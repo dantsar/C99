@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lex.h"
+#include "./lexer/lex.h"
 
 extern YYSTYPE yylval;
 

@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "lex.h"
-#include "lex.yy.c"
+#include "../lex.yy.c"
 
 char* get_keyword(int kw){
     switch(kw){
