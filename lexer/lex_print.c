@@ -96,6 +96,7 @@ void print_char(char c){
 
 int main(){
     int t;
+    /* default */
     lineno = 1;
     strcpy(filename, "<stdin>");
     /* yylex returns every char that it reads from stdio */
@@ -117,7 +118,10 @@ int main(){
                 break;
             case STRING:
                 fprintf(stdout, "%s\t %d\t ", filename, lineno);
-                fprintf(stdout, "STRING\t %s\n", yylval.str.str);
+                for(int i = 0; i < yylval.str.len; i++){
+                    print_char(yylval.str.str[i]);
+                }   
+                fprintf(stdout, "\n");
                 break;
             case NUMBER:
                 fprintf(stdout, "%s\t %d\t NUMBER\t ", filename, lineno);

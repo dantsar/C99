@@ -29,5 +29,4 @@ typedef union{
 
 YYSTYPE yylval;
 
-
 #endif

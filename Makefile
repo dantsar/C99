@@ -8,6 +8,3 @@ lex: lex.yy.c ./lexer/lex_print.c
 
 clean: 
 	rm lex.yy.c lex
-
-remove: 
-	rm lex
