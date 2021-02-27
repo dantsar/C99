@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "lex.yy.h": "c",
+        "parser.tab.c": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}

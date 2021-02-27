@@ -1,16 +1,26 @@
 %{
-
 #include <stdio.h>
 #include <stdlib.h>
+#include "parser.h"
 
 extern int yylex();
 void yyerror(const char*);
 
 %}
 
-%union{
-    struct  Str str;
-    struct  Num num;
+%union {
+    struct Str{
+        char *str;
+        int len;
+    }str;
+
+    struct Num{
+        unsigned long long int_num;
+        long double real;
+        int type;
+        int sign;
+    }num;
+
     char*   ident;
     char    charlit;
 }
@@ -25,11 +35,12 @@ void yyerror(const char*);
 
 %%
 
-
 expr: '(' expr ')'
-    | NUMBER '+' NUMBER
+    | expr '+' expr 
     | NUMBER
+    | IDENT
     ;
+
 %% 
 
 void yyerror(const char *msg){

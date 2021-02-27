@@ -1,9 +1,12 @@
 #include <stdio.h>
 
-#include "lex.h"
+// #include "lex.h"
+// #include "lex.yy.h"
 #include "lex.yy.c"
 #include "parser.tab.h"
 
+extern int lineno;
+extern char filename[];
 
 char* get_keyword(int kw){
     switch(kw){
@@ -76,17 +79,17 @@ char* get_op(int op){
 
 void print_char(char c){
     switch(c){
-        case '\'':  fprintf(stdout, "%s", "\\'");  break;  
-        case '\"':  fprintf(stdout, "%s", "\\\""); break;
-        case '\?':  fprintf(stdout, "%s", "\\?");  break;
-        case '\\':  fprintf(stdout, "%s", "\\\\"); break;
-        case '\a':  fprintf(stdout, "%s", "\\a");  break;
-        case '\b':  fprintf(stdout, "%s", "\\b");  break; 
-        case '\f':  fprintf(stdout, "%s", "\\f");  break;
-        case '\n':  fprintf(stdout, "%s", "\\n");  break; 
-        case '\r':  fprintf(stdout, "%s", "\\r");  break;
-        case '\t':  fprintf(stdout, "%s", "\\t");  break;
-        case '\v':  fprintf(stdout, "%s", "\\v");  break; 
+        case '\'':  fprintf(stdout, "\\'");  break;  
+        case '\"':  fprintf(stdout, "\\\""); break;
+        case '\?':  fprintf(stdout, "\\?");  break;
+        case '\\':  fprintf(stdout, "\\\\"); break;
+        case '\a':  fprintf(stdout, "\\a");  break;
+        case '\b':  fprintf(stdout, "\\b");  break; 
+        case '\f':  fprintf(stdout, "\\f");  break;
+        case '\n':  fprintf(stdout, "\\n");  break; 
+        case '\r':  fprintf(stdout, "\\r");  break;
+        case '\t':  fprintf(stdout, "\\t");  break;
+        case '\v':  fprintf(stdout, "\\v");  break; 
         default:
             if(c >127 || c < 32){
                 fprintf(stdout, "%03o", c);
@@ -119,7 +122,7 @@ int main(){
                 fprintf(stdout, "\n");
                 break;
             case STRING:
-                fprintf(stdout, "%s\t %d\t \t STRING ", filename, lineno);
+                fprintf(stdout, "%s\t %d\t STRING ", filename, lineno);
                 for(int i = 0; i < yylval.str.len; i++){
                     print_char(yylval.str.str[i]);
                 }   
