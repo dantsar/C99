@@ -1,7 +1,9 @@
 #include <stdio.h>
 
 #include "lex.h"
-#include "../lex.yy.c"
+#include "lex.yy.c"
+#include "parser.tab.h"
+
 
 char* get_keyword(int kw){
     switch(kw){
@@ -117,7 +119,7 @@ int main(){
                 fprintf(stdout, "\n");
                 break;
             case STRING:
-                fprintf(stdout, "%s\t %d\t ", filename, lineno);
+                fprintf(stdout, "%s\t %d\t \t STRING ", filename, lineno);
                 for(int i = 0; i < yylval.str.len; i++){
                     print_char(yylval.str.str[i]);
                 }   

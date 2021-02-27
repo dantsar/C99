@@ -1,7 +1,7 @@
-#ifndef __LEX_H
-#define __LEX_H
+#ifndef _LEX_H
+#define _LEX_H
 
-#include "tokens-manual.h"
+// #include "tokens-manual.h"
 
 void set_yylval_int(unsigned long long num, int type, int sign);
 
@@ -20,13 +20,14 @@ struct Str{
     int len;
 };
 
-typedef union{
-    struct Str str;
-    struct Num num;
-    char* ident;
-    char charlit;
-} YYSTYPE;
 
-YYSTYPE yylval;
+// typedef union{
+//     struct Str str;
+//     struct Num num;
+//     char* ident;
+//     char charlit;
+// } YYSTYPE;
+
+// YYSTYPE yylval;
 
 #endif
