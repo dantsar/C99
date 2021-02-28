@@ -1,7 +1,8 @@
-#ifndef __PARSER_H
-#define __PARSER_H
+#ifndef __AST_H
+#define __AST_H
 
 struct astnode* astnode_alloc(int ast_type);
+void print_ast();
 
 /* Abstract Symbol Table node types */
 enum {AST_BINOP=0, AST_IDENT, AST_NUM, AST_SIZEOF, AST_FCN};
