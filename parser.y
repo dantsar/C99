@@ -49,31 +49,29 @@ void yyerror(const char*);
 %left '+' '-'
 %left '*' '/' '%'
 
+%type<ident>        IDENT 
+%type<num>          NUMBER 
+%type<charlit>      CHARLIT
+%type<astnode_p>    value binop
+
 %%
 
-statement:        expr ';'           {fprintf(stdout, "parsed an expression\n");}
-                | statement expr ';' {fprintf(stdout, "parsed an expression\n");}
+statement:        expr ';'              {fprintf(stdout, "parsed an expression\n");}
+                | statement expr ';'    {fprintf(stdout, "parsed an expression\n");}
                 ;
 
-expr:           binop
+expr:           binop                   {}
                 ;
 
-binop:          | binop ',' binop
-                | binop '=' binop    
-                | binop '|' binop
-                | binop '^' binop
-                | binop '&' binop
-                | binop '+' binop
-                | binop '-' binop
-                | binop '*' binop
-                | binop '/' binop
-                | binop '%' binop
+binop:            binop ',' value       {}
+                | binop '=' value       {}
+                | binop '+' value       {} 
                 | value
                 ;
 
-value:            IDENT
-                | NUMBER
-                | CHARLIT
+value:            IDENT                 {fprintf(stdout, "Matched: IDENT %s\n", yylval.ident);}
+                | NUMBER                {fprintf(stdout, "Matched: NUMBER %d\n", yylval.num.int_num);}
+                | CHARLIT               {fprintf(stdout, "Matched: CHARLIT %d\n", yylval.charlit);}
                 ;
 
 %% 
@@ -87,3 +85,15 @@ int main(){
     print_ast();
     return 1;
 }
+
+/* 
+                | binop '|' value 
+                | binop '^' value 
+                | binop '&' value 
+
+                | binop '-' value 
+                | binop '*' value 
+                | binop '/' value 
+                | binop '%' value 
+                | value ',' value
+*/

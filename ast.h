@@ -1,7 +1,10 @@
 #ifndef __AST_H
 #define __AST_H
 
-struct astnode* astnode_alloc(int ast_type);
+typedef struct astnode* ASTNODE;
+
+ASTNODE astnode_alloc(int ast_type);
+ASTNODE alloc_and_set_binop(ASTNODE val1, int op, ASTNODE val2);
 void print_ast();
 
 /* Abstract Symbol Table node types */

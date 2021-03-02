@@ -1,0 +1,354 @@
+Terminals unused in grammar
+
+    STRING
+    INDSEL
+    PLUSPLUS
+    MINUSMINUS
+    SHL
+    SHR
+    LTEQ
+    GTEQ
+    EQEQ
+    NOTEQ
+    LOGAND
+    LOGOR
+    ELLIPSIS
+    TIMESEQ
+    DIVEQ
+    MODEQ
+    PLUSEQ
+    MINUSEQ
+    SHLEQ
+    SHREQ
+    ANDEQ
+    OREQ
+    XOREQ
+    AUTO
+    BREAK
+    CASE
+    CHAR
+    CONST
+    CONTINUE
+    DEFAULT
+    DO
+    DOUBLE
+    ELSE
+    ENUM
+    EXTERN
+    FLOAT
+    FOR
+    GOTO
+    IF
+    INLINE
+    INT
+    LONG
+    REGISTER
+    RESTRICT
+    RETURN
+    SHORT
+    SIGNED
+    SIZEOF
+    STATIC
+    STRUCT
+    SWITCH
+    TYPEDEF
+    UNION
+    UNSIGNED
+    VOID
+    VOLATILE
+    WHILE
+    _BOOL
+    _COMPLEX
+    _IMAGINARY
+    '?'
+    ':'
+    '|'
+    '^'
+    '&'
+    '<'
+    '>'
+    '-'
+    '*'
+    '/'
+    '%'
+
+
+Grammar
+
+    0 $accept: statement $end
+
+    1 statement: expr ';'
+    2          | statement expr ';'
+
+    3 expr: binop
+
+    4 binop: binop ',' value
+    5      | binop '=' value
+    6      | binop '+' value
+    7      | value
+
+    8 value: IDENT
+    9      | NUMBER
+   10      | CHARLIT
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '%' (37)
+    '&' (38)
+    '*' (42)
+    '+' (43) 6
+    ',' (44) 4
+    '-' (45)
+    '/' (47)
+    ':' (58)
+    ';' (59) 1 2
+    '<' (60)
+    '=' (61) 5
+    '>' (62)
+    '?' (63)
+    '^' (94)
+    '|' (124)
+    error (256)
+    IDENT <ident> (258) 8
+    CHARLIT <charlit> (259) 10
+    STRING (260)
+    NUMBER <num> (261) 9
+    INDSEL (262)
+    PLUSPLUS (263)
+    MINUSMINUS (264)
+    SHL (265)
+    SHR (266)
+    LTEQ (267)
+    GTEQ (268)
+    EQEQ (269)
+    NOTEQ (270)
+    LOGAND (271)
+    LOGOR (272)
+    ELLIPSIS (273)
+    TIMESEQ (274)
+    DIVEQ (275)
+    MODEQ (276)
+    PLUSEQ (277)
+    MINUSEQ (278)
+    SHLEQ (279)
+    SHREQ (280)
+    ANDEQ (281)
+    OREQ (282)
+    XOREQ (283)
+    AUTO (284)
+    BREAK (285)
+    CASE (286)
+    CHAR (287)
+    CONST (288)
+    CONTINUE (289)
+    DEFAULT (290)
+    DO (291)
+    DOUBLE (292)
+    ELSE (293)
+    ENUM (294)
+    EXTERN (295)
+    FLOAT (296)
+    FOR (297)
+    GOTO (298)
+    IF (299)
+    INLINE (300)
+    INT (301)
+    LONG (302)
+    REGISTER (303)
+    RESTRICT (304)
+    RETURN (305)
+    SHORT (306)
+    SIGNED (307)
+    SIZEOF (308)
+    STATIC (309)
+    STRUCT (310)
+    SWITCH (311)
+    TYPEDEF (312)
+    UNION (313)
+    UNSIGNED (314)
+    VOID (315)
+    VOLATILE (316)
+    WHILE (317)
+    _BOOL (318)
+    _COMPLEX (319)
+    _IMAGINARY (320)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (81)
+        on left: 0
+    statement (82)
+        on left: 1 2
+        on right: 0 2
+    expr (83)
+        on left: 3
+        on right: 1 2
+    binop <astnode_p> (84)
+        on left: 4 5 6 7
+        on right: 3 4 5 6
+    value <astnode_p> (85)
+        on left: 8 9 10
+        on right: 4 5 6 7
+
+
+State 0
+
+    0 $accept: • statement $end
+
+    IDENT    shift, and go to state 1
+    CHARLIT  shift, and go to state 2
+    NUMBER   shift, and go to state 3
+
+    statement  go to state 4
+    expr       go to state 5
+    binop      go to state 6
+    value      go to state 7
+
+
+State 1
+
+    8 value: IDENT •
+
+    $default  reduce using rule 8 (value)
+
+
+State 2
+
+   10 value: CHARLIT •
+
+    $default  reduce using rule 10 (value)
+
+
+State 3
+
+    9 value: NUMBER •
+
+    $default  reduce using rule 9 (value)
+
+
+State 4
+
+    0 $accept: statement • $end
+    2 statement: statement • expr ';'
+
+    $end     shift, and go to state 8
+    IDENT    shift, and go to state 1
+    CHARLIT  shift, and go to state 2
+    NUMBER   shift, and go to state 3
+
+    expr   go to state 9
+    binop  go to state 6
+    value  go to state 7
+
+
+State 5
+
+    1 statement: expr • ';'
+
+    ';'  shift, and go to state 10
+
+
+State 6
+
+    3 expr: binop •
+    4 binop: binop • ',' value
+    5      | binop • '=' value
+    6      | binop • '+' value
+
+    ','  shift, and go to state 11
+    '='  shift, and go to state 12
+    '+'  shift, and go to state 13
+
+    $default  reduce using rule 3 (expr)
+
+
+State 7
+
+    7 binop: value •
+
+    $default  reduce using rule 7 (binop)
+
+
+State 8
+
+    0 $accept: statement $end •
+
+    $default  accept
+
+
+State 9
+
+    2 statement: statement expr • ';'
+
+    ';'  shift, and go to state 14
+
+
+State 10
+
+    1 statement: expr ';' •
+
+    $default  reduce using rule 1 (statement)
+
+
+State 11
+
+    4 binop: binop ',' • value
+
+    IDENT    shift, and go to state 1
+    CHARLIT  shift, and go to state 2
+    NUMBER   shift, and go to state 3
+
+    value  go to state 15
+
+
+State 12
+
+    5 binop: binop '=' • value
+
+    IDENT    shift, and go to state 1
+    CHARLIT  shift, and go to state 2
+    NUMBER   shift, and go to state 3
+
+    value  go to state 16
+
+
+State 13
+
+    6 binop: binop '+' • value
+
+    IDENT    shift, and go to state 1
+    CHARLIT  shift, and go to state 2
+    NUMBER   shift, and go to state 3
+
+    value  go to state 17
+
+
+State 14
+
+    2 statement: statement expr ';' •
+
+    $default  reduce using rule 2 (statement)
+
+
+State 15
+
+    4 binop: binop ',' value •
+
+    $default  reduce using rule 4 (binop)
+
+
+State 16
+
+    5 binop: binop '=' value •
+
+    $default  reduce using rule 5 (binop)
+
+
+State 17
+
+    6 binop: binop '+' value •
+
+    $default  reduce using rule 6 (binop)
