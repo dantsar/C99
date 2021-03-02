@@ -10,6 +10,19 @@ struct astnode* astnode_alloc(int astnode_type){
 }
 
 
-void print_ast(){
+void print_ast(struct astnode *ast){
+    switch(ast->type){
+        case AST_BINOP: 
+            break;
+        case AST_IDENT: 
+            break;
+        case AST_NUM: 
+            break;
+        case AST_SIZEOF: 
+            break;
+        case AST_FCN: 
+            break;
+
+    }
     fprintf(stdout, "printing ast...\n");
 }

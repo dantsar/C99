@@ -5,7 +5,7 @@ struct astnode* astnode_alloc(int ast_type);
 void print_ast();
 
 /* Abstract Symbol Table node types */
-enum {AST_BINOP=0, AST_IDENT, AST_NUM, AST_SIZEOF, AST_FCN};
+enum {AST_BINOP=0, AST_IDENT, AST_NUM, AST_SIZEOF, AST_FCN, AST_UNOP};
 
 struct astnode_binop{
     int op;

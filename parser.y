@@ -24,6 +24,7 @@ void yyerror(const char*);
 
     char*   ident;
     char    charlit;
+    struct astnode *astnode_p;
 }
 
 
@@ -37,7 +38,7 @@ void yyerror(const char*);
 /* https://en.cppreference.com/w/c/language/operator_precedence */
 %left ','
 %right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ
-/* ternary here */
+%right '?' ':'
 %left LOGOR
 %left LOGAND
 %left '|'
@@ -57,7 +58,8 @@ statement:        expr ';'           {fprintf(stdout, "parsed an expression\n");
 expr:           binop
                 ;
 
-binop:            binop '=' binop    {}
+binop:          | binop ',' binop
+                | binop '=' binop    
                 | binop '|' binop
                 | binop '^' binop
                 | binop '&' binop
