@@ -83,8 +83,8 @@ Grammar
     3 expr: binop
 
     4 binop: binop ',' value
-    5      | binop '=' value
-    6      | binop '+' value
+    5      | binop '=' binop
+    6      | binop '+' binop
     7      | value
 
     8 value: IDENT
@@ -95,21 +95,21 @@ Grammar
 Terminals, with rules where they appear
 
     $end (0) 0
-    '%' (37)
-    '&' (38)
-    '*' (42)
-    '+' (43) 6
-    ',' (44) 4
-    '-' (45)
-    '/' (47)
-    ':' (58)
+    '%' <c> (37)
+    '&' <c> (38)
+    '*' <c> (42)
+    '+' <c> (43) 6
+    ',' <c> (44) 4
+    '-' <c> (45)
+    '/' <c> (47)
+    ':' <c> (58)
     ';' (59) 1 2
-    '<' (60)
-    '=' (61) 5
-    '>' (62)
-    '?' (63)
-    '^' (94)
-    '|' (124)
+    '<' <c> (60)
+    '=' <c> (61) 5
+    '>' <c> (62)
+    '?' <c> (63)
+    '^' <c> (94)
+    '|' <c> (124)
     error (256)
     IDENT <ident> (258) 8
     CHARLIT <charlit> (259) 10
@@ -120,23 +120,23 @@ Terminals, with rules where they appear
     MINUSMINUS (264)
     SHL (265)
     SHR (266)
-    LTEQ (267)
-    GTEQ (268)
-    EQEQ (269)
-    NOTEQ (270)
-    LOGAND (271)
-    LOGOR (272)
+    LTEQ <c> (267)
+    GTEQ <c> (268)
+    EQEQ <c> (269)
+    NOTEQ <c> (270)
+    LOGAND <c> (271)
+    LOGOR <c> (272)
     ELLIPSIS (273)
-    TIMESEQ (274)
-    DIVEQ (275)
-    MODEQ (276)
-    PLUSEQ (277)
-    MINUSEQ (278)
-    SHLEQ (279)
-    SHREQ (280)
-    ANDEQ (281)
+    TIMESEQ <c> (274)
+    DIVEQ <c> (275)
+    MODEQ <c> (276)
+    PLUSEQ <c> (277)
+    MINUSEQ <c> (278)
+    SHLEQ <c> (279)
+    SHREQ <c> (280)
+    ANDEQ <c> (281)
     OREQ (282)
-    XOREQ (283)
+    XOREQ <c> (283)
     AUTO (284)
     BREAK (285)
     CASE (286)
@@ -191,12 +191,12 @@ Nonterminals, with rules where they appear
         on right: 3 4 5 6
     value <astnode_p> (85)
         on left: 8 9 10
-        on right: 4 5 6 7
+        on right: 4 7
 
 
 State 0
 
-    0 $accept: • statement $end
+    0 $accept: . statement $end
 
     IDENT    shift, and go to state 1
     CHARLIT  shift, and go to state 2
@@ -210,29 +210,29 @@ State 0
 
 State 1
 
-    8 value: IDENT •
+    8 value: IDENT .
 
     $default  reduce using rule 8 (value)
 
 
 State 2
 
-   10 value: CHARLIT •
+   10 value: CHARLIT .
 
     $default  reduce using rule 10 (value)
 
 
 State 3
 
-    9 value: NUMBER •
+    9 value: NUMBER .
 
     $default  reduce using rule 9 (value)
 
 
 State 4
 
-    0 $accept: statement • $end
-    2 statement: statement • expr ';'
+    0 $accept: statement . $end
+    2 statement: statement . expr ';'
 
     $end     shift, and go to state 8
     IDENT    shift, and go to state 1
@@ -246,17 +246,17 @@ State 4
 
 State 5
 
-    1 statement: expr • ';'
+    1 statement: expr . ';'
 
     ';'  shift, and go to state 10
 
 
 State 6
 
-    3 expr: binop •
-    4 binop: binop • ',' value
-    5      | binop • '=' value
-    6      | binop • '+' value
+    3 expr: binop .
+    4 binop: binop . ',' value
+    5      | binop . '=' binop
+    6      | binop . '+' binop
 
     ','  shift, and go to state 11
     '='  shift, and go to state 12
@@ -267,35 +267,35 @@ State 6
 
 State 7
 
-    7 binop: value •
+    7 binop: value .
 
     $default  reduce using rule 7 (binop)
 
 
 State 8
 
-    0 $accept: statement $end •
+    0 $accept: statement $end .
 
     $default  accept
 
 
 State 9
 
-    2 statement: statement expr • ';'
+    2 statement: statement expr . ';'
 
     ';'  shift, and go to state 14
 
 
 State 10
 
-    1 statement: expr ';' •
+    1 statement: expr ';' .
 
     $default  reduce using rule 1 (statement)
 
 
 State 11
 
-    4 binop: binop ',' • value
+    4 binop: binop ',' . value
 
     IDENT    shift, and go to state 1
     CHARLIT  shift, and go to state 2
@@ -306,49 +306,60 @@ State 11
 
 State 12
 
-    5 binop: binop '=' • value
+    5 binop: binop '=' . binop
 
     IDENT    shift, and go to state 1
     CHARLIT  shift, and go to state 2
     NUMBER   shift, and go to state 3
 
-    value  go to state 16
+    binop  go to state 16
+    value  go to state 7
 
 
 State 13
 
-    6 binop: binop '+' • value
+    6 binop: binop '+' . binop
 
     IDENT    shift, and go to state 1
     CHARLIT  shift, and go to state 2
     NUMBER   shift, and go to state 3
 
-    value  go to state 17
+    binop  go to state 17
+    value  go to state 7
 
 
 State 14
 
-    2 statement: statement expr ';' •
+    2 statement: statement expr ';' .
 
     $default  reduce using rule 2 (statement)
 
 
 State 15
 
-    4 binop: binop ',' value •
+    4 binop: binop ',' value .
 
     $default  reduce using rule 4 (binop)
 
 
 State 16
 
-    5 binop: binop '=' value •
+    4 binop: binop . ',' value
+    5      | binop . '=' binop
+    5      | binop '=' binop .
+    6      | binop . '+' binop
+
+    '='  shift, and go to state 12
+    '+'  shift, and go to state 13
 
     $default  reduce using rule 5 (binop)
 
 
 State 17
 
-    6 binop: binop '+' value •
+    4 binop: binop . ',' value
+    5      | binop . '=' binop
+    6      | binop . '+' binop
+    6      | binop '+' binop .
 
     $default  reduce using rule 6 (binop)

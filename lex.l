@@ -7,12 +7,10 @@
 #include <string.h>
 
 #include "parser.tab.h"
+#include "def.h"
 
 extern YYSTYPE yylval;
 
-/* enums for NUMS */
-enum N_SIGN {N_UNSIGNED=0, N_SIGNED};
-enum N_TYPE {N_INT=0, N_LONG, N_LLONG, N_FLOAT, N_DOUBLE, N_LDOUBLE};
 
 void set_yylval_int(unsigned long long num, int type, int sign);
 void set_yylval_real(char* str, int type, int sign);

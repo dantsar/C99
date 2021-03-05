@@ -10,6 +10,9 @@ void yyerror(const char*);
 %}
 
 %union {
+    /* for single character tokens */
+    int c; 
+
     struct Str{
         char *str;
         int len;
@@ -36,42 +39,42 @@ void yyerror(const char*);
 %token WHILE _BOOL _COMPLEX _IMAGINARY
 
 /* https://en.cppreference.com/w/c/language/operator_precedence */
-%left ','
-%right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ
-%right '?' ':'
-%left LOGOR
-%left LOGAND
-%left '|'
-%left '^'
-%left '&'
-%left EQEQ NOTEQ
-%left '<' LTEQ '>' GTEQ
-%left '+' '-'
-%left '*' '/' '%'
+%left<c>    ','
+%right<c>   '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ
+%right<c>   '?' ':'
+%left<c>    LOGOR
+%left<c>    LOGAND
+%left<c>    '|'
+%left<c>    '^'
+%left<c>    '&'
+%left<c>    EQEQ NOTEQ
+%left<c>    '<' LTEQ '>' GTEQ
+%left<c>    '+' '-'
+%left<c>    '*' '/' '%'
 
 %type<ident>        IDENT 
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
-%type<astnode_p>    value binop
+%type<astnode_p>    binop value 
 
 %%
 
-statement:        expr ';'              {fprintf(stdout, "parsed an expression\n");}
-                | statement expr ';'    {fprintf(stdout, "parsed an expression\n");}
+statement:        expr ';'              {}
+                | statement expr ';'    {}
                 ;
 
-expr:           binop                   {}
+expr:           binop                   {print_ast($1);}
                 ;
 
-binop:            binop ',' value       {}
-                | binop '=' value       {}
-                | binop '+' value       {} 
+binop:            binop ',' binop       {}
+                | binop '=' binop       {$$=alloc_and_set_binop($1, '=', $3);}
+                | binop '+' binop       {$$=alloc_and_set_binop($1, '+', $3);} 
                 | value
                 ;
 
-value:            IDENT                 {fprintf(stdout, "Matched: IDENT %s\n", yylval.ident);}
-                | NUMBER                {fprintf(stdout, "Matched: NUMBER %d\n", yylval.num.int_num);}
-                | CHARLIT               {fprintf(stdout, "Matched: CHARLIT %d\n", yylval.charlit);}
+value:            IDENT                 {$$=alloc_and_set_ident($1);}
+                | NUMBER                {}
+                | CHARLIT               {/* $$=astnode_alloc(AST_CHARLIT); $$=CHARLIT; */}
                 ;
 
 %% 
@@ -82,7 +85,6 @@ void yyerror(const char *msg){
 
 int main(){
     yyparse();
-    print_ast();
     return 1;
 }
 

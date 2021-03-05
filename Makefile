@@ -15,9 +15,6 @@ lex.yy.o: lex.yy.c parser.tab.o
 lex: lex_print.c lex.yy.c
 	gcc -o lex lex_print.c parser.tab.o
 
-parser.tab.c: parser.y
-	bison parser.y
-
 ast.o: ast.h ast.c
 	gcc -c -o ast.o ast.c
 

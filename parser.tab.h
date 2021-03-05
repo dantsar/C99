@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.3.  */
+/* A Bison parser, made by GNU Bison 3.6.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -127,6 +127,9 @@ union YYSTYPE
 {
 #line 12 "parser.y"
 
+    /* for single character tokens */
+    int c; 
+
     struct Str{
         char *str;
         int len;
@@ -143,7 +146,7 @@ union YYSTYPE
     char    charlit;
     struct astnode *astnode_p;
 
-#line 147 "parser.tab.h"
+#line 150 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
