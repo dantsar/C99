@@ -4,6 +4,7 @@
 
 #include "ast.h"
 #include "def.h"
+#include "parser.tab.h"
 
 
 ASTNODE alloc_and_set_num(unsigned long long int_num, long double real, int type, int sign){
@@ -65,6 +66,28 @@ static void indent(int indent){
     }
 }
 
+void print_op(int op){
+    if(op < 255){
+        putchar(op);
+    }else{
+        char* op_str;
+        switch(op){ 
+            case PLUSPLUS:    op_str = "++"; break;
+            case MINUSMINUS:  op_str = "--"; break;
+            case SHL:         op_str = "<<"; break;
+            case SHR:         op_str = ">>"; break;
+            case LTEQ:        op_str = "<="; break;  
+            case GTEQ:        op_str = ">="; break; 
+            case EQEQ:        op_str = "=="; break; 
+            case NOTEQ:       op_str = "!="; break;  
+            case LOGAND:      op_str = "&&"; break;  
+            case LOGOR:       op_str = "||"; break;
+            case ELLIPSIS:    op_str = "..."; break;
+        }
+        fprintf(stdout, "%s", op_str);
+    }
+}
+
 void print_ast(ASTNODE ast){
     /* int for storing indentation in the output */
     static int space = 0;
@@ -73,7 +96,9 @@ void print_ast(ASTNODE ast){
             if(ast->binop.op == '='){
                 fprintf(stdout, "ASSIGNMENT\n");
             }else{
-                fprintf(stdout, "BINARY OP %c\n", ast->binop.op);
+                fprintf(stdout, "BINARY OP ", ast->binop.op);
+                print_op(ast->binop.op);
+                putchar('\n');
             }
             space++;
             indent(space); print_ast(ast->binop.left);

@@ -41,7 +41,7 @@ void yyerror(const char*);
 
 /* https://en.cppreference.com/w/c/language/operator_precedence */
 %left<c>    ','
-%right<c>   '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ
+%right<c>   '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ OREQ
 %right<c>   '?' ':'
 %left<c>    LOGOR
 %left<c>    LOGAND
@@ -50,6 +50,7 @@ void yyerror(const char*);
 %left<c>    '&'
 %left<c>    EQEQ NOTEQ
 %left<c>    '<' LTEQ '>' GTEQ
+%left<c>    SHR SHL
 %left<c>    '+' '-'
 %left<c>    '*' '/' '%'
 
@@ -78,21 +79,23 @@ binop:            binop ',' binop       {$$=alloc_and_set_binop($1, ',', $3);}
                 | binop '&' binop       {$$=alloc_and_set_binop($1, '&', $3);} 
                 | binop '%' binop       {$$=alloc_and_set_binop($1, '%', $3);} 
                 | binop '/' binop       {$$=alloc_and_set_binop($1, '/', $3);} 
+                | binop SHR binop       {$$=alloc_and_set_binop($1, SHR, $3);} 
+                | binop SHL binop       {$$=alloc_and_set_binop($1, SHL, $3);} 
                 | '(' binop ')'         {$$=$2;}
                 | short_assign          {$$=$1;}
                 | value
                 ;
 
-    /* TO DO: IMPLEMENT SHIFT LEFT AND RIGHT */
 short_assign:     binop PLUSEQ binop    {$$=alloc_and_expand_assignment($1, '+', $3);} 
                 | binop MINUSEQ binop   {$$=alloc_and_expand_assignment($1, '-', $3);}     
                 | binop TIMESEQ binop   {$$=alloc_and_expand_assignment($1, '*', $3);}     
                 | binop DIVEQ binop     {$$=alloc_and_expand_assignment($1, '/', $3);}     
                 | binop MODEQ binop     {$$=alloc_and_expand_assignment($1, '%', $3);}     
-                | binop SHLEQ binop     {$$=alloc_and_expand_assignment($1, '+', $3);}     
-                | binop SHREQ binop     {$$=alloc_and_expand_assignment($1, '+', $3);}     
+                | binop SHLEQ binop     {$$=alloc_and_expand_assignment($1, SHL, $3);}     
+                | binop SHREQ binop     {$$=alloc_and_expand_assignment($1, SHR, $3);}     
                 | binop ANDEQ binop     {$$=alloc_and_expand_assignment($1, '&', $3);}     
                 | binop XOREQ binop     {$$=alloc_and_expand_assignment($1, '^', $3);}     
+                | binop OREQ binop      {$$=alloc_and_expand_assignment($1, '|', $3);}     
                 ;
                     
 value:            IDENT                 {$$=alloc_and_set_ident($1);}
