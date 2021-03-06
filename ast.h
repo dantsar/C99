@@ -7,12 +7,13 @@ typedef struct astnode* ASTNODE;
 
 ASTNODE astnode_alloc(int ast_type);
 ASTNODE alloc_and_set_binop(ASTNODE val1, int op, ASTNODE val2);
-ASTNODE alloc_and_set_ident(const char* ident);
+ASTNODE alloc_and_expand_assignment(ASTNODE val1, int op, ASTNODE val2);
+ASTNODE alloc_and_set_ident(char* ident);
+ASTNODE alloc_and_set_num(unsigned long long int_num, long double real, int type, int sign);
+ASTNODE alloc_and_set_charlit(char charlit);
+ASTNODE alloc_and_set_string(char* string, int len);
 
 void print_ast(ASTNODE ast);
-
-
-
 
 struct astnode_binop{
     int op;
@@ -24,8 +25,16 @@ struct astnode_ident{
     char* ident;
 };
 
+struct astnode_charlit{
+    char charlit;
+};
+
+struct astnode_string{
+    char* string;
+    int len;
+};
 struct astnode_num{
-    int numtype;
+    int type;
     int sign;
     unsigned long long int_num;
     long double real;
@@ -50,6 +59,8 @@ struct astnode{
         struct astnode_binop    binop;
         struct astnode_ident    ident;
         struct astnode_num      num;
+        struct astnode_charlit  charlit;
+        struct astnode_string   string;
         // struct astnode_sizeof   ast_sizeof;
         // struct astnode_fnc      fnc;
         // struct astnode_ifstmt   ifstmt;

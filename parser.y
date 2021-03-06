@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "def.h"
 #include "ast.h"
 
 extern int yylex();
@@ -55,7 +56,8 @@ void yyerror(const char*);
 %type<ident>        IDENT 
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
-%type<astnode_p>    binop value 
+%type<str>          STRING
+%type<astnode_p>    binop value short_assign
 
 %%
 
@@ -66,15 +68,37 @@ statement:        expr ';'              {}
 expr:           binop                   {print_ast($1);}
                 ;
 
-binop:            binop ',' binop       {}
+binop:            binop ',' binop       {$$=alloc_and_set_binop($1, ',', $3);}
                 | binop '=' binop       {$$=alloc_and_set_binop($1, '=', $3);}
                 | binop '+' binop       {$$=alloc_and_set_binop($1, '+', $3);} 
+                | binop '-' binop       {$$=alloc_and_set_binop($1, '-', $3);} 
+                | binop '*' binop       {$$=alloc_and_set_binop($1, '*', $3);} 
+                | binop '|' binop       {$$=alloc_and_set_binop($1, '|', $3);} 
+                | binop '^' binop       {$$=alloc_and_set_binop($1, '^', $3);} 
+                | binop '&' binop       {$$=alloc_and_set_binop($1, '&', $3);} 
+                | binop '%' binop       {$$=alloc_and_set_binop($1, '%', $3);} 
+                | binop '/' binop       {$$=alloc_and_set_binop($1, '/', $3);} 
+                | '(' binop ')'         {$$=$2;}
+                | short_assign          {$$=$1;}
                 | value
                 ;
 
+    /* TO DO: IMPLEMENT SHIFT LEFT AND RIGHT */
+short_assign:     binop PLUSEQ binop    {$$=alloc_and_expand_assignment($1, '+', $3);} 
+                | binop MINUSEQ binop   {$$=alloc_and_expand_assignment($1, '-', $3);}     
+                | binop TIMESEQ binop   {$$=alloc_and_expand_assignment($1, '*', $3);}     
+                | binop DIVEQ binop     {$$=alloc_and_expand_assignment($1, '/', $3);}     
+                | binop MODEQ binop     {$$=alloc_and_expand_assignment($1, '%', $3);}     
+                | binop SHLEQ binop     {$$=alloc_and_expand_assignment($1, '+', $3);}     
+                | binop SHREQ binop     {$$=alloc_and_expand_assignment($1, '+', $3);}     
+                | binop ANDEQ binop     {$$=alloc_and_expand_assignment($1, '&', $3);}     
+                | binop XOREQ binop     {$$=alloc_and_expand_assignment($1, '^', $3);}     
+                ;
+                    
 value:            IDENT                 {$$=alloc_and_set_ident($1);}
-                | NUMBER                {}
-                | CHARLIT               {/* $$=astnode_alloc(AST_CHARLIT); $$=CHARLIT; */}
+                | NUMBER                {$$=alloc_and_set_num($1.int_num, $1.real, $1.type, $1.sign);}
+                | CHARLIT               {$$=alloc_and_set_charlit($1);}
+                | STRING                {$$=alloc_and_set_string($1.str, $1.len);}
                 ;
 
 %% 
@@ -87,15 +111,5 @@ int main(){
     yyparse();
     return 1;
 }
-
-/* 
-                | binop '|' value 
-                | binop '^' value 
-                | binop '&' value 
-
-                | binop '-' value 
-                | binop '*' value 
-                | binop '/' value 
-                | binop '%' value 
-                | value ',' value
+/*
 */
