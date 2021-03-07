@@ -67,7 +67,7 @@ ASSIGNMENT
     IDENT  m
     LOGICAL  OP  &&
       IDENT  n
-      IDEN
+      IDENT  o
 ASSIGNMENT
   IDENT  n
   BINARY  OP  |

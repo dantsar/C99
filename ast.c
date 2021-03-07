@@ -79,7 +79,6 @@ ASTNODE alloc_and_set_fncall(ASTNODE name, ASTNODE params){
 
         ast_temp = ast_temp->binop.left;
     }
-
     list->param = ast_temp;
 
     ast_ret->fncall.num_param = count;
@@ -179,6 +178,5 @@ void print_ast(ASTNODE ast){
         case AST_SIZEOF: 
             /* FF said: "BLAH" */
             break;
-
     }
 }

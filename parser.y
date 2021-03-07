@@ -53,13 +53,13 @@ void yyerror(const char*);
 %left<c>    SHR SHL
 %left<c>    '+' '-'
 %left<c>    '*' '/' '%'
-%left<c>     PLUSPLUS MINUSMINUS '(' ')' '.' INDSEL
+%left<c>     PLUSPLUS MINUSMINUS '(' ')' '.' '[' ']' INDSEL
 
 %type<ident>        IDENT 
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
 %type<str>          STRING
-%type<astnode_p>    expr binop value short_assign func comparison
+%type<astnode_p>    expr binop prim_expr short_assign comparison
 
 %%
 
@@ -67,15 +67,9 @@ statement:        expr ';'                      {print_ast($1);}
                 | statement expr ';'            {print_ast($2);}
                 ;
 
-expr:             binop                         {}
-                | func                          {}
+expr:             binop                         {$$=$1;}
                 ;
 
- func:            binop '(' ')'                 {$$=alloc_and_set_fncall($1, NULL);}
-                | binop '(' binop ')'           {$$=alloc_and_set_fncall($1, $3);}
-                | binop '(' func ')'            {}
-                ; 
- 
 binop:            binop ',' binop               {$$=alloc_and_set_binop($1, ',', $3);}
                 | binop '=' binop               {$$=alloc_and_set_binop($1, '=', $3);}
                 | binop '+' binop               {$$=alloc_and_set_binop($1, '+', $3);} 
@@ -90,13 +84,17 @@ binop:            binop ',' binop               {$$=alloc_and_set_binop($1, ',',
                 | binop SHL binop               {$$=alloc_and_set_binop($1, SHL, $3);} 
                 | binop PLUSPLUS                {$$=alloc_and_set_binop($1, PLUSPLUS, NULL);} 
                 | binop MINUSMINUS              {$$=alloc_and_set_binop($1, MINUSMINUS, NULL);} 
+                |  binop '(' ')'                {$$=alloc_and_set_fncall($1, NULL);}
+                | binop '(' binop ')'           {$$=alloc_and_set_fncall($1, $3);}
                 | '(' binop ')'                 {$$=$2;}
                 | short_assign                  {$$=$1;}
                 | comparison                    {$$=$1;}
-                | value
+                | prim_expr 
                 ;
 
-comparison:       binop LTEQ binop              {$$=alloc_and_set_binop($1, LTEQ, $3);}
+comparison:       binop '<' binop               {$$=alloc_and_set_binop($1, '<', $3);}
+                | binop '>' binop               {$$=alloc_and_set_binop($1, '>', $3);}
+                | binop LTEQ binop              {$$=alloc_and_set_binop($1, LTEQ, $3);}
                 | binop GTEQ binop              {$$=alloc_and_set_binop($1, GTEQ, $3);}
                 | binop EQEQ binop              {$$=alloc_and_set_binop($1, EQEQ, $3);}
                 | binop NOTEQ binop             {$$=alloc_and_set_binop($1, NOTEQ, $3);}
@@ -120,12 +118,11 @@ short_assign:     binop PLUSEQ binop            {$$=alloc_and_expand_assignment(
                                                  $$=alloc_and_expand_assignment($2, '-', temp);}     
                 ;
                     
-value:            IDENT                         {$$=alloc_and_set_ident($1);}
+prim_expr:        IDENT                         {$$=alloc_and_set_ident($1);}
                 | NUMBER                        {$$=alloc_and_set_num($1.int_num, $1.real, $1.type, $1.sign);}
                 | CHARLIT                       {$$=alloc_and_set_charlit($1);}
                 | STRING                        {$$=alloc_and_set_string($1.str, $1.len);}
                 ;
-
 %% 
 
 void yyerror(const char *msg){
