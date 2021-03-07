@@ -30,6 +30,12 @@ ASTNODE alloc_and_expand_assignment(ASTNODE val1, int op, ASTNODE val2){
     return ret2;
 }
 
+// ASTNODE alloc_and_expand_shorthand(ASTNODE val1, ASTNODE val2){
+//     ASTNODE ret1 = alloc_and_set_binop(val1, op, val2);
+//     ASTNODE ret2 = alloc_and_set_binop(val1, '=', ret1);
+//     return ret2;
+// }
+
 ASTNODE alloc_and_set_ident(char *ident){
     ASTNODE ret = astnode_alloc(AST_IDENT);
     ret->ident.ident = ident;
@@ -49,6 +55,40 @@ ASTNODE alloc_and_set_string(char* string, int len){
     return ret;
 }
 
+ASTNODE alloc_and_set_fncall(ASTNODE name, ASTNODE params){
+    ASTNODE ast_ret = astnode_alloc(AST_FNCALL);
+    ast_ret->fncall.name = name;
+    if(params == NULL){
+        ast_ret->fncall.num_param = 0;
+        return ast_ret;
+    }
+
+    /* temporary variables */
+    struct fncall_params *list,*temp;
+    ASTNODE ast_temp = params;
+
+    list = malloc(sizeof(struct fncall_params));
+    list->next = NULL;
+
+    int count;
+    for(count = 1; ast_temp->binop.op == ','; count++){
+        list->param = ast_temp->binop.right;
+        temp = malloc(sizeof(struct fncall_params));
+        temp->next = list;
+        list = temp;
+
+        ast_temp = ast_temp->binop.left;
+    }
+
+    list->param = ast_temp;
+
+    ast_ret->fncall.num_param = count;
+    ast_ret->fncall.params = list;
+    return ast_ret;
+}
+
+
+
 ASTNODE astnode_alloc(int astnode_type){
     ASTNODE ret = malloc(sizeof(struct astnode));
     ret->type = astnode_type;
@@ -66,7 +106,7 @@ static void indent(int indent){
     }
 }
 
-void print_op(int op){
+static void print_op(int op){
     if(op < 255){
         putchar(op);
     }else{
@@ -102,8 +142,23 @@ void print_ast(ASTNODE ast){
             }
             space++;
             indent(space); print_ast(ast->binop.left);
+            if(ast->binop.right == NULL){--space; return;}
             indent(space); print_ast(ast->binop.right);
+            /* print_binop(op) ==> either print one or two */
             space--;
+            break;
+        case AST_FNCALL: 
+            indent(space);   fprintf(stdout, "FNCALL, %d arguments\n",ast->fncall.num_param); 
+            indent(++space); print_ast(ast->fncall.name); --space;
+            if(ast->fncall.num_param == 0) return;
+
+            /* print out linked list of args */
+            ASTNODE temp = ast;
+            for(int i = 1; temp->fncall.params != NULL; i++){
+                indent(space);   fprintf(stdout, "arg #%d=\n",i);
+                indent(++space); print_ast(temp->fncall.params->param); space--;
+                temp->fncall.params = temp->fncall.params->next;
+            }
             break;
         case AST_NUM: 
             if(ast->num.type <= N_LLONG){
@@ -122,8 +177,7 @@ void print_ast(ASTNODE ast){
             fprintf(stdout, "STRING %s\n", ast->string.string);
             break;
         case AST_SIZEOF: 
-            break;
-        case AST_FCN: 
+            /* FF said: "BLAH" */
             break;
 
     }

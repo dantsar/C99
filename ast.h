@@ -12,6 +12,7 @@ ASTNODE alloc_and_set_ident(char* ident);
 ASTNODE alloc_and_set_num(unsigned long long int_num, long double real, int type, int sign);
 ASTNODE alloc_and_set_charlit(char charlit);
 ASTNODE alloc_and_set_string(char* string, int len);
+ASTNODE alloc_and_set_fncall(ASTNODE name, ASTNODE params);
 
 void print_ast(ASTNODE ast);
 
@@ -33,6 +34,7 @@ struct astnode_string{
     char* string;
     int len;
 };
+
 struct astnode_num{
     int type;
     int sign;
@@ -40,12 +42,18 @@ struct astnode_num{
     long double real;
 };
 
-// struct astnode_sizeof{
-//     int size;
-// };
+struct fncall_params{ /* linked list of params */
+    ASTNODE param;
+    struct fncall_params* next;
+};
+struct astnode_fncall{
+    ASTNODE name;
+    int num_param;
+    struct fncall_params* params;
+};
 
-// struct astnode_fnc{
-//     char *name;
+// struct astnode_sizeof{
+//     struct astnode_binop exp;
 // };
 
 // struct astnode_ifstmt{
@@ -61,8 +69,8 @@ struct astnode{
         struct astnode_num      num;
         struct astnode_charlit  charlit;
         struct astnode_string   string;
+        struct astnode_fncall   fncall;
         // struct astnode_sizeof   ast_sizeof;
-        // struct astnode_fnc      fnc;
         // struct astnode_ifstmt   ifstmt;
     };
 };
