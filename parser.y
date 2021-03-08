@@ -59,63 +59,89 @@ void yyerror(const char*);
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
 %type<str>          STRING
-%type<astnode_p>    expr binop prim_expr short_assign comparison
+%type<astnode_p>    expr assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr
 
 %%
 
-statement:        expr ';'                      {print_ast($1);}
-                | statement expr ';'            {print_ast($2);}
+statement:        expr ';'                                  {print_ast($1); putchar('\n');}
+                | statement expr ';'                        {print_ast($2); putchar('\n');}
                 ;
 
-expr:             binop                         {$$=$1;}
+expr:             assign_expr                               {$$=$1;}
+                | expr ',' assign_expr                      {$$=alloc_and_set_binary(BINOP, $1, ',', $3);}
                 ;
 
-binop:            binop ',' binop               {$$=alloc_and_set_binop($1, ',', $3);}
-                | binop '=' binop               {$$=alloc_and_set_binop($1, '=', $3);}
-                | binop '+' binop               {$$=alloc_and_set_binop($1, '+', $3);} 
-                | binop '-' binop               {$$=alloc_and_set_binop($1, '-', $3);} 
-                | binop '*' binop               {$$=alloc_and_set_binop($1, '*', $3);} 
-                | binop '|' binop               {$$=alloc_and_set_binop($1, '|', $3);} 
-                | binop '^' binop               {$$=alloc_and_set_binop($1, '^', $3);} 
-                | binop '&' binop               {$$=alloc_and_set_binop($1, '&', $3);} 
-                | binop '%' binop               {$$=alloc_and_set_binop($1, '%', $3);} 
-                | binop '/' binop               {$$=alloc_and_set_binop($1, '/', $3);} 
-                | binop SHR binop               {$$=alloc_and_set_binop($1, SHR, $3);} 
-                | binop SHL binop               {$$=alloc_and_set_binop($1, SHL, $3);} 
-                | binop PLUSPLUS                {$$=alloc_and_set_binop($1, PLUSPLUS, NULL);} 
-                | binop MINUSMINUS              {$$=alloc_and_set_binop($1, MINUSMINUS, NULL);} 
-                |  binop '(' ')'                {$$=alloc_and_set_fncall($1, NULL);}
-                | binop '(' binop ')'           {$$=alloc_and_set_fncall($1, $3);}
-                | '(' binop ')'                 {$$=$2;}
-                | short_assign                  {$$=$1;}
-                | comparison                    {$$=$1;}
-                | prim_expr 
+assign_expr:      unary_expr '=' assign_expr                {$$=alloc_and_set_binary(ASSIGN, $1, '=', $3);} 
+                | unary_expr PLUSEQ assign_expr             {$$=alloc_and_expand_assignment($1, '+', $3);} 
+                | unary_expr MINUSEQ assign_expr            {$$=alloc_and_expand_assignment($1, '-', $3);}     
+                | unary_expr TIMESEQ assign_expr            {$$=alloc_and_expand_assignment($1, '*', $3);}     
+                | unary_expr DIVEQ assign_expr              {$$=alloc_and_expand_assignment($1, '/', $3);}     
+                | unary_expr MODEQ assign_expr              {$$=alloc_and_expand_assignment($1, '%', $3);}     
+                | unary_expr SHLEQ assign_expr              {$$=alloc_and_expand_assignment($1, SHL, $3);}     
+                | unary_expr SHREQ assign_expr              {$$=alloc_and_expand_assignment($1, SHR, $3);}     
+                | unary_expr ANDEQ assign_expr              {$$=alloc_and_expand_assignment($1, '&', $3);}     
+                | unary_expr XOREQ assign_expr              {$$=alloc_and_expand_assignment($1, '^', $3);}     
+                | unary_expr OREQ assign_expr               {$$=alloc_and_expand_assignment($1, '|', $3);}     
+                | cond_expr                                 {$$=$1;}
                 ;
 
-comparison:       binop '<' binop               {$$=alloc_and_set_binop($1, '<', $3);}
-                | binop '>' binop               {$$=alloc_and_set_binop($1, '>', $3);}
-                | binop LTEQ binop              {$$=alloc_and_set_binop($1, LTEQ, $3);}
-                | binop GTEQ binop              {$$=alloc_and_set_binop($1, GTEQ, $3);}
-                | binop EQEQ binop              {$$=alloc_and_set_binop($1, EQEQ, $3);}
-                | binop NOTEQ binop             {$$=alloc_and_set_binop($1, NOTEQ, $3);}
-                | binop LOGAND binop            {$$=alloc_and_set_binop($1, LOGAND, $3);}
-                | binop LOGOR binop             {$$=alloc_and_set_binop($1, LOGOR, $3);}
+unary_expr:       postfix_expr                              {$$=$1;}
+                | PLUSPLUS unary_expr                       {ASTNODE temp = alloc_and_set_num(1, 0.0, N_INT, N_SIGNED);
+                                                                $$=alloc_and_expand_assignment($2, '+', temp);}
+                | MINUSMINUS unary_expr                     {ASTNODE temp = alloc_and_set_num(1, 0.0, N_INT, N_SIGNED);
+                                                                $$=alloc_and_expand_assignment($2, '-', temp);}
+                | SIZEOF unary_expr                         {$$=alloc_and_set_sizeof($2);}
+                | SIZEOF '(' unary_expr ')'                 {$$=alloc_and_set_sizeof($3);}
+                | '&' cast_expr                             {$$=alloc_and_set_unary('&',$2);}
+                | '*' cast_expr                             {$$=alloc_and_set_unary('*',$2);}
+                | '+' cast_expr                             {$$=alloc_and_set_unary('+',$2);}
+                | '-' cast_expr                             {$$=alloc_and_set_unary('-',$2);}
+                | '~' cast_expr                             {$$=alloc_and_set_unary('~',$2);}
+                | '!' cast_expr                             {$$=alloc_and_set_unary('!',$2);}
                 ;
 
-short_assign:     binop PLUSEQ binop            {$$=alloc_and_expand_assignment($1, '+', $3);} 
-                | binop MINUSEQ binop           {$$=alloc_and_expand_assignment($1, '-', $3);}     
-                | binop TIMESEQ binop           {$$=alloc_and_expand_assignment($1, '*', $3);}     
-                | binop DIVEQ binop             {$$=alloc_and_expand_assignment($1, '/', $3);}     
-                | binop MODEQ binop             {$$=alloc_and_expand_assignment($1, '%', $3);}     
-                | binop SHLEQ binop             {$$=alloc_and_expand_assignment($1, SHL, $3);}     
-                | binop SHREQ binop             {$$=alloc_and_expand_assignment($1, SHR, $3);}     
-                | binop ANDEQ binop             {$$=alloc_and_expand_assignment($1, '&', $3);}     
-                | binop XOREQ binop             {$$=alloc_and_expand_assignment($1, '^', $3);}     
-                | binop OREQ binop              {$$=alloc_and_expand_assignment($1, '|', $3);}     
-                | PLUSPLUS binop                {ASTNODE temp = alloc_and_set_num(1, 0.0, N_INT, N_SIGNED);
-                                                 $$=alloc_and_expand_assignment($2, '+', temp);}     
-                | MINUSMINUS binop              {ASTNODE temp = alloc_and_set_num(1, 0.0, N_INT, N_SIGNED);
-                                                 $$=alloc_and_expand_assignment($2, '-', temp);}     
+cond_expr:        arith_expr                                {$$=$1;}
+                | arith_expr '?' expr ':' cond_expr         {$$=alloc_and_set_ternary($1, $3, $5);}
+                ;
+
+arith_expr:       arith_expr '+' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '+', $3);} 
+                | arith_expr '-' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '-', $3);} 
+                | arith_expr '*' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '*', $3);} 
+                | arith_expr '|' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '|', $3);} 
+                | arith_expr '^' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '^', $3);} 
+                | arith_expr '&' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '&', $3);} 
+                | arith_expr '%' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '%', $3);} 
+                | arith_expr '/' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '/', $3);} 
+                | arith_expr SHR cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, SHR, $3);} 
+                | arith_expr SHL cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, SHL, $3);} 
+                | arith_expr '<' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '<', $3);}
+                | arith_expr '>' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '>', $3);}
+                | arith_expr LTEQ cast_expr                 {$$=alloc_and_set_binary(BINOP,$1, LTEQ, $3);}
+                | arith_expr GTEQ cast_expr                 {$$=alloc_and_set_binary(BINOP,$1, GTEQ, $3);}
+                | arith_expr EQEQ cast_expr                 {$$=alloc_and_set_binary(BINOP,$1, EQEQ, $3);}
+                | arith_expr NOTEQ cast_expr                {$$=alloc_and_set_binary(BINOP,$1, NOTEQ, $3);}
+                | arith_expr LOGAND cast_expr               {$$=alloc_and_set_binary(BINOP,$1, LOGAND, $3);}
+                | arith_expr LOGOR cast_expr                {$$=alloc_and_set_binary(BINOP,$1, LOGOR, $3);}
+                | arith_expr PLUSPLUS                       {$$=alloc_and_set_unary(PLUSPLUS,$1);} 
+                | arith_expr MINUSMINUS                     {$$=alloc_and_set_unary(MINUSMINUS,$1);} 
+                | arith_expr '(' ')'                        {$$=alloc_and_set_fncall($1, NULL);}
+                | arith_expr '(' expr ')'                   {$$=alloc_and_set_fncall($1, $3);}
+                | '(' arith_expr ')'                        {$$=$2;}
+                | cast_expr                                 {$$=$1;}
+                ;
+
+/*blank for now */
+cast_expr:        unary_expr                                {$$=$1;}
+                ;
+
+postfix_expr:     prim_expr                                 {$$=$1;}
+                | postfix_expr '[' expr ']'                 {$$=alloc_and_set_binary(BINOP, $1, '+', $3);
+                                                                $$=alloc_and_set_unary('*', $$);}
+                | postfix_expr '.' IDENT                    {$$=alloc_and_set_select($1, $3);}
+                | postfix_expr INDSEL IDENT                 {$$=alloc_and_set_unary('*', $1);
+                                                                $$=alloc_and_set_select($$, $3);}
+                // | '(' type_name ')' '{' init_list '}'       {/* shtuff */}
+                // | '(' type_name ')' '{' init_list ',' '}'   {/* shtuff */}
                 ;
                     
 prim_expr:        IDENT                         {$$=alloc_and_set_ident($1);}
