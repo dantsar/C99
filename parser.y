@@ -61,7 +61,6 @@ void yyerror(const char*);
 %type<charlit>      CHARLIT
 %type<str>          STRING
 %type<astnode_p>    expr assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr
-//%type<astnode_p>    unary_expr 
 
 %%
 
