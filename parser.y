@@ -53,6 +53,7 @@ void yyerror(const char*);
 %left<c>    SHR SHL
 %left<c>    '+' '-'
 %left<c>    '*' '/' '%'
+%left<c>    '~' '!'
 %left<c>     PLUSPLUS MINUSMINUS '(' ')' '.' '[' ']' INDSEL
 
 %type<ident>        IDENT 
@@ -104,24 +105,24 @@ cond_expr:        arith_expr                                {$$=$1;}
                 | arith_expr '?' expr ':' cond_expr         {$$=alloc_and_set_ternary($1, $3, $5);}
                 ;
 
-arith_expr:       arith_expr '+' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '+', $3);} 
-                | arith_expr '-' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '-', $3);} 
-                | arith_expr '*' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '*', $3);} 
-                | arith_expr '|' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '|', $3);} 
-                | arith_expr '^' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '^', $3);} 
-                | arith_expr '&' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '&', $3);} 
-                | arith_expr '%' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '%', $3);} 
-                | arith_expr '/' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '/', $3);} 
-                | arith_expr SHR cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, SHR, $3);} 
-                | arith_expr SHL cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, SHL, $3);} 
-                | arith_expr '<' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '<', $3);}
-                | arith_expr '>' cast_expr                  {$$=alloc_and_set_binary(BINOP,$1, '>', $3);}
-                | arith_expr LTEQ cast_expr                 {$$=alloc_and_set_binary(BINOP,$1, LTEQ, $3);}
-                | arith_expr GTEQ cast_expr                 {$$=alloc_and_set_binary(BINOP,$1, GTEQ, $3);}
-                | arith_expr EQEQ cast_expr                 {$$=alloc_and_set_binary(BINOP,$1, EQEQ, $3);}
-                | arith_expr NOTEQ cast_expr                {$$=alloc_and_set_binary(BINOP,$1, NOTEQ, $3);}
-                | arith_expr LOGAND cast_expr               {$$=alloc_and_set_binary(BINOP,$1, LOGAND, $3);}
-                | arith_expr LOGOR cast_expr                {$$=alloc_and_set_binary(BINOP,$1, LOGOR, $3);}
+arith_expr:       arith_expr '+' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '+', $3);} 
+                | arith_expr '-' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '-', $3);} 
+                | arith_expr '*' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '*', $3);} 
+                | arith_expr '|' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '|', $3);} 
+                | arith_expr '^' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '^', $3);} 
+                | arith_expr '&' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '&', $3);} 
+                | arith_expr '%' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '%', $3);} 
+                | arith_expr '/' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '/', $3);} 
+                | arith_expr SHR arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, SHR, $3);} 
+                | arith_expr SHL arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, SHL, $3);} 
+                | arith_expr '<' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '<', $3);}
+                | arith_expr '>' arith_expr                 {$$=alloc_and_set_binary(BINOP,$1, '>', $3);}
+                | arith_expr LTEQ arith_expr                {$$=alloc_and_set_binary(BINOP,$1, LTEQ, $3);}
+                | arith_expr GTEQ arith_expr                {$$=alloc_and_set_binary(BINOP,$1, GTEQ, $3);}
+                | arith_expr EQEQ arith_expr                {$$=alloc_and_set_binary(BINOP,$1, EQEQ, $3);}
+                | arith_expr NOTEQ arith_expr               {$$=alloc_and_set_binary(BINOP,$1, NOTEQ, $3);}
+                | arith_expr LOGAND arith_expr              {$$=alloc_and_set_binary(BINOP,$1, LOGAND, $3);}
+                | arith_expr LOGOR arith_expr               {$$=alloc_and_set_binary(BINOP,$1, LOGOR, $3);}
                 | arith_expr PLUSPLUS                       {$$=alloc_and_set_unary(PLUSPLUS,$1);} 
                 | arith_expr MINUSMINUS                     {$$=alloc_and_set_unary(MINUSMINUS,$1);} 
                 | arith_expr '(' ')'                        {$$=alloc_and_set_fncall($1, NULL);}

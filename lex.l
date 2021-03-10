@@ -111,7 +111,7 @@ CHAR_SEQ    ([^"'\\]|\\.)*
 "..."   {return ELLIPSIS;   }
 "*="    {return TIMESEQ;    }
 "/="    {return DIVEQ;      }
-"%/"    {return MODEQ;      }
+"%="    {return MODEQ;      }
 "+="    {return PLUSEQ;     }
 "-="    {return MINUSEQ;    }
 "<<="   {return SHLEQ;      }
