@@ -65,6 +65,7 @@ ASTNODE alloc_and_set_string(char* string, int len){
     return ret;
 }
 
+/* params is assumed to be a binop astnode */
 ASTNODE alloc_and_set_fncall(ASTNODE name, ASTNODE params){
     ASTNODE ast_ret = astnode_alloc(AST_FNCALL);
     ast_ret->fncall.name = name;
