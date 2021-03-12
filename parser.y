@@ -4,8 +4,13 @@
 
 #include "def.h"
 #include "ast.h"
+#include "sym_tab.h"
 
+/* stuff from lex */
 extern int yylex();
+extern char filename[256];
+extern int lineno;
+
 void yyerror(const char*);
 
 %}
@@ -64,7 +69,7 @@ void yyerror(const char*);
 
 %%
 
-statement:        expr ';'                                  {print_ast($1); putchar('\n');}
+statement:        expr ';'                                  {print_ast($1); putchar('\n'); sym_create();}
                 | statement expr ';'                        {print_ast($2); putchar('\n');}
                 ;
 
@@ -153,7 +158,7 @@ prim_expr:        IDENT                         {$$=alloc_and_set_ident($1);}
 %% 
 
 void yyerror(const char *msg){
-    fprintf(stderr, "Error: %s\n", msg);
+    fprintf(stderr, "Error: %s:%d %s\n", filename, lineno, msg);
 }
 
 int main(){

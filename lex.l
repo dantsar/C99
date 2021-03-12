@@ -18,7 +18,7 @@ int isoctal(int c);
 int parse_seq(char* src, char *buf);
 
 /* only used for lexer error handling, parser has its own system */
-char filename[256];
+char filename[256] = "<stdin>";
 int lineno = 1;
 %}
 

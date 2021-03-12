@@ -2,7 +2,7 @@ CFLAGS= -std=gnu99
 
 all: parser
 
-parser.tab.h: parser.y
+parser.tab.h: parser.y def.h
 	bison -vd parser.y
 
 parser.tab.o: parser.tab.h
@@ -20,8 +20,11 @@ lex: lex_print.c lex.yy.c
 ast.o: ast.h ast.c
 	gcc $(CFLAGS) -c -o ast.o ast.c
 
-parser: parser.tab.o lex.yy.o ast.o
-	gcc $(CFLAGS) -o parser parser.tab.o lex.yy.o ast.o
+sym_tab.o: sym_tab.c sym_tab.h
+	gcc $(CFLAGS) -c -o sym_tab.o sym_tab.c
+
+parser: parser.tab.o lex.yy.o ast.o sym_tab.o
+	gcc $(CFLAGS) -o parser $^
 
 
 clean: 

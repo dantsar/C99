@@ -58,14 +58,14 @@ struct astnode_num{
     long double real;
 };
 
-struct fncall_params{ /* linked list of params */
-    ASTNODE param;
-    struct fncall_params* next;
-};
 struct astnode_fncall{
     ASTNODE name;
     int num_param;
-    struct fncall_params* params;
+
+    struct fncall_params{ /* linked list of params */
+        ASTNODE param;
+        struct fncall_params* next;
+    } *params;
 };
 
 struct astnode_sizeof{
