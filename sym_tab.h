@@ -1,21 +1,23 @@
 #ifndef SYM_TAB_H
 #define SYM_TAB_H
 
+#include "def.h"
 #include "ast.h"
-#include "parser.tab.h"
+// #include "parser.tab.h"
 
 typedef struct sym_tab* SYM_TAB;
 typedef enum {false, true} bool;
 
+
 SYM_TAB sym_create();
 // SYM_TAB sym_destory(SYM_TAB sym);
 // SYM_TAB sym_lookup(SYM_TAB); 
-// int sym_enter(SYM_TAB, entry);
+// int sym_enter(GYM_TAB tab, struct sym_entry *ent);
 
 
 
 struct var_att{
-    int type;
+    ASTNODE type;
     int stg_class;
     int offset;     /* offset in stackframe: only for type auto */
 };
@@ -33,7 +35,7 @@ struct struct_union_tag{
 };
 
 struct struct_union_mem{
-    int type;
+    ASTNODE type;
     int offset; /* only for structs */
     int bitfield, bitwidth;
 };
@@ -52,11 +54,10 @@ struct statement_label{
 };
 
 struct typedef_name{
-    //EQ_TYPE;
-    bool seen; /* placeholder */
+    ASTNODE eq_type;
 };
 
-struct entry{
+struct sym_entry{
     char *filename;
     int lineno;
 
@@ -71,17 +72,16 @@ struct entry{
         struct enum_const           en_val;
         struct statement_label      stmt_l;
         struct typedef_name         t_def;
-
     };
 };
 
 
 /* linked list of scopes */
-struct scope{
+struct sym_scope{
     int scope_type;
     SYM_TAB cur;
     SYM_TAB next;
-} sym_scopes;
+};
 
 struct sym_tab{
 

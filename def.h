@@ -24,4 +24,27 @@ enum AST_TYPE{
 /* enum for binary types in ast */
 enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
+/* size of scalars */
+enum S_SCALAR{
+      S_CHAR, 
+      S_SHORT, 
+      S_INT,
+      S_LONG,
+      S_LLONG,
+      S_FLOAT,
+      S_DOUBLE,
+      S_LDOUBLE
+};
+
+/* scalar size */
+enum SS_SCALAR{
+      SS_CHAR=1,
+      SS_SHORT=2,
+      SS_INT=4,
+      SS_LONG=4,
+      SS_LLONG=8,
+      SS_FLOAT=4,
+      SS_DOUBLE=8,
+      SS_LDOUBLE=16
+};
 #endif

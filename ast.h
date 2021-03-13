@@ -1,22 +1,22 @@
-#ifndef __AST_H
-#define __AST_H
+#ifndef AST_H
+#define AST_H
 
 #include "def.h"
 
 typedef struct astnode* ASTNODE;
 
 ASTNODE astnode_alloc(int ast_type);
-ASTNODE alloc_and_set_unary(int op, ASTNODE expr);
-ASTNODE alloc_and_set_binary(int type, ASTNODE val1, int op, ASTNODE val2);
-ASTNODE alloc_and_set_ternary(ASTNODE cond, ASTNODE true, ASTNODE false);
+ASTNODE alloc_unary(int op, ASTNODE expr);
+ASTNODE alloc_binary(int type, ASTNODE val1, int op, ASTNODE val2);
+ASTNODE alloc_ternary(ASTNODE cond, ASTNODE true, ASTNODE false);
 ASTNODE alloc_and_expand_assignment(ASTNODE val1, int op, ASTNODE val2);
-ASTNODE alloc_and_set_ident(char* ident);
-ASTNODE alloc_and_set_num(unsigned long long int_num, long double real, int type, int sign);
-ASTNODE alloc_and_set_charlit(char charlit);
-ASTNODE alloc_and_set_string(char* string, int len);
-ASTNODE alloc_and_set_fncall(ASTNODE name, ASTNODE params);
-ASTNODE alloc_and_set_sizeof(ASTNODE expr);
-ASTNODE alloc_and_set_select(ASTNODE expr, char* ident);
+ASTNODE alloc_ident(char* ident);
+ASTNODE alloc_num(unsigned long long int_num, long double real, int type, int sign);
+ASTNODE alloc_charlit(char charlit);
+ASTNODE alloc_string(char* string, int len);
+ASTNODE alloc_fncall(ASTNODE name, ASTNODE params);
+ASTNODE alloc_sizeof(ASTNODE expr);
+ASTNODE alloc_select(ASTNODE expr, char* ident);
 
 void print_ast(ASTNODE ast);
 

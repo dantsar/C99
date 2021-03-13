@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parser.tab.h"
 #include "def.h"
+#include "parser.tab.h"
 
 extern YYSTYPE yylval;
 

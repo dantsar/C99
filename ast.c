@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "def.h"
 #include "ast.h"
+#include "char_util.h"
+#include "def.h"
 #include "parser.tab.h"
 
 
-ASTNODE alloc_and_set_num(unsigned long long int_num, long double real, int type, int sign){
+ASTNODE alloc_num(unsigned long long int_num, long double real, int type, int sign){
     ASTNODE ret = astnode_alloc(AST_NUM);
     ret->num.int_num = int_num;
     ret->num.real = real;
@@ -16,14 +17,14 @@ ASTNODE alloc_and_set_num(unsigned long long int_num, long double real, int type
     return ret;
 }
 
-ASTNODE alloc_and_set_unary(int op, ASTNODE expr){
+ASTNODE alloc_unary(int op, ASTNODE expr){
     ASTNODE ret = astnode_alloc(AST_UNARY);
     ret->unary.op = op;
     ret->unary.expr = expr;
     return ret;
 }
 
-ASTNODE alloc_and_set_binary(int type, ASTNODE val1, int op, ASTNODE val2){
+ASTNODE alloc_binary(int type, ASTNODE val1, int op, ASTNODE val2){
     ASTNODE ret = astnode_alloc(AST_BINARY);
     ret->binary.op = op;
     ret->binary.op_type = type;
@@ -32,7 +33,7 @@ ASTNODE alloc_and_set_binary(int type, ASTNODE val1, int op, ASTNODE val2){
     return ret;
 }
 
-ASTNODE alloc_and_set_ternary(ASTNODE cond, ASTNODE true, ASTNODE false){
+ASTNODE alloc_ternary(ASTNODE cond, ASTNODE true, ASTNODE false){
     ASTNODE ret = astnode_alloc(AST_TERNARY);
     ret->ternary.cond = cond;
     ret->ternary.true = true;
@@ -41,24 +42,24 @@ ASTNODE alloc_and_set_ternary(ASTNODE cond, ASTNODE true, ASTNODE false){
 }
 
 ASTNODE alloc_and_expand_assignment(ASTNODE val1, int op, ASTNODE val2){
-    ASTNODE ret1 = alloc_and_set_binary(BINOP, val1, op, val2);
-    ASTNODE ret2 = alloc_and_set_binary(ASSIGN, val1, '=', ret1);
+    ASTNODE ret1 = alloc_binary(BINOP, val1, op, val2);
+    ASTNODE ret2 = alloc_binary(ASSIGN, val1, '=', ret1);
     return ret2;
 }
 
-ASTNODE alloc_and_set_ident(char *ident){
+ASTNODE alloc_ident(char *ident){
     ASTNODE ret = astnode_alloc(AST_IDENT);
     ret->ident.ident = ident;
     return ret;
 }
 
-ASTNODE alloc_and_set_charlit(char charlit){
+ASTNODE alloc_charlit(char charlit){
     ASTNODE ret = astnode_alloc(AST_CHARLIT);
     ret->charlit.charlit = charlit;
     return ret;
 }
 
-ASTNODE alloc_and_set_string(char* string, int len){
+ASTNODE alloc_string(char* string, int len){
     ASTNODE ret = astnode_alloc(AST_STRING);
     ret->string.string = string;
     ret->string.len = len;
@@ -66,7 +67,7 @@ ASTNODE alloc_and_set_string(char* string, int len){
 }
 
 /* params is assumed to be a binop astnode */
-ASTNODE alloc_and_set_fncall(ASTNODE name, ASTNODE params){
+ASTNODE alloc_fncall(ASTNODE name, ASTNODE params){
     ASTNODE ast_ret = astnode_alloc(AST_FNCALL);
     ast_ret->fncall.name = name;
     if(params == NULL){
@@ -97,13 +98,13 @@ ASTNODE alloc_and_set_fncall(ASTNODE name, ASTNODE params){
     return ast_ret;
 }
 
-ASTNODE alloc_and_set_sizeof(ASTNODE expr){
+ASTNODE alloc_sizeof(ASTNODE expr){
     ASTNODE ret = astnode_alloc(AST_SIZEOF);
     ret->a_sizeof.expr = expr;
     return ret;
 }
 
-ASTNODE alloc_and_set_select(ASTNODE expr, char* ident){
+ASTNODE alloc_select(ASTNODE expr, char* ident){
     ASTNODE tag = astnode_alloc(AST_IDENT);
     tag->ident.ident = ident;
 
@@ -119,36 +120,9 @@ ASTNODE astnode_alloc(int astnode_type){
     return ret;
 }
 
-
-
-
-
-
 static void indent(int indent){
     for(int i = 0; i < indent*2; i++){
         putchar(' ');
-    }
-}
-
-static void print_op(int op){
-    if(op < 255){
-        putchar(op);
-    }else{
-        char* op_str;
-        switch(op){ 
-            case PLUSPLUS:    op_str = "++"; break;
-            case MINUSMINUS:  op_str = "--"; break;
-            case SHL:         op_str = "<<"; break;
-            case SHR:         op_str = ">>"; break;
-            case LTEQ:        op_str = "<="; break;  
-            case GTEQ:        op_str = ">="; break; 
-            case EQEQ:        op_str = "=="; break; 
-            case NOTEQ:       op_str = "!="; break;  
-            case LOGAND:      op_str = "&&"; break;  
-            case LOGOR:       op_str = "||"; break;
-            case ELLIPSIS:    op_str = "..."; break;
-        }
-        fprintf(stdout, "%s", op_str);
     }
 }
 

@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 
 // #include "lex.h"
-// #include "lex.yy.h"
+#include "def.h"
 #include "lex.yy.c"
 #include "parser.tab.h"
+#include "char_util.h"
 
 extern int lineno;
 extern char filename[];
@@ -74,28 +76,6 @@ char* get_op(int op){
         case ANDEQ:      return "ANDEQ";     
         case OREQ:       return "OREQ";     
         case XOREQ:      return "XOREQ";      
-    }
-}
-
-void print_char(char c){
-    switch(c){
-        case '\'':  fprintf(stdout, "\\'");  break;  
-        case '\"':  fprintf(stdout, "\\\""); break;
-        case '\?':  fprintf(stdout, "\\?");  break;
-        case '\\':  fprintf(stdout, "\\\\"); break;
-        case '\a':  fprintf(stdout, "\\a");  break;
-        case '\b':  fprintf(stdout, "\\b");  break; 
-        case '\f':  fprintf(stdout, "\\f");  break;
-        case '\n':  fprintf(stdout, "\\n");  break; 
-        case '\r':  fprintf(stdout, "\\r");  break;
-        case '\t':  fprintf(stdout, "\\t");  break;
-        case '\v':  fprintf(stdout, "\\v");  break; 
-        default:
-            if(c >127 || c < 32){
-                fprintf(stdout, "%03o", c);
-            }else{
-                fprintf(stdout, "%c", c);
-            }
     }
 }
 
