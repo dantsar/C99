@@ -3,13 +3,18 @@
 #include <stdlib.h>
 
 #include "def.h"
-#include "ast.h"
 #include "sym_tab.h"
+#include "ast.h"
+
+
 
 /* stuff from lex */
 extern int yylex();
 extern char filename[256];
 extern int lineno;
+
+/* stuff for symbol table */
+SYM_TAB curr_scope;
 
 void yyerror(const char*);
 

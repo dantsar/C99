@@ -2,8 +2,23 @@
 #define AST_H
 
 #include "def.h"
+#include "sym_tab.h"
 
-typedef struct astnode* ASTNODE;
+/* Abstract Symbol Table node types */
+enum AST_TYPE{ 
+      AST_UNARY=0, 
+      AST_BINARY, 
+      AST_TERNARY, 
+      AST_IDENT, 
+      AST_NUM, 
+      AST_SIZEOF, 
+      AST_FNCALL, 
+      AST_CHARLIT, 
+      AST_STRING, 
+      AST_SELECT
+};
+/* enum for binary types in ast */
+enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
 ASTNODE astnode_alloc(int ast_type);
 ASTNODE alloc_unary(int op, ASTNODE expr);
@@ -77,6 +92,37 @@ struct astnode_select{
     ASTNODE tag;
 };
 
+struct astnode_scalar{ 
+    char *filename;
+    int lineno;
+
+    int sign;
+    int type;
+    union{
+        unsigned long long int_num;
+        long double real;
+    };
+};
+
+struct astnode_pointer{
+    ASTNODE ptr_to;
+};
+
+struct astnode_array{
+    int size;
+    ASTNODE ptr_to;
+}; 
+
+struct astnode_func{
+    char *filename;
+    int lineno;
+
+    ASTNODE ret;
+    ASTNODE body;
+    SYM_TAB proto;
+};
+
+
 struct astnode{
     int type;
     union{
@@ -90,6 +136,13 @@ struct astnode{
         struct astnode_fncall   fncall;
         struct astnode_sizeof   a_sizeof;
         struct astnode_select   select;
+
+        /* assignment 3 */
+        struct astnode_scalar   scalar;
+        struct astnode_pointer  pointer;
+        struct astnode_array    array;
+        struct astnode_func     func;
+        // struct astnode_st_un   st_un;
     };
 };
 

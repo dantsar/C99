@@ -23,7 +23,7 @@ lex: lex_print.c lex.yy.o char_util.o   ast.o sym_tab.o
 
 
 
-ast.o: ast.h ast.c
+ast.o: ast.h ast.c sym_tab.h
 	gcc $(CFLAGS) -c -o ast.o ast.c
 
 sym_tab.o: sym_tab.c sym_tab.h
@@ -35,4 +35,4 @@ parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o
 
 
 clean: 
-	rm *.o lex.yy.* lex parser.tab.* parser parser.output
+	rm *.o lex.yy.c parser.tab.h parser.tab.c parser parser.output 

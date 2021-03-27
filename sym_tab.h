@@ -3,25 +3,62 @@
 
 #include "def.h"
 #include "ast.h"
-// #include "parser.tab.h"
 
-typedef struct sym_tab* SYM_TAB;
-typedef enum {false, true} bool;
+enum SCOPES{
+      GLOB_SCOP=0, 
+      FUNC_SCOP, 
+      BLOCK_SCOP, 
+      PROTO_SCOP, 
+      MINI_SCOP /* only for structs and unions */
+}; 
+
+/* types of scalars */
+enum S_SCALAR{
+      S_CHAR, 
+      S_SHORT, 
+      S_INT,
+      S_LONG,
+      S_LLONG,
+      S_FLOAT,
+      S_DOUBLE,
+      S_LDOUBLE
+};
+
+/* size of scalars */
+enum SS_SCALAR{
+      SS_CHAR=1,
+      SS_SHORT=2,
+      SS_INT=4,
+      SS_LONG=4,
+      SS_LLONG=8,
+      SS_FLOAT=4,
+      SS_DOUBLE=8,
+      SS_LDOUBLE=16
+};
+
+enum SYM_TYPE{
+      SYM_SCALAR=0,
+      SYM_PTR
+};
 
 
 SYM_TAB sym_create();
-// SYM_TAB sym_destory(SYM_TAB sym);
-// SYM_TAB sym_lookup(SYM_TAB); 
-// int sym_enter(GYM_TAB tab, struct sym_entry *ent);
+void sym_destory(SYM_TAB sym);
+void sym_push(SYM_TAB stack, SYM_TAB sym);
+void sym_pop(SYM_TAB stack);
+SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent); 
+bool sym_enter(SYM_TAB tab, SYM_ENT ent);
+void print_sym(SYM_TAB sym);
 
 
-
+/* variable attributes */
 struct var_att{
     ASTNODE type;
     int stg_class;
     int offset;     /* offset in stackframe: only for type auto */
 };
 
+/* function attributes */
 struct func_att{
     // type 
     int stg_class;
@@ -57,12 +94,15 @@ struct typedef_name{
     ASTNODE eq_type;
 };
 
+
 struct sym_entry{
     char *filename;
     int lineno;
 
-    int namespace;
     int type;
+    char* name;
+    int namespace;
+    ASTNODE ast_node;
     union{ /* attributes */
         struct var_att              var;
         struct func_att             func;
@@ -75,22 +115,20 @@ struct sym_entry{
     };
 };
 
-
-/* linked list of scopes */
-struct sym_scope{
-    int scope_type;
-    SYM_TAB cur;
-    SYM_TAB next;
-};
-
 struct sym_tab{
 
-    /*  linked list of arrays... yes this is harder than just a linked list, but I want to try out new things :^) */
-    struct entries{ 
-        int num;
-        struct entry *list[16];
-        struct entries *next;
-    }ents;
+    /* stack of symbol table scopes */
+    int scope_type;
+    SYM_TAB top;
+    SYM_TAB next;
+
+    /* linked list of symbol table entries */
+    SYM_ENT first_ent;
+    SYM_ENT last_ent;
+    struct sym_entries{ 
+        SYM_ENT entry;
+        struct sym_entries *next;
+    }*ents;
 };
 
 
