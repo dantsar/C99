@@ -1,7 +1,7 @@
 CFLAGS= -std=gnu99 -ggdb
 CC=clang
 
-all: test
+all: parser
 
 char_util.o: char_util.c char_util.h
 	$(CC) $(CFLAGS) -c -o char_util.o char_util.c
@@ -18,6 +18,7 @@ lex.yy.c: lex.l parser.tab.o
 lex.yy.o: lex.yy.c 
 	$(CC) $(CFLAGS) -c -o lex.yy.o lex.yy.c
 
+# need to fix this...but later!
 lex: lex_print.c lex.yy.o char_util.o   ast.o sym_tab.o
 	$(CC) $(CFLAGS) -DLEXER -c -o parser.tab.o parser.tab.c
 	$(CC) $(CFLAGS) -o lex  $^ parser.tab.o

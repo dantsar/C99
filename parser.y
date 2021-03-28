@@ -66,18 +66,51 @@ void yyerror(const char*);
 %left<c>    '~' '!'
 %left<c>     PLUSPLUS MINUSMINUS '(' ')' '.' '[' ']' INDSEL
 
+/* statements */
+%type<astnode_p> statement expr_stmnt
+%type<astnode_p> label_stmnt //compound_stmnt selec_stmnt loop_stmnt jmp_stmnt
+
+/* expressions */
+%type<astnode_p> expr
+
+
 %type<ident>        IDENT 
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
 %type<str>          STRING
-%type<astnode_p>    expr assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr
+%type<astnode_p>    assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr //func_call
+//%type<astnode_p>    decl_spec init_decl_spec std_class_spec
+
 
 %%
 
-statement:        expr ';'                                  {print_ast($1); putchar('\n'); sym_create();}
-                | statement expr ';'                        {print_ast($2); putchar('\n');}
+// decl:             decl_spec                                 {}
+//                 | init_decl_spec                            {}
+
+
+// decl_spec:        stg_class_spec                            {}
+//                 | std_class_spec init_decl_spec             {}
+
+statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
+                | label_stmnt                               {$$=$1;}
+                // | compound_stmnt                            {}
+                // | selec_stmnt                               {}
+                // | loop_stmnt                                {}
+                // | jmp_stmnt                                 {}
                 ;
 
+expr_stmnt:       expr ';'                                  {$$=$1;}
+
+label_stmnt:      IDENT ':' statement                       {$$=$3;}
+                | CASE cond_expr ':' statement              {$$=$4;}
+                | DEFAULT ':' statement                     {$$=$3;}
+                ;
+
+
+/* old stuff going to delete later
+//                   expr ';'                                  {print_ast($1); putchar('\n');}
+//                 | statement expr ';'                        {print_ast($2); putchar('\n');}
+*/
 expr:             assign_expr                               {$$=$1;}
                 | expr ',' assign_expr                      {$$=alloc_binary(BINOP, $1, ',', $3);}
                 ;
@@ -135,8 +168,6 @@ arith_expr:       arith_expr '+' arith_expr                 {$$=alloc_binary(BIN
                 | arith_expr LOGOR arith_expr               {$$=alloc_binary(BINOP,$1, LOGOR, $3);}
                 | arith_expr PLUSPLUS                       {$$=alloc_unary(PLUSPLUS,$1);} 
                 | arith_expr MINUSMINUS                     {$$=alloc_unary(MINUSMINUS,$1);} 
-                | arith_expr '(' ')'                        {$$=alloc_fncall($1, NULL);}
-                | arith_expr '(' expr ')'                   {$$=alloc_fncall($1, $3);}
                 | '(' arith_expr ')'                        {$$=$2;}
                 | cast_expr                                 {$$=$1;}
                 ;
@@ -151,9 +182,15 @@ postfix_expr:     prim_expr                                 {$$=$1;}
                 | postfix_expr '.' IDENT                    {$$=alloc_select($1, $3);}
                 | postfix_expr INDSEL IDENT                 {$$=alloc_unary('*', $1);
                                                                 $$=alloc_select($$, $3);}
+                | postfix_expr '(' ')'                        {$$=alloc_fncall($1, NULL);}
+                | postfix_expr '(' expr ')'                   {$$=alloc_fncall($1, $3);}
                 // | '(' type_name ')' '{' init_list '}'       {/* shtuff */}
                 // | '(' type_name ')' '{' init_list ',' '}'   {/* shtuff */}
                 ;
+
+// func_call:        postfix_expr '(' ')'                             {}
+//                 |
+//                 ;
                     
 prim_expr:        IDENT                         {$$=alloc_ident($1);}
                 | NUMBER                        {$$=alloc_num($1.int_num, $1.real, $1.type, $1.sign);}
