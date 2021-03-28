@@ -82,18 +82,11 @@ bool sym_enter(SYM_TAB sym, SYM_ENT ent)
 
     if(sym->ent_ll == NULL){
         sym->last_ent_ll = temp_ent_ll;
+        sym->ent_ll = temp_ent_ll;
     }else{
         sym->last_ent_ll->next = temp_ent_ll;
         sym->last_ent_ll = temp_ent_ll;
     }
-
-    // sym->ent_ll->entry = ent;
-    // sym->ent_ll->entry->name = ent->name;
-    // sym->ent_ll->entry->namespace = ent->namespace;
-
-    // sym->last_ent_ll->next = temp_ent_ll;
-    // sym->last_ent_ll = temp_ent_ll;
-    // sym->ent_ll->next = NULL;
 
     return true;
 }
@@ -117,9 +110,36 @@ static void print_sym_ent(SYM_ENT ent)
 {
     static int space = 1;
 
-    switch(ent->att-type){
+    switch(ent->att_type){
         case ENT_SCALAR:
-            indent(space); fprintf(stdout, "%s: SCALAR");
+            indent(space); fprintf(stdout, "%s: SCALAR", ent->name);
+            switch(ent->var.type->type){
+                case S_CHAR:
+                    fprintf(stdout, "char\n");
+                    break;
+                case S_SHORT:
+                    fprintf(stdout, "short\n");
+                    break;
+                case S_INT:
+                    fprintf(stdout, "int\n");
+                    break;
+                case S_LONG:
+                    fprintf(stdout, "long\n");
+                    break;
+                case S_LLONG:
+                    fprintf(stdout, "long long\n");
+                    break;
+                case S_FLOAT:
+                    fprintf(stdout, "float\n");
+                    break;
+                case S_DOUBLE:
+                    fprintf(stdout, "double\n");
+                    break;
+                case S_LDOUBLE:
+                    fprintf(stdout, "long double\n");
+                    break;
+            }
+
             break;
 
 

@@ -24,6 +24,13 @@ enum NAMESPACES{
     NS_MISC
 };
 
+/* the different storages classes */
+enum STG_CLASS{
+    STG_AUTO=0,
+    STG_STATIC,
+    STG_EXTERN,
+};
+
 /* types of scalars */
 enum S_SCALAR{
       S_CHAR, 
@@ -36,7 +43,7 @@ enum S_SCALAR{
       S_LDOUBLE
 };
 
-/* size of scalars */
+/* size of scalars. Used for sizeof operator */
 enum SS_SCALAR{
       SS_CHAR=1,
       SS_SHORT=2,
@@ -65,8 +72,8 @@ void print_sym_stack(SYM_TAB curr_scope);
 
 /* variable attributes */
 struct var_att{
+    // ASTNODE val;
     ASTNODE type;
-    ASTNODE val;
     int stg_class;
     int offset;     /* offset in stackframe: only for type auto */
 };
