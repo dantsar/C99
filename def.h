@@ -9,7 +9,7 @@ typedef enum {false, true} bool;
 typedef struct astnode*       ASTNODE;
 typedef struct sym_tab*       SYM_TAB;
 typedef struct sym_entry*     SYM_ENT;
-typedef struct sym_entries*   SYM_ENTS;
+typedef struct sym_entries*   SYM_ENT_LL;
 
 /* enums for NUMS */
 enum N_SIGN {N_UNSIGNED=0, N_SIGNED};

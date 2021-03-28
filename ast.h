@@ -93,9 +93,6 @@ struct astnode_select{
 };
 
 struct astnode_scalar{ 
-    char *filename;
-    int lineno;
-
     int sign;
     int type;
     union{
@@ -114,9 +111,6 @@ struct astnode_array{
 }; 
 
 struct astnode_func{
-    char *filename;
-    int lineno;
-
     ASTNODE ret;
     ASTNODE body;
     SYM_TAB proto;

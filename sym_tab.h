@@ -5,12 +5,24 @@
 #include "ast.h"
 
 enum SCOPES{
-      GLOB_SCOP=0, 
-      FUNC_SCOP, 
-      BLOCK_SCOP, 
-      PROTO_SCOP, 
-      MINI_SCOP /* only for structs and unions */
+      SCOPE_GLOBAL=0, 
+      SCOPE_FUNC, 
+      SCOPE_BLOCK, 
+      SCOPE_PROTO, 
+      SCOPE_MINI /* only for structs and unions */
 }; 
+
+enum SYM_ENT_TYPE{
+      ENT_SCALAR=0,
+      ENT_PTR
+};
+
+enum NAMESPACES{
+    NS_SU=0, /* struct/union */
+    NS_SU_TAG,
+    NS_LABEL,
+    NS_MISC
+};
 
 /* types of scalars */
 enum S_SCALAR{
@@ -36,24 +48,25 @@ enum SS_SCALAR{
       SS_LDOUBLE=16
 };
 
-enum SYM_TYPE{
-      SYM_SCALAR=0,
-      SYM_PTR
-};
 
+SYM_TAB sym_create(int att_type);
+SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);
 
-SYM_TAB sym_create();
 void sym_destory(SYM_TAB sym);
 void sym_push(SYM_TAB stack, SYM_TAB sym);
 void sym_pop(SYM_TAB stack);
-SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent); 
 bool sym_enter(SYM_TAB tab, SYM_ENT ent);
+SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent); 
+
 void print_sym(SYM_TAB sym);
+void print_sym_stack(SYM_TAB curr_scope);
+
 
 
 /* variable attributes */
 struct var_att{
     ASTNODE type;
+    ASTNODE val;
     int stg_class;
     int offset;     /* offset in stackframe: only for type auto */
 };
@@ -64,6 +77,7 @@ struct func_att{
     int stg_class;
     bool inline_spec;
     bool def_seen;
+    ASTNODE body;
 };
 
 struct struct_union_tag{
@@ -99,10 +113,11 @@ struct sym_entry{
     char *filename;
     int lineno;
 
-    int type;
     char* name;
     int namespace;
-    ASTNODE ast_node;
+    // ASTNODE ast_node;
+
+    int att_type;
     union{ /* attributes */
         struct var_att              var;
         struct func_att             func;
@@ -119,16 +134,16 @@ struct sym_tab{
 
     /* stack of symbol table scopes */
     int scope_type;
-    SYM_TAB top;
+    SYM_TAB curr_scope;
     SYM_TAB next;
 
     /* linked list of symbol table entries */
-    SYM_ENT first_ent;
-    SYM_ENT last_ent;
+    SYM_ENT_LL first_ent_ll;
+    SYM_ENT_LL last_ent_ll;
     struct sym_entries{ 
         SYM_ENT entry;
         struct sym_entries *next;
-    }*ents;
+    }*ent_ll;
 };
 
 

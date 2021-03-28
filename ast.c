@@ -154,11 +154,11 @@ void print_ast(ASTNODE ast){
             if(ast->binary.op_type == ASSIGN){
                 fprintf(stdout, "ASSIGNMENT\n");
             }else if(ast->binary.op_type == BINOP){
-                fprintf(stdout, "BINARY OP ", ast->binary.op);
+                fprintf(stdout, "BINARY OP ");
                 print_op(ast->binary.op);
                 putchar('\n');
             }else if(ast->binary.op_type == COMP){
-                fprintf(stdout, "COMPARISON ", ast->binary.op);
+                fprintf(stdout, "COMPARISON ");
                 print_op(ast->binary.op);
                 putchar('\n');
             }
@@ -204,7 +204,7 @@ void print_ast(ASTNODE ast){
             if(ast->num.type <= N_LLONG){
                 fprintf(stdout, "CONSTANT: (type=int)%lld\n",ast->num.int_num);
             }else{
-                fprintf(stdout, "CONSTANT: (type=double)%llf\n",ast->num.real);
+                fprintf(stdout, "CONSTANT: (type=double)%Lf\n",ast->num.real);
             }
             break;
         case AST_IDENT: 

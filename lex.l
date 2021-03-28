@@ -292,7 +292,7 @@ int parse_seq(char* src, char* buf){
             return 1;
         }
     }
-    fprintf(stderr, "%s:%d: Error: unknown character\n", filename, lineno, src[i]);
+    fprintf(stderr, "%s:%d: Error: unknown character %c\n", filename, lineno, src[i]);
     exit(-1);
 }
 
