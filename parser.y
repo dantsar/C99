@@ -66,51 +66,140 @@ void yyerror(const char*);
 %left<c>    '~' '!'
 %left<c>     PLUSPLUS MINUSMINUS '(' ')' '.' '[' ']' INDSEL
 
-/* statements */
-%type<astnode_p> statement expr_stmnt
-%type<astnode_p> label_stmnt //compound_stmnt selec_stmnt loop_stmnt jmp_stmnt
-
-/* expressions */
-%type<astnode_p> expr
-
-
+/* values */
 %type<ident>        IDENT 
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
 %type<str>          STRING
+
+/* expressions */
+%type<astnode_p>    expr
+// %type<astnode_p>    const_expr 
 %type<astnode_p>    assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr //func_call
-//%type<astnode_p>    decl_spec init_decl_spec std_class_spec
+
+/* declarations */
+/* delc: declarator */
+%type<astnode_p>    declaration 
+%type<astnode_p>    declaration_specs init_decl_list 
+%type<astnode_p>    decl direct_decl
+
+%type<astnode_p>    init_decl
+%type<astnode_p>    stg_class_spec type_spec type_qualif type_qualif_list //func_spec
+
+/* statements */
+// %type<astnode_p>    statement expr_stmnt
+// %type<astnode_p>    label_stmnt //compound_stmnt selec_stmnt loop_stmnt jmp_stmnt
+
+/* External Definitions */
+%type<astnode_p>    translation_unit extern_declaration //func_def
+// %type<astode_p>     decl_list
 
 
 %%
 
-// decl:             decl_spec                                 {}
-//                 | init_decl_spec                            {}
+translation_unit:     extern_declaration                               {} 
+                    | translation_unit extern_declaration              {}
+                    ;
 
+extern_declaration:   declaration                               {}
+                    // | func_def                                  {}
+                    ;
 
-// decl_spec:        stg_class_spec                            {}
-//                 | std_class_spec init_decl_spec             {}
+declaration:      declaration_specs                           {}
+                | declaration_specs init_decl_list                  {}
+                ;   
 
-statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
-                | label_stmnt                               {$$=$1;}
-                // | compound_stmnt                            {}
-                // | selec_stmnt                               {}
-                // | loop_stmnt                                {}
-                // | jmp_stmnt                                 {}
+init_decl_list:   init_decl                                          //{$$=$1;}
+                | init_decl_list ',' init_decl                       //{$$=$1;}
                 ;
 
-expr_stmnt:       expr ';'                                  {$$=$1;}
-
-label_stmnt:      IDENT ':' statement                       {$$=$3;}
-                | CASE cond_expr ':' statement              {$$=$4;}
-                | DEFAULT ':' statement                     {$$=$3;}
+init_decl:        decl                                      {}            
+                | decl '=' init                             {}                
                 ;
 
+declaration_specs:   stg_class_spec                            {}
+                    // | stg_class_spec declaration_specs                  {}
+                    | type_spec                                 {}
+                    // | type_spec declaration_specs                       {}
+                    | type_qualif                               {}
+                    // | type_qualif declaration_specs                     {}
+                    // | func_spec                                 {}
+                    // | func_spec decl_spe                        {}
+                    ;
 
-/* old stuff going to delete later
-//                   expr ';'                                  {print_ast($1); putchar('\n');}
-//                 | statement expr ';'                        {print_ast($2); putchar('\n');}
-*/
+stg_class_spec:   AUTO                                          {fprintf(stdout, "AUTO\n");}
+                | STATIC                                        {fprintf(stdout, "STATIC\n");}
+                | EXTERN                                        {fprintf(stdout, "EXTERN\n");} 
+                | TYPEDEF                                       {fprintf(stdout, "TYPEDEF\n");}
+                | REGISTER                                      {fprintf(stdout, "REGISTER\n");}
+                ;
+
+type_spec:        VOID                                          {fprintf(stdout, "type_spec\n");} 
+                | CHAR                                          {fprintf(stdout, "type_spec\n");} 
+                | SHORT                                         {fprintf(stdout, "type_spec\n");}  
+                | INT                                           {fprintf(stdout, "type_spec\n");} 
+                | LONG                                          {fprintf(stdout, "type_spec\n");} 
+                | FLOAT                                         {fprintf(stdout, "type_spec\n");}  
+                | DOUBLE                                        {fprintf(stdout, "type_spec\n");}    
+                | SIGNED                                        {fprintf(stdout, "type_spec\n");}    
+                | UNSIGNED                                      {fprintf(stdout, "type_spec\n");}      
+                | _BOOL                                         {fprintf(stdout, "type_spec\n");}  
+                | _COMPLEX                                      {fprintf(stdout, "type_spec\n");}      
+                // | struct_union_spec
+                // | enum_spec
+                // | typedef_name
+                ; 
+
+
+type_qualif:      CONST                                         {}  
+                | RESTRICT                                      {} 
+                | VOLATILE                                      {} 
+                ;
+type_qualif_list:     type_qualif
+                    | type_qualif_list type_qualif
+                    ;
+
+// func_spec:        INLINE
+//                 ;
+
+init:             assign_expr
+                // |
+                ;
+
+decl:             direct_decl                                   {$$=$1;}
+                | pointer direct_decl                           {$$=$2;}
+                ;
+
+direct_decl:      IDENT                                         {$$=alloc_ident($1); fprintf(stdout, "IDENT\n");}
+                | '(' decl ')'                                  {$$=$2;}
+                // | direct_decl '[' ']'
+                ;
+pointer:          '*' 
+                | '*' type_qualif_list 
+                | '*' type_qualif_list pointer
+                ;
+
+// /* statements... to be worked on later */
+// statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
+//                 | label_stmnt                               {$$=$1;}
+//                 // | compound_stmnt                            {}
+//                 // | selec_stmnt                               {}
+//                 // | loop_stmnt                                {}
+//                 // | jmp_stmnt                                 {}
+//                 ;
+
+// expr_stmnt:       expr ';'                                  {$$=$1;}
+
+// label_stmnt:      IDENT ':' statement                       {$$=$3;}
+//                 | CASE const_expr ':' statement              {$$=$4;}
+//                 | DEFAULT ':' statement                     {$$=$3;}
+//                 ;
+
+
+// /* old stuff going to delete later
+// //                   expr ';'                                  {print_ast($1); putchar('\n');}
+// //                 | statement expr ';'                        {print_ast($2); putchar('\n');}
+// */
 expr:             assign_expr                               {$$=$1;}
                 | expr ',' assign_expr                      {$$=alloc_binary(BINOP, $1, ',', $3);}
                 ;
@@ -143,6 +232,9 @@ unary_expr:       postfix_expr                              {$$=$1;}
                 | '~' cast_expr                             {$$=alloc_unary('~',$2);}
                 | '!' cast_expr                             {$$=alloc_unary('!',$2);}
                 ;
+
+// const_expr:       cond_expr                                 {$$=$1;}
+//                 ;
 
 cond_expr:        arith_expr                                {$$=$1;}
                 | arith_expr '?' expr ':' cond_expr         {$$=alloc_ternary($1, $3, $5);}
