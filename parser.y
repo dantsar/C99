@@ -6,8 +6,6 @@
 #include "sym_tab.h"
 #include "ast.h"
 
-
-
 /* stuff from lex */
 extern int yylex();
 extern char filename[256];
@@ -74,17 +72,18 @@ void yyerror(const char*);
 
 /* expressions */
 %type<astnode_p>    expr
-// %type<astnode_p>    const_expr 
+%type<astnode_p>    const_expr 
 %type<astnode_p>    assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr //func_call
 
 /* declarations */
 /* delc: declarator */
 %type<astnode_p>    declaration 
-%type<astnode_p>    declaration_specs init_decl_list 
+%type<astnode_p>    declaration_specs declaration_spec init_decl_list 
 %type<astnode_p>    decl direct_decl
-
 %type<astnode_p>    init_decl
-%type<astnode_p>    stg_class_spec type_spec type_qualif type_qualif_list //func_spec
+%type<astnode_p>    stg_class_spec type_spec type_qualif type_qualif_list func_spec pointer
+%type<astnode_p>    param_type_list param_list param_declaration abstract_decl direct_abstract_decl 
+%type<astnode_p>    ident_list
 
 /* statements */
 // %type<astnode_p>    statement expr_stmnt
@@ -105,8 +104,8 @@ extern_declaration:   declaration                               {}
                     // | func_def                                  {}
                     ;
 
-declaration:      declaration_specs                           {}
-                | declaration_specs init_decl_list                  {}
+declaration:      declaration_specs ';'                          {}
+                | declaration_specs init_decl_list ';'           {}
                 ;   
 
 init_decl_list:   init_decl                                          //{$$=$1;}
@@ -117,15 +116,18 @@ init_decl:        decl                                      {}
                 | decl '=' init                             {}                
                 ;
 
-declaration_specs:   stg_class_spec                            {}
-                    // | stg_class_spec declaration_specs                  {}
-                    | type_spec                                 {}
-                    // | type_spec declaration_specs                       {}
-                    | type_qualif                               {}
-                    // | type_qualif declaration_specs                     {}
-                    // | func_spec                                 {}
-                    // | func_spec decl_spe                        {}
+declaration_specs:    declaration_spec                         {}
+                    | declaration_specs declaration_spec       {}
                     ;
+
+/* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
+declaration_spec:     stg_class_spec
+                    | type_spec                                 {}
+                    | type_qualif                               {}
+                    | func_spec                                 {}
+                    ;
+
+
 
 stg_class_spec:   AUTO                                          {fprintf(stdout, "AUTO\n");}
                 | STATIC                                        {fprintf(stdout, "STATIC\n");}
@@ -151,19 +153,18 @@ type_spec:        VOID                                          {fprintf(stdout,
                 ; 
 
 
-type_qualif:      CONST                                         {}  
-                | RESTRICT                                      {} 
-                | VOLATILE                                      {} 
+type_qualif:      CONST                                         {fprintf(stdout, "TYPE_QUALIF\n");}  
+                | RESTRICT                                      {fprintf(stdout, "TYPE_QUALIF\n");} 
+                | VOLATILE                                      {fprintf(stdout, "TYPE_QUALIF\n");} 
                 ;
 type_qualif_list:     type_qualif
                     | type_qualif_list type_qualif
                     ;
 
-// func_spec:        INLINE
-//                 ;
+func_spec:        INLINE                                        {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+                ;
 
 init:             assign_expr
-                // |
                 ;
 
 decl:             direct_decl                                   {$$=$1;}
@@ -172,12 +173,60 @@ decl:             direct_decl                                   {$$=$1;}
 
 direct_decl:      IDENT                                         {$$=alloc_ident($1); fprintf(stdout, "IDENT\n");}
                 | '(' decl ')'                                  {$$=$2;}
-                // | direct_decl '[' ']'
+                | direct_decl '[' ']'                   /* array */
+                | direct_decl '[' const_expr ']'        /* array */
+                | direct_decl '(' param_type_list ')'   /* func */
+                | direct_decl '(' ident_list ')'        /* func */
+                | direct_decl '(' ')'                   /* func */
                 ;
-pointer:          '*' 
-                | '*' type_qualif_list 
-                | '*' type_qualif_list pointer
+
+pointer:          '*'                                           {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/} 
+                | '*' pointer                                   {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+                | '*' type_qualif_list                          {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+                | '*' type_qualif_list pointer                  {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
                 ;
+
+
+
+/* new */
+//param_type_list param_list param_declaration abstract_decl direct_abstract_decl 
+
+
+param_type_list:      param_list                                {}
+                    | param_list ',' ELLIPSIS                   {}
+                    ;
+
+param_list:           param_declaration                         {}
+                    | param_list ',' param_declaration          {}
+                    ;
+
+param_declaration:    declaration_specs decl
+                    | declaration_specs 
+                    | declaration_specs abstract_decl
+                    ;
+
+abstract_decl:        pointer
+                    | pointer direct_abstract_decl
+                    | direct_abstract_decl
+                    ;
+
+direct_abstract_decl:     '(' abstract_decl ')'                 {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+                        |  '[' ']'                              {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+                        |  '[' const_expr ']'                              {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+                        ;
+                    
+ident_list:           IDENT                         {$$=alloc_ident("TESTTESTTEST");}
+                    | ident_list ',' IDENT          {$$=alloc_ident("TESTTESTTEST");}
+                    ;
+
+// type_name:            spec_qualif_list 
+//                     | spec_qualif_list abstract_decl
+//                     ;
+
 
 // /* statements... to be worked on later */
 // statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
@@ -233,8 +282,8 @@ unary_expr:       postfix_expr                              {$$=$1;}
                 | '!' cast_expr                             {$$=alloc_unary('!',$2);}
                 ;
 
-// const_expr:       cond_expr                                 {$$=$1;}
-//                 ;
+const_expr:       cond_expr                                 {$$=$1;}
+                ;
 
 cond_expr:        arith_expr                                {$$=$1;}
                 | arith_expr '?' expr ':' cond_expr         {$$=alloc_ternary($1, $3, $5);}
