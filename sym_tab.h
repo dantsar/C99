@@ -12,35 +12,41 @@ enum SCOPES{
       SCOPE_MINI /* only for structs and unions */
 }; 
 
+/* used for the setting type in the sym table */
 enum SYM_ENT_TYPE{
       ENT_SCALAR=0,
-      ENT_PTR
+      ENT_PTR,
+      ENT_ARRAY
 };
 
+/* namespace types */
 enum NAMESPACES{
     NS_SU=0, /* struct/union */
-    NS_SU_TAG,
-    NS_LABEL,
-    NS_MISC
+    NS_SU_TAG, NS_LABEL, NS_MISC
 };
 
 /* the different storages classes */
 enum STG_CLASS{
-    STG_AUTO=0,
-    STG_STATIC,
-    STG_EXTERN,
+    STG_AUTO=0, STG_STATIC, STG_EXTERN, STG_TYPEDEF, STG_REGISTER
 };
 
 /* types of scalars */
-enum S_SCALAR{
-      S_CHAR, 
-      S_SHORT, 
-      S_INT,
-      S_LONG,
-      S_LLONG,
-      S_FLOAT,
-      S_DOUBLE,
-      S_LDOUBLE
+enum TYPE_SPEC{
+    TYPE_VOID=STG_REGISTER+1,
+    TYPE_CHAR, TYPE_SHORT, TYPE_INT, TYPE_LONG, TYPE_LLONG, TYPE_FLOAT, 
+    TYPE_DOUBLE, TYPE_LDOUBLE, TYPE__BOOL, TYPE__COMPLEX
+};
+
+/* type qualifier */
+enum TYPE_QUALIF{
+    QUALIF_CONST=TYPE__COMPLEX+1,
+    QUALIF_RESTRICT, 
+    QUALIF_VOLATILE
+};
+
+/* function specifier */
+enum FUNC_SPEC{
+    FUNC_INLINE=QUALIF_VOLATILE+1
 };
 
 /* size of scalars. Used for sizeof operator */
@@ -56,9 +62,10 @@ enum SS_SCALAR{
 };
 
 
-SYM_TAB sym_create(int att_type);
 SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);
+SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident);
 
+SYM_TAB sym_create(int att_type);
 void sym_destory(SYM_TAB sym);
 void sym_push(SYM_TAB stack, SYM_TAB sym);
 void sym_pop(SYM_TAB stack);
@@ -117,13 +124,12 @@ struct typedef_name{
 
 
 struct sym_entry{
+    /* information for debugging */
     char *filename;
     int lineno;
 
     char* name;
     int namespace;
-    // ASTNODE ast_node;
-
     int att_type;
     union{ /* attributes */
         struct var_att              var;

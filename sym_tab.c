@@ -4,6 +4,8 @@
 
 #include "sym_tab.h"
 
+extern char filename[256];
+extern int lineno;
 
 SYM_TAB sym_create(int scope_type){
     SYM_TAB ret = calloc(sizeof(struct sym_tab), 1);
@@ -16,8 +18,21 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
     ret->name = name;
     ret->namespace = ent_ns;
     ret->att_type = ent_type;
+
+    ret->filename = malloc(strlen(filename));
+    strcpy(filename, ret->filename);
+    ret->lineno = lineno;
     return ret;
 }
+
+SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident){
+    SYM_ENT ret = alloc_sym_ent("BLAHBLAH", 0, 0);
+
+
+
+    return ret;
+}
+
 
 void sym_destroy(SYM_TAB sym_tab){
     /* figure this out later: I have 32G of RAM, so I don't care :^) */
@@ -110,39 +125,40 @@ static void print_sym_ent(SYM_ENT ent)
 {
     static int space = 1;
 
-    switch(ent->att_type){
-        case ENT_SCALAR:
-            indent(space); fprintf(stdout, "%s: SCALAR", ent->name);
-            switch(ent->var.type->type){
-                case S_CHAR:
-                    fprintf(stdout, "char\n");
-                    break;
-                case S_SHORT:
-                    fprintf(stdout, "short\n");
-                    break;
-                case S_INT:
-                    fprintf(stdout, "int\n");
-                    break;
-                case S_LONG:
-                    fprintf(stdout, "long\n");
-                    break;
-                case S_LLONG:
-                    fprintf(stdout, "long long\n");
-                    break;
-                case S_FLOAT:
-                    fprintf(stdout, "float\n");
-                    break;
-                case S_DOUBLE:
-                    fprintf(stdout, "double\n");
-                    break;
-                case S_LDOUBLE:
-                    fprintf(stdout, "long double\n");
-                    break;
-            }
+    /* need to fix this to account for the modified enum tags */
+    // switch(ent->att_type){
+    //     case ENT_SCALAR:
+    //         indent(space); fprintf(stdout, "%s: SCALAR", ent->name);
+    //         switch(ent->var.type->type){
+    //             case S_CHAR:
+    //                 fprintf(stdout, "char\n");
+    //                 break;
+    //             case S_SHORT:
+    //                 fprintf(stdout, "short\n");
+    //                 break;
+    //             case S_INT:
+    //                 fprintf(stdout, "int\n");
+    //                 break;
+    //             case S_LONG:
+    //                 fprintf(stdout, "long\n");
+    //                 break;
+    //             case S_LLONG:
+    //                 fprintf(stdout, "long long\n");
+    //                 break;
+    //             case S_FLOAT:
+    //                 fprintf(stdout, "float\n");
+    //                 break;
+    //             case S_DOUBLE:
+    //                 fprintf(stdout, "double\n");
+    //                 break;
+    //             case S_LDOUBLE:
+    //                 fprintf(stdout, "long double\n");
+    //                 break;
+    //         }
 
-            break;
+    //         break;
 
 
-    }
+    // }
 
 }

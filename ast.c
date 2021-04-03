@@ -2,10 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ast.h"
-#include "char_util.h"
 #include "def.h"
-#include "parser.tab.h"
+#include "ast.h"
 
 
 ASTNODE alloc_num(unsigned long long int_num, long double real, int type, int sign){

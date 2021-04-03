@@ -17,7 +17,7 @@ void set_yylval_real(char* str, int type, int sign);
 int isoctal(int c);
 int parse_seq(char* src, char *buf);
 
-/* only used for lexer error handling, parser has its own system */
+/* info used for debugging and error reporting */
 char filename[256] = "<stdin>";
 int lineno = 1;
 %}

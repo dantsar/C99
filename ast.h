@@ -2,6 +2,8 @@
 #define AST_H
 
 #include "def.h"
+#include "char_util.h"
+#include "parser.tab.h"
 #include "sym_tab.h"
 
 /* Abstract Symbol Table node types */
@@ -20,6 +22,7 @@ enum AST_TYPE{
 /* enum for binary types in ast */
 enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
+/* TO DO: FIX alloc_num, alloc_str to not be so verbose and accept struct num && struct str */
 ASTNODE astnode_alloc(int ast_type);
 ASTNODE alloc_unary(int op, ASTNODE expr);
 ASTNODE alloc_binary(int type, ASTNODE val1, int op, ASTNODE val2);
@@ -87,10 +90,12 @@ struct astnode_sizeof{
     ASTNODE expr;
 };
 
+/* from a struct/union dot op or idsel */
 struct astnode_select{
     ASTNODE expr;
     ASTNODE tag;
 };
+
 
 struct astnode_scalar{ 
     int sign;
@@ -116,6 +121,9 @@ struct astnode_func{
     SYM_TAB proto;
 };
 
+struct astnode_list{
+    ASTNODE me, next;
+};
 
 struct astnode{
     int type;
@@ -130,6 +138,7 @@ struct astnode{
         struct astnode_fncall   fncall;
         struct astnode_sizeof   a_sizeof;
         struct astnode_select   select;
+        struct astnode_list     list;
 
         /* assignment 3 */
         struct astnode_scalar   scalar;

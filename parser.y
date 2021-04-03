@@ -22,21 +22,13 @@ void yyerror(const char*);
     /* for single character tokens */
     int c; 
 
-    struct Str{
-        char *str;
-        int len;
-    }str;
+    /* definition in def.h */
+    struct Str str;
+    struct Num num;
 
-    struct Num{
-        unsigned long long int_num;
-        long double real;
-        int type;
-        int sign;
-    }num;
-
-    char*   ident;
-    char    charlit;
-    struct astnode *astnode_p;
+    char*  ident;
+    char   charlit;
+    struct astnode *astnode_p; /* definition in ast.h */
 }
 
 
@@ -81,7 +73,8 @@ void yyerror(const char*);
 %type<astnode_p>    declaration_specs declaration_spec init_decl_list 
 %type<astnode_p>    decl direct_decl
 %type<astnode_p>    init_decl
-%type<astnode_p>    stg_class_spec type_spec type_qualif type_qualif_list func_spec pointer
+%type<c>    stg_class_spec type_spec type_qualif func_spec 
+%type<astnode_p>    type_qualif_list pointer
 %type<astnode_p>    param_type_list param_list param_declaration abstract_decl direct_abstract_decl 
 %type<astnode_p>    ident_list
 
@@ -96,16 +89,17 @@ void yyerror(const char*);
 
 %%
 
-translation_unit:     extern_declaration                               {} 
-                    | translation_unit extern_declaration              {}
+translation_unit:     extern_declaration                                {} 
+                    | translation_unit extern_declaration               {}
                     ;
 
-extern_declaration:   declaration                               {}
-                    // | func_def                                  {}
+extern_declaration:   declaration                                       {}
+                    // | func_def                                       {}
                     ;
 
-declaration:      declaration_specs ';'                          {}
-                | declaration_specs init_decl_list ';'           {}
+declaration:      declaration_specs ';'                         {fprintf(stderr, "warning empty declation, NO identifier\n");}
+                | declaration_specs init_decl_list ';'          {   /* loop through linked list and alloc and add symbol table entires */
+                                                                    /* alloc_sym_ent(); sym_*/ }
                 ;   
 
 init_decl_list:   init_decl                                          //{$$=$1;}
@@ -113,20 +107,19 @@ init_decl_list:   init_decl                                          //{$$=$1;}
                 ;
 
 init_decl:        decl                                      {}            
-                | decl '=' init                             {}                
+                | decl '=' init /* avoiding initialization for now */ {}
                 ;
 
-declaration_specs:    declaration_spec                         {}
-                    | declaration_specs declaration_spec       {}
-                    ;
-
 /* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
-declaration_spec:     stg_class_spec
+/* should probably make this a linked list */
+declaration_specs:    declaration_spec                          {}
+                    | declaration_specs declaration_spec        {}
+                    ;
+declaration_spec:     stg_class_spec                            {}
                     | type_spec                                 {}
                     | type_qualif                               {}
                     | func_spec                                 {}
                     ;
-
 
 
 stg_class_spec:   AUTO                                          {fprintf(stdout, "AUTO\n");}
@@ -152,16 +145,17 @@ type_spec:        VOID                                          {fprintf(stdout,
                 // | typedef_name
                 ; 
 
-
 type_qualif:      CONST                                         {fprintf(stdout, "TYPE_QUALIF\n");}  
                 | RESTRICT                                      {fprintf(stdout, "TYPE_QUALIF\n");} 
                 | VOLATILE                                      {fprintf(stdout, "TYPE_QUALIF\n");} 
                 ;
-type_qualif_list:     type_qualif
-                    | type_qualif_list type_qualif
+
+/* linked list of declaration_spec list
+type_qualif_list:     type_qualif                               {$$=alloc_ident("TESTTESTTEST");}
+                    | type_qualif_list type_qualif              {$$=alloc_ident("TESTTESTTEST");}
                     ;
 
-func_spec:        INLINE                                        {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+func_spec:        INLINE                                        {$$=FUNC_INLINE; /* PLACE HOLDER FOR NOW!!!*/}
                 ;
 
 init:             assign_expr
@@ -185,12 +179,6 @@ pointer:          '*'                                           {$$=alloc_ident(
                 | '*' type_qualif_list                          {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
                 | '*' type_qualif_list pointer                  {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
                 ;
-
-
-
-/* new */
-//param_type_list param_list param_declaration abstract_decl direct_abstract_decl 
-
 
 param_type_list:      param_list                                {}
                     | param_list ',' ELLIPSIS                   {}
@@ -344,11 +332,11 @@ void yyerror(const char *msg){
     fprintf(stderr, "Error: %s:%d %s\n", filename, lineno, msg);
 }
 
-#ifndef LEXER
-
 int main(){
+
+    /* creating global symbol table */
+    curr_scope = sym_create(SCOPE_GLOBAL);
+
     yyparse();
     return 1;
 }
-
-#endif
