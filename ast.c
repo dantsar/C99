@@ -5,6 +5,11 @@
 #include "def.h"
 #include "ast.h"
 
+ASTNODE astnode_alloc(int astnode_type){
+    ASTNODE ret = calloc(1, sizeof(struct astnode));
+    ret->type = astnode_type;
+    return ret;
+}
 
 ASTNODE alloc_num(unsigned long long int_num, long double real, int type, int sign){
     ASTNODE ret = astnode_alloc(AST_NUM);
@@ -65,6 +70,7 @@ ASTNODE alloc_string(char* string, int len){
 }
 
 /* params is assumed to be a binop astnode */
+/* unnecessarily complicated... will be replaced with ast_list and append...*/
 ASTNODE alloc_fncall(ASTNODE name, ASTNODE params){
     ASTNODE ast_ret = astnode_alloc(AST_FNCALL);
     ast_ret->fncall.name = name;
@@ -112,11 +118,36 @@ ASTNODE alloc_select(ASTNODE expr, char* ident){
     return ret;
 }
 
-ASTNODE astnode_alloc(int astnode_type){
-    ASTNODE ret = malloc(sizeof(struct astnode));
-    ret->type = astnode_type;
+ASTNODE alloc_list(ASTNODE elem){
+    ASTNODE ret = astnode_alloc(AST_LIST);
+    ret->list.elem = elem;
     return ret;
 }
+
+ASTNODE alloc_list_num(int num){
+    ASTNODE ret = astnode_alloc(AST_LIST_NUM);
+    ret->list_num.num = num;
+    return ret;
+
+}
+
+void list_append(ASTNODE elem, ASTNODE list){
+    ASTNODE new_elem = astnode_alloc(AST_LIST); /* random type, doesn't matter */
+    new_elem->list.elem = elem;
+    while(list != NULL) list = list->list.next;
+    list->list.next = new_elem;
+}
+
+int list_size(ASTNODE list){
+    int count = 0;
+    while(list!= NULL){
+        count++;
+        list = list->list.next;
+    }
+
+    return count;
+}
+
 
 static void indent(int indent){
     for(int i = 0; i < indent*2; i++){

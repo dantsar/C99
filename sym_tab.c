@@ -8,7 +8,7 @@ extern char filename[256];
 extern int lineno;
 
 SYM_TAB sym_create(int scope_type){
-    SYM_TAB ret = calloc(sizeof(struct sym_tab), 1);
+    SYM_TAB ret = calloc(1, sizeof(struct sym_tab));
     ret->scope_type = scope_type;
     return ret;
 }

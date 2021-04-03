@@ -17,7 +17,9 @@ enum AST_TYPE{
       AST_FNCALL, 
       AST_CHARLIT, 
       AST_STRING, 
-      AST_SELECT
+      AST_SELECT,
+      AST_LIST,
+      AST_LIST_NUM
 };
 /* enum for binary types in ast */
 enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
@@ -35,6 +37,10 @@ ASTNODE alloc_string(char* string, int len);
 ASTNODE alloc_fncall(ASTNODE name, ASTNODE params);
 ASTNODE alloc_sizeof(ASTNODE expr);
 ASTNODE alloc_select(ASTNODE expr, char* ident);
+ASTNODE alloc_list(ASTNODE elem);
+ASTNODE alloc_list_num(int num);
+void list_append(ASTNODE elem, ASTNODE list);
+int  list_size(ASTNODE list);
 
 void print_ast(ASTNODE ast);
 
@@ -122,7 +128,11 @@ struct astnode_func{
 };
 
 struct astnode_list{
-    ASTNODE me, next;
+    ASTNODE elem, next;
+};
+/* used by the parser to chain together enum values */
+struct astnode_list_num{
+    int num;
 };
 
 struct astnode{
@@ -138,7 +148,9 @@ struct astnode{
         struct astnode_fncall   fncall;
         struct astnode_sizeof   a_sizeof;
         struct astnode_select   select;
+
         struct astnode_list     list;
+        struct astnode_list_num list_num;
 
         /* assignment 3 */
         struct astnode_scalar   scalar;

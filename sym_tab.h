@@ -34,20 +34,20 @@ enum STG_CLASS{
 enum TYPE_SPEC{
     TYPE_VOID=STG_REGISTER+1,
     TYPE_CHAR, TYPE_SHORT, TYPE_INT, TYPE_LONG, TYPE_LLONG, TYPE_FLOAT, 
-    TYPE_DOUBLE, TYPE_LDOUBLE, TYPE__BOOL, TYPE__COMPLEX
+    TYPE_DOUBLE, TYPE_SIGNED, TYPE_UNSIGED, TYPE__BOOL, TYPE__COMPLEX
 };
 
-/* type qualifier */
-enum TYPE_QUALIF{
-    QUALIF_CONST=TYPE__COMPLEX+1,
-    QUALIF_RESTRICT, 
-    QUALIF_VOLATILE
-};
+// /* type qualifier */
+// enum TYPE_QUALIF{
+//     QUALIF_CONST=TYPE__COMPLEX+1,
+//     QUALIF_RESTRICT, 
+//     QUALIF_VOLATILE
+// };
 
-/* function specifier */
-enum FUNC_SPEC{
-    FUNC_INLINE=QUALIF_VOLATILE+1
-};
+// /* function specifier */
+// enum FUNC_SPEC{
+//     FUNC_INLINE=QUALIF_VOLATILE+1
+// };
 
 /* size of scalars. Used for sizeof operator */
 enum SS_SCALAR{
