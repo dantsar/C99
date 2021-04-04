@@ -119,6 +119,7 @@ ASTNODE alloc_select(ASTNODE expr, char* ident){
 }
 
 ASTNODE alloc_list(ASTNODE elem){
+    fprintf(stderr, "alloc list\n");
     ASTNODE ret = astnode_alloc(AST_LIST);
     ret->list.elem = elem;
     return ret;
@@ -128,13 +129,11 @@ ASTNODE alloc_list_num(int num){
     ASTNODE ret = astnode_alloc(AST_LIST_NUM);
     ret->list_num.num = num;
     return ret;
-
 }
 
 void list_append(ASTNODE elem, ASTNODE list){
-    ASTNODE new_elem = astnode_alloc(AST_LIST); /* random type, doesn't matter */
-    new_elem->list.elem = elem;
-    while(list != NULL) list = list->list.next;
+    ASTNODE new_elem = alloc_list(elem); 
+    while(list->list.next != NULL) list = list->list.next; /* go to last elem */
     list->list.next = new_elem;
 }
 
@@ -144,7 +143,6 @@ int list_size(ASTNODE list){
         count++;
         list = list->list.next;
     }
-
     return count;
 }
 

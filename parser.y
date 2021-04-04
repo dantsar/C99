@@ -99,12 +99,12 @@ extern_declaration:   declaration                                       {}
 
 declaration:      declaration_specs ';'                         {yyerror("Empty empty declaration");}
                 | declaration_specs init_decl_list ';'          {   fprintf(stdout, "size %d\n", list_size($1));
-                                                                    /* loop through linked list and alloc and add symbol table entires */
+                                                    /* loop through linked list and alloc and add symbol table entires */
                                                                     /* alloc_sym_ent(); sym_*/ }
                 ;   
 
-init_decl_list:   init_decl                                          //{$$=alloc_list($1);}
-                | init_decl_list ',' init_decl                       //{$$=$1; list_append($3, $1);}
+init_decl_list:   init_decl                                          {$$=alloc_list($1);}
+                | init_decl_list ',' init_decl                       {$$=$1; list_append($3, $1);}
                 ;
 
 init_decl:        decl                                      {}            
@@ -114,7 +114,7 @@ init_decl:        decl                                      {}
 /* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
 /* should probably make this a linked list */
 declaration_specs:    declaration_spec                          {$$=alloc_list(alloc_list_num($1));}
-                    | declaration_specs declaration_spec        {$$=$1, list_append(alloc_list_num($2), $1);}
+                    | declaration_specs declaration_spec        {$$=$1; list_append(alloc_list_num($2), $1);}
                     ;
 declaration_spec:     stg_class_spec                            {$$=$1;}
                     | type_spec                                 {$$=$1;}
