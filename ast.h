@@ -8,19 +8,26 @@
 
 /* Abstract Symbol Table node types */
 enum AST_TYPE{ 
-      AST_UNARY=0, 
-      AST_BINARY, 
-      AST_TERNARY, 
-      AST_IDENT, 
-      AST_NUM, 
-      AST_SIZEOF, 
-      AST_FNCALL, 
-      AST_CHARLIT, 
-      AST_STRING, 
-      AST_SELECT,
-      AST_LIST,
-      AST_LIST_NUM
+    AST_UNARY=0, 
+    AST_BINARY, 
+    AST_TERNARY, 
+    AST_IDENT, 
+    AST_NUM, 
+    AST_SIZEOF, 
+    AST_FNCALL, 
+    AST_CHARLIT, 
+    AST_STRING, 
+    AST_SELECT,
+    AST_SCALAR,
+    AST_PTR,
+    AST_ARRAY,
+    AST_FUNC,
+    AST_LIST,
+    AST_STORAGE,
+    AST_QUALIF,
+    AST_FUNC_SPEC
 };
+
 /* enum for binary types in ast */
 enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
@@ -38,8 +45,15 @@ ASTNODE alloc_fncall(ASTNODE name, ASTNODE params);
 ASTNODE alloc_sizeof(ASTNODE expr);
 ASTNODE alloc_select(ASTNODE expr, char* ident);
 ASTNODE alloc_list(ASTNODE elem);
-ASTNODE alloc_list_num(int num);
-void list_append(ASTNODE elem, ASTNODE list);
+ASTNODE alloc_storage(int storage);
+ASTNODE alloc_qualif(int qualif);
+ASTNODE alloc_scalar(int type);
+ASTNODE alloc_ptr(ASTNODE ptr_to);
+// ASTNODE alloc_array(ASTNODE array_of, int size);
+// ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
+// ASTNODE alloc_su();
+
+ASTNODE list_append(ASTNODE elem, ASTNODE list);
 int  list_size(ASTNODE list);
 
 void print_ast(ASTNODE ast);
@@ -102,7 +116,6 @@ struct astnode_select{
     ASTNODE tag;
 };
 
-
 struct astnode_scalar{ 
     int sign;
     int type;
@@ -117,22 +130,28 @@ struct astnode_pointer{
 };
 
 struct astnode_array{
-    int size;
     ASTNODE ptr_to;
+    int size;
 }; 
 
 struct astnode_func{
     ASTNODE ret;
-    ASTNODE body;
-    SYM_TAB proto;
+    ASTNODE args;
+    SYM_TAB sym;
 };
 
 struct astnode_list{
     ASTNODE elem, next;
 };
-/* used by the parser to chain together enum values */
-struct astnode_list_num{
-    int num;
+
+struct astnode_storage{
+    int storage;
+};
+struct astnode_qualif{
+    int type_qualif;
+};
+struct astnode_fnc_spec{
+    int func_spec;
 };
 
 struct astnode{
@@ -150,11 +169,13 @@ struct astnode{
         struct astnode_select   select;
 
         struct astnode_list     list;
-        struct astnode_list_num list_num;
+        struct astnode_storage  storage;
+        struct astnode_qualif   qualif;
+        struct astnode_fnc_spec func_spec;
 
         /* assignment 3 */
         struct astnode_scalar   scalar;
-        struct astnode_pointer  pointer;
+        struct astnode_pointer  ptr;
         struct astnode_array    array;
         struct astnode_func     func;
         // struct astnode_st_un   st_un;

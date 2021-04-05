@@ -4,35 +4,16 @@
 
 #include "sym_tab.h"
 
+extern SYM_TAB curr_scope;
 extern char filename[256];
 extern int lineno;
+extern void yyerror(const char* msg);
 
 SYM_TAB sym_create(int scope_type){
     SYM_TAB ret = calloc(1, sizeof(struct sym_tab));
     ret->scope_type = scope_type;
     return ret;
 }
-
-SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
-    SYM_ENT ret = calloc(sizeof(struct sym_entry),1);
-    ret->name = name;
-    ret->namespace = ent_ns;
-    ret->att_type = ent_type;
-
-    ret->filename = malloc(strlen(filename));
-    strcpy(filename, ret->filename);
-    ret->lineno = lineno;
-    return ret;
-}
-
-SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident){
-    SYM_ENT ret = alloc_sym_ent("BLAHBLAH", 0, 0);
-
-
-
-    return ret;
-}
-
 
 void sym_destroy(SYM_TAB sym_tab){
     /* figure this out later: I have 32G of RAM, so I don't care :^) */
@@ -106,6 +87,76 @@ bool sym_enter(SYM_TAB sym, SYM_ENT ent)
     return true;
 }
 
+
+SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
+    SYM_ENT ret = calloc(sizeof(struct sym_entry),1);
+    ret->name = name;
+    ret->namespace = ent_ns;
+    ret->att_type = ent_type;
+
+    ret->filename = malloc(strlen(filename));
+    strcpy(filename, ret->filename);
+    ret->lineno = lineno;
+    return ret;
+}
+
+// SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident){
+//     int entry_namespace;
+
+// /* need to parse type */
+
+
+
+//     SYM_ENT ret = alloc_sym_ent(ident->ident.ident, ENT_VAR, 0);
+//     return ret;
+// }
+
+/* 
+   this is super convoluted, but basically type is the scalar part of the declaration
+   and vars is a list of the pointers and array part of the declaration. I create and enter
+   entries into the symbol table. But in the process, I merge type with the corresponding 
+   elements in vars
+*/
+void sym_decl(ASTNODE type, ASTNODE vars)
+{
+    ASTNODE get_name,prev, temp = vars;
+    while(temp != NULL){
+        char *name;
+        /* go down ptrs and arrays to get name */
+        get_name = temp->list.elem;
+        if(get_name->type != AST_IDENT){
+            while(get_name->type != AST_IDENT){
+                prev = get_name;
+                if(get_name->type == AST_PTR){
+                    get_name = get_name->ptr.ptr_to;
+                }else if(get_name->type == AST_ARRAY){
+                    prev = get_name->array.ptr_to;
+                } else /* error? */ ;
+            }
+            /* get the name from the end */
+            name = get_name->ident.ident;
+            /* merge the two lists...erasing the ident part, but that was already saved */
+            if(prev->type == AST_PTR){
+                prev->ptr.ptr_to = type;
+            }else{
+                prev->array.ptr_to = type;
+            }
+            type = temp->list.elem;
+        } else {
+            name = temp->list.elem->ident.ident;
+        }
+
+        SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
+        ent->var.type = type;
+        if(!sym_enter(curr_scope, ent)){
+            fprintf(stdout, "error: redeclaration of IDENT\n");
+            exit(-1);
+        }
+        
+        temp = temp->list.next;
+    }
+}
+
 void print_sym_stack(SYM_TAB curr_scope){
 
 
@@ -114,51 +165,33 @@ void print_sym_stack(SYM_TAB curr_scope){
 
 void print_sym(SYM_TAB sym){
 
+    SYM_ENT_LL temp = sym->ent_ll;
+    while(temp != NULL){
+        print_sym_ent(temp->entry);
+        
+        temp = temp->next;
+    }
 
 }
+
+
+
 static void indent(int indent){
-    for(int i = 0; i < indent*2; i++){
+    for(int i = 0; i < indent*2; i++)
         putchar(' ');
-    }
 }
-static void print_sym_ent(SYM_ENT ent)
+void print_sym_ent(SYM_ENT ent)
 {
-    static int space = 1;
+    static int space = 0;
 
     /* need to fix this to account for the modified enum tags */
-    // switch(ent->att_type){
-    //     case ENT_SCALAR:
-    //         indent(space); fprintf(stdout, "%s: SCALAR", ent->name);
-    //         switch(ent->var.type->type){
-    //             case S_CHAR:
-    //                 fprintf(stdout, "char\n");
-    //                 break;
-    //             case S_SHORT:
-    //                 fprintf(stdout, "short\n");
-    //                 break;
-    //             case S_INT:
-    //                 fprintf(stdout, "int\n");
-    //                 break;
-    //             case S_LONG:
-    //                 fprintf(stdout, "long\n");
-    //                 break;
-    //             case S_LLONG:
-    //                 fprintf(stdout, "long long\n");
-    //                 break;
-    //             case S_FLOAT:
-    //                 fprintf(stdout, "float\n");
-    //                 break;
-    //             case S_DOUBLE:
-    //                 fprintf(stdout, "double\n");
-    //                 break;
-    //             case S_LDOUBLE:
-    //                 fprintf(stdout, "long double\n");
-    //                 break;
-    //         }
+    switch(ent->att_type){
+        case ENT_VAR:
+            indent(space); fprintf(stdout, "%s: ", ent->name);
+            print_ast(ent->var.type);  /* list should be being passed to print_ast */
+            putchar('\n');
 
-    //         break;
-
-
-    // }
+            break;
+    }
 
 }

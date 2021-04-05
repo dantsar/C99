@@ -119,22 +119,57 @@ ASTNODE alloc_select(ASTNODE expr, char* ident){
 }
 
 ASTNODE alloc_list(ASTNODE elem){
-    fprintf(stderr, "alloc list\n");
+    if(elem == NULL) return NULL;
     ASTNODE ret = astnode_alloc(AST_LIST);
     ret->list.elem = elem;
     return ret;
 }
 
-ASTNODE alloc_list_num(int num){
-    ASTNODE ret = astnode_alloc(AST_LIST_NUM);
-    ret->list_num.num = num;
+ASTNODE alloc_storage(int storage){
+    ASTNODE ret = astnode_alloc(AST_STORAGE);
+    ret->storage.storage = storage;
+    return ret;
+}
+ASTNODE alloc_qualif(int qualif){
+    ASTNODE ret = astnode_alloc(AST_QUALIF);
+    ret->qualif.type_qualif = qualif;
     return ret;
 }
 
-void list_append(ASTNODE elem, ASTNODE list){
+
+ASTNODE alloc_scalar(int type){
+    ASTNODE ret = astnode_alloc(AST_SCALAR);
+    switch(type){
+        case TYPE_SIGNED:
+            ret->scalar.sign = N_SIGNED;
+            break;
+        case TYPE_UNSIGNED: 
+            ret->scalar.sign = N_UNSIGNED;
+            break;
+    };
+    ret->scalar.type = type;
+    return ret;
+}
+
+ASTNODE alloc_ptr(ASTNODE ptr_to){
+    ASTNODE ret = astnode_alloc(AST_PTR);
+    if(ptr_to) ret->ptr.ptr_to = ptr_to;
+    return ret;
+}
+// ASTNODE alloc_array(ASTNODE array_of, int size);
+// ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
+
+
+ASTNODE list_append(ASTNODE elem, ASTNODE list){
+    if(elem == NULL) return NULL;
+    if(list == NULL)
+        return alloc_list(elem);
+
+    ASTNODE temp = list;
     ASTNODE new_elem = alloc_list(elem); 
-    while(list->list.next != NULL) list = list->list.next; /* go to last elem */
-    list->list.next = new_elem;
+    while(temp->list.next != NULL) temp = temp->list.next; /* go to last elem */
+    temp->list.next = new_elem;
+    return list;
 }
 
 int list_size(ASTNODE list){
@@ -147,6 +182,7 @@ int list_size(ASTNODE list){
 }
 
 
+
 static void indent(int indent){
     for(int i = 0; i < indent*2; i++){
         putchar(' ');
@@ -156,6 +192,7 @@ static void indent(int indent){
 void print_ast(ASTNODE ast){
     /* int for storing indentation in the output */
     static int space = 0;
+    ASTNODE temp;
     switch(ast->type){
         case AST_UNARY:
             switch(ast->unary.op){
@@ -220,7 +257,7 @@ void print_ast(ASTNODE ast){
             if(ast->fncall.num_param == 0) return;
 
             /* print out linked list of args */
-            ASTNODE temp = ast;
+            temp = ast;
             for(int i = 1; temp->fncall.params != NULL; i++){
                 indent(space);   fprintf(stdout, "arg #%d=\n",i);
                 indent(++space); print_ast(temp->fncall.params->param); space--;
@@ -251,6 +288,64 @@ void print_ast(ASTNODE ast){
             fprintf(stdout, "SELECT\n");
             indent(++space); print_ast(ast->select.expr); space--;
             indent(++space); print_ast(ast->select.tag); space--;
+            break;
+        case AST_LIST:
+            // fprintf(stdout, "AST_LIST\n");
+            temp = ast;
+            while(temp != NULL){
+                print_ast(temp->list.elem);
+                temp = temp->list.next;
+            }
+            break;
+        case AST_PTR:
+            fprintf(stdout, "pointer to\n");
+            indent(++space); print_ast(ast->ptr.ptr_to); space--;
+            break;
+        case AST_SCALAR:
+            // fprintf(stdout, "AST_SCALAR\n");
+            // if(ast->scalar.sign == N_UNSIGNED)
+            //     fprintf(stdout, "unsigned ");
+            switch(ast->scalar.type){
+                case TYPE_CHAR:
+                    fprintf(stdout, "char ");
+                    break;
+                case TYPE_SHORT:
+                    fprintf(stdout, "short ");
+                    break;
+                case TYPE_INT:
+                    fprintf(stdout, "int ");
+                    break;
+                case TYPE_LONG:
+                    fprintf(stdout, "long ");
+                    break;
+                // case TYPE_LLONG:
+                //     fprintf(stdout, "long long ");
+                //     break;
+                case TYPE_FLOAT:
+                    fprintf(stdout, "float ");
+                    break;
+                case TYPE_DOUBLE:
+                    fprintf(stdout, "double ");
+                    break;
+                case TYPE_SIGNED:
+                    fprintf(stdout, "signed ");
+                    break;
+                case TYPE_UNSIGNED:
+                    fprintf(stdout, "unsigned ");
+                    break;
+                // case TYPE_LDOUBLE:
+                //     fprintf(stdout, "long double ");
+                //     break;
+                case QUALIF_CONST:
+                    fprintf(stdout, "const ");
+                    break;
+                case QUALIF_RESTRICT:
+                    fprintf(stdout, "restrict ");
+                    break;
+                case QUALIF_VOLATILE:
+                    fprintf(stdout, "volatile ");
+                    break;
+            }
             break;
     }
 }

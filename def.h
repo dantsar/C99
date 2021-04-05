@@ -12,7 +12,7 @@ typedef struct sym_entry*     SYM_ENT;
 typedef struct sym_entries*   SYM_ENT_LL;
 
 /* enums for NUMS */
-enum N_SIGN {N_UNSIGNED=0, N_SIGNED};
+enum N_SIGN {N_SIGNED=0, N_UNSIGNED};
 enum N_TYPE {N_INT=0, N_LONG, N_LLONG, N_FLOAT, N_DOUBLE, N_LDOUBLE};
 
 struct Str{
