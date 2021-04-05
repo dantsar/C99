@@ -161,9 +161,10 @@ ASTNODE alloc_ptr(ASTNODE ptr_to){
 
 /* last ptr/array in chain */
 ASTNODE last_ptr(ASTNODE ptr_chain){
-    ASTNODE last_elem;
+    if(!ptr_chain) return NULL;
 
-    while(ptr_chain->type == AST_PTR || ptr_chain->type == AST_ARRAY){
+    ASTNODE last_elem;
+    while(ptr_chain != NULL && (ptr_chain->type == AST_PTR || ptr_chain->type == AST_ARRAY)){
         last_elem = ptr_chain;
         if(ptr_chain->type == AST_PTR){
             ptr_chain = ptr_chain->ptr.ptr_to;

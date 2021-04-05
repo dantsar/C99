@@ -163,8 +163,10 @@ init_decl:        decl                                      {}
 init:             assign_expr
                 ;
 
-decl:             direct_decl                                   {$$=$1;}  //{$$=alloc_list($1);}
-                | pointer direct_decl                           {$$=$1; $1->ptr.ptr_to = $2; /* alloc_ptr($2)*/ ;}  //{$$=$1; list_append($1, $2);}
+decl:             direct_decl                                   {$$=$1;}
+                | pointer direct_decl                           {$$=last_ptr($1); 
+                                                                 $$->ptr.ptr_to = $2;
+                                                                 $$=$1;}
                 ;
 
 direct_decl:      IDENT                                         {$$=alloc_ident($1);} //{$$=alloc_list(alloc_ident($1));}
