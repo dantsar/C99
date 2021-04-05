@@ -137,8 +137,8 @@ type_spec:        VOID                                          {$$=alloc_scalar
                 | _BOOL                                         {$$=alloc_scalar(TYPE__BOOL);   }  
                 | _COMPLEX                                      {$$=alloc_scalar(TYPE__COMPLEX);}      
                 // | struct_union_spec
-                // | enum_spec
-                // | typedef_name
+                // | enum_spec /* lmaooo noooo. */
+                // | typedef_name /* you are funny if you think that I have time to worry about this */
                 ; 
 
 /* not handling type qualifiers and inline func specifier, so just quietly consume... */
@@ -148,9 +148,9 @@ type_qualif:          CONST                                     {$$=alloc_qualif
                     ;
 func_spec:            INLINE                                    {$$=astnode_alloc(AST_FUNC_SPEC);};       
 
-type_qualif_list:     type_qualif                               
-                    | type_qualif_list type_qualif              
-                    ;
+// type_qualif_list:     type_qualif                               
+//                     | type_qualif_list type_qualif              
+//                     ;
 
 init_decl_list:   init_decl                                          {$$=alloc_list($1);}
                 | init_decl_list ',' init_decl                       {$$=$1; list_append($3, $1);}
@@ -178,8 +178,8 @@ direct_decl:      IDENT                                         {$$=alloc_ident(
 
 /* come back to pointers */
 pointer:          '*'                                           {$$=alloc_ptr(NULL);} 
-                // | '*' pointer                                   {$$=list_append(alloc_ptr($2), $2);}
-                | '*' type_qualif_list                          {$$=alloc_ptr(NULL);}
+                | '*' pointer                                   {$$=alloc_ptr($2);} //{$$=list_append(alloc_ptr($2), $2);}
+                // | '*' type_qualif_list                          {$$=alloc_ptr(NULL);}
                 // | '*' type_qualif_list pointer                  {$$=alloc_ptr(NULL);}
                 ;
 

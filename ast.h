@@ -52,6 +52,7 @@ ASTNODE alloc_ptr(ASTNODE ptr_to);
 // ASTNODE alloc_array(ASTNODE array_of, int size);
 // ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
 // ASTNODE alloc_su();
+ASTNODE last_ptr(ASTNODE ptr_chain);
 
 ASTNODE list_append(ASTNODE elem, ASTNODE list);
 int  list_size(ASTNODE list);

@@ -100,17 +100,6 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
     return ret;
 }
 
-// SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident){
-//     int entry_namespace;
-
-// /* need to parse type */
-
-
-
-//     SYM_ENT ret = alloc_sym_ent(ident->ident.ident, ENT_VAR, 0);
-//     return ret;
-// }
-
 /* 
    this is super convoluted, but basically type is the scalar part of the declaration
    and vars is a list of the pointers and array part of the declaration. I create and enter
@@ -119,27 +108,21 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
 */
 void sym_decl(ASTNODE type, ASTNODE vars)
 {
-    ASTNODE get_name,prev, temp = vars;
+    ASTNODE last, temp = vars;
     while(temp != NULL){
         char *name;
         /* go down ptrs and arrays to get name */
-        get_name = temp->list.elem;
-        if(get_name->type != AST_IDENT){
-            while(get_name->type != AST_IDENT){
-                prev = get_name;
-                if(get_name->type == AST_PTR){
-                    get_name = get_name->ptr.ptr_to;
-                }else if(get_name->type == AST_ARRAY){
-                    prev = get_name->array.ptr_to;
-                } else /* error? */ ;
-            }
+        last = temp->list.elem;
+        if(last->type != AST_IDENT){
             /* get the name from the end */
-            name = get_name->ident.ident;
-            /* merge the two lists...erasing the ident part, but that was already saved */
-            if(prev->type == AST_PTR){
-                prev->ptr.ptr_to = type;
+            last = last_ptr(last);
+            /* merge the two lists...erasing the ident part, but saving the name */
+            if(last->type == AST_PTR){
+                name = last->ptr.ptr_to->ident.ident;
+                last->ptr.ptr_to = type;
             }else{
-                prev->array.ptr_to = type;
+                name = last->array.ptr_to->ident.ident;
+                last->array.ptr_to = type;
             }
             type = temp->list.elem;
         } else {
@@ -149,7 +132,7 @@ void sym_decl(ASTNODE type, ASTNODE vars)
         SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
         ent->var.type = type;
         if(!sym_enter(curr_scope, ent)){
-            fprintf(stdout, "error: redeclaration of IDENT\n");
+            yyerror("error: redeclaration of variable\n");
             exit(-1);
         }
         
@@ -168,7 +151,6 @@ void print_sym(SYM_TAB sym){
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
         print_sym_ent(temp->entry);
-        
         temp = temp->next;
     }
 

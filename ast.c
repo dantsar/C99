@@ -159,6 +159,20 @@ ASTNODE alloc_ptr(ASTNODE ptr_to){
 // ASTNODE alloc_array(ASTNODE array_of, int size);
 // ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
 
+/* last ptr/array in chain */
+ASTNODE last_ptr(ASTNODE ptr_chain){
+    ASTNODE last_elem;
+
+    while(ptr_chain->type == AST_PTR || ptr_chain->type == AST_ARRAY){
+        last_elem = ptr_chain;
+        if(ptr_chain->type == AST_PTR){
+            ptr_chain = ptr_chain->ptr.ptr_to;
+        }else if(ptr_chain->type == AST_ARRAY){
+            ptr_chain = ptr_chain->array.ptr_to;
+        } 
+    }
+    return last_elem;
+}
 
 ASTNODE list_append(ASTNODE elem, ASTNODE list){
     if(elem == NULL) return NULL;
@@ -171,6 +185,7 @@ ASTNODE list_append(ASTNODE elem, ASTNODE list){
     temp->list.next = new_elem;
     return list;
 }
+
 
 int list_size(ASTNODE list){
     int count = 0;
