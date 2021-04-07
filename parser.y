@@ -102,7 +102,7 @@ extern_declaration:   declaration                                       {print_s
 declaration:      declaration_specs ';'                         {yyerror("Empty Declaration");}
                 | declaration_specs init_decl_list ';'          {   
                                                                     // print_ast($2);
-                                                                    sym_decl($1, $2);                                                                   
+                                                                    sym_decl($1, $2->list.elem);                                                                   
                                                                     // fprintf(stdout, "size %d\n", list_size($1));
                                                     /* loop through linked list and alloc and add symbol table entires */
                                                                     /* alloc_sym_ent(); sym_*/ }
@@ -110,7 +110,7 @@ declaration:      declaration_specs ';'                         {yyerror("Empty 
 
 /* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
 declaration_specs:    declaration_spec                          {$$=alloc_list($1);}
-                    | declaration_specs declaration_spec        {$$=list_append($2, $1);}
+                    | declaration_specs declaration_spec        {$$=list_append_tail($2, $1);}
                     ;
 declaration_spec:     stg_class_spec                            {$$=$1;}
                     | type_spec                                 {$$=$1;}
@@ -118,42 +118,43 @@ declaration_spec:     stg_class_spec                            {$$=$1;}
                     | func_spec                                 {$$=$1;}
                     ;
 
-stg_class_spec:       AUTO                                      {$$=alloc_storage(STG_AUTO);    }
-                    | STATIC                                    {$$=alloc_storage(STG_STATIC);  }
-                    | EXTERN                                    {$$=alloc_storage(STG_EXTERN);  } 
-                    | TYPEDEF                                   {$$=alloc_storage(STG_TYPEDEF); }
-                    | REGISTER                                  {$$=alloc_storage(STG_REGISTER);}
+stg_class_spec:       AUTO                                      {$$=alloc_decl_spec(STG_AUTO);    }
+                    | STATIC                                    {$$=alloc_decl_spec(STG_STATIC);  }
+                    | EXTERN                                    {$$=alloc_decl_spec(STG_EXTERN);  } 
+                    | TYPEDEF                                   {$$=alloc_decl_spec(STG_TYPEDEF); }
+                    | REGISTER                                  {$$=alloc_decl_spec(STG_REGISTER);}
                     ;
 
-type_spec:        VOID                                          {$$=alloc_scalar(TYPE_VOID);    } 
-                | CHAR                                          {$$=alloc_scalar(TYPE_CHAR);    } 
-                | SHORT                                         {$$=alloc_scalar(TYPE_SHORT);   }  
-                | INT                                           {$$=alloc_scalar(TYPE_INT);     } 
-                | LONG                                          {$$=alloc_scalar(TYPE_LONG);    } 
-                | FLOAT                                         {$$=alloc_scalar(TYPE_FLOAT);   }  
-                | DOUBLE                                        {$$=alloc_scalar(TYPE_DOUBLE);  }    
-                | SIGNED                                        {$$=alloc_scalar(TYPE_SIGNED);  }    
-                | UNSIGNED                                      {$$=alloc_scalar(TYPE_UNSIGNED);}      
-                | _BOOL                                         {$$=alloc_scalar(TYPE__BOOL);   }  
-                | _COMPLEX                                      {$$=alloc_scalar(TYPE__COMPLEX);}      
+type_spec:        VOID                                          {$$=alloc_decl_spec(TYPE_VOID);    } 
+                | CHAR                                          {$$=alloc_decl_spec(TYPE_CHAR);    } 
+                | SHORT                                         {$$=alloc_decl_spec(TYPE_SHORT);   }  
+                | INT                                           {$$=alloc_decl_spec(TYPE_INT);     } 
+                | LONG                                          {$$=alloc_decl_spec(TYPE_LONG);    } 
+                | FLOAT                                         {$$=alloc_decl_spec(TYPE_FLOAT);   }  
+                | DOUBLE                                        {$$=alloc_decl_spec(TYPE_DOUBLE);  }    
+                | SIGNED                                        {$$=alloc_decl_spec(TYPE_SIGNED);  }    
+                | UNSIGNED                                      {$$=alloc_decl_spec(TYPE_UNSIGNED);}      
+                | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL);   }  
+                | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX);}      
                 // | struct_union_spec
                 // | enum_spec /* lmaooo noooo. */
                 // | typedef_name /* you are funny if you think that I have time to worry about this */
                 ; 
 
-/* not handling type qualifiers and inline func specifier, so just quietly consume... */
-type_qualif:          CONST                                     {$$=alloc_qualif(QUALIF_CONST);}
-                    | RESTRICT                                  {$$=alloc_qualif(QUALIF_RESTRICT);}
-                    | VOLATILE                                  {$$=alloc_qualif(QUALIF_VOLATILE);}
+/* not handling type qualifiers and inline func specifier, but still supporing it in grammar */
+type_qualif:          CONST                                     {$$=alloc_decl_spec(QUALIF_CONST);}
+                    | RESTRICT                                  {$$=alloc_decl_spec(QUALIF_RESTRICT);}
+                    | VOLATILE                                  {$$=alloc_decl_spec(QUALIF_VOLATILE);}
                     ;
-func_spec:            INLINE                                    {$$=astnode_alloc(AST_FUNC_SPEC);};       
+func_spec:            INLINE                                    {$$=alloc_decl_spec(FUNC_INLINE);}       
+                    ;
 
 // type_qualif_list:     type_qualif                               
 //                     | type_qualif_list type_qualif              
 //                     ;
 
 init_decl_list:   init_decl                                          {$$=alloc_list($1);}
-                | init_decl_list ',' init_decl                       {$$=$1; list_append($3, $1);}
+                | init_decl_list ',' init_decl                       {$$=$1; list_append_tail($3, $1);}
                 ;
 
 init_decl:        decl                                      {}            
@@ -164,23 +165,33 @@ init:             assign_expr
                 ;
 
 decl:             direct_decl                                   {$$=$1;}
-                | pointer direct_decl                           {$$=last_ptr($1); 
-                                                                 $$->ptr.ptr_to = $2;
-                                                                 $$=$1;}
+                | pointer direct_decl                           { /* yes, it's convoluted. KLUDGE!!! because of the way that direct_decl works, the first element in the list is the ident */
+                                                                  /* so, I append the ident to the pointer side, and append the pointer side to the direct_decl, skip the ident and convert the list to a "pointer chain" */
+                                                                  list_append_tail($2->list.elem, $1);
+                                                                  list_append_tail($1, $2);
+                                                                  $$=$2->list.next;
+                                                                  $$=list_to_ptr_chain($$);
+                                                                // //  $$=list_append_tail($1, $2);
+                                                                // //  $$=list_to_ptr_chain($$);
+                                                                // /*
+                                                                //  $$=last_ptr($1); 
+                                                                //  $$->ptr.ptr_to = $2;
+                                                                // */
+                                                                 /* $$=reverse_ptr_chain($$);*/}
                 ;
 
-direct_decl:      IDENT                                         {$$=alloc_ident($1);} //{$$=alloc_list(alloc_ident($1));}
+direct_decl:      IDENT                                         {$$=alloc_list(alloc_ident($1));} //{$$=alloc_list(alloc_ident($1));}
                 | '(' decl ')'                                  {$$=$2;}
-                | direct_decl '[' ']'                   /* array */
-                | direct_decl '[' constant ']'          /* array */
+                | direct_decl '[' constant ']'                  {$$=list_append_tail(alloc_array(NULL,$3), $1);}
+                | direct_decl '[' ']'                           {yyerror("not supporting variable length arrays");exit(-1);}
                 | direct_decl '(' param_type_list ')'   /* func */
                 | direct_decl '(' ident_list ')'        /* func */
                 | direct_decl '(' ')'                   /* func */
                 ;
 
 /* come back to pointers */
-pointer:          '*'                                           {$$=alloc_ptr(NULL);} 
-                | '*' pointer                                   {$$=alloc_ptr($2);} //{$$=list_append(alloc_ptr($2), $2);}
+pointer:          '*'                                           {$$=alloc_list(alloc_ptr(NULL));} 
+                | '*' pointer                                   {$$=list_append_tail(alloc_ptr(NULL), $2);} 
                 // | '*' type_qualif_list                          {$$=alloc_ptr(NULL);}
                 // | '*' type_qualif_list pointer                  {$$=alloc_ptr(NULL);}
                 ;
@@ -213,7 +224,7 @@ direct_abstract_decl:     '(' abstract_decl ')'                 {$$=alloc_ident(
                         ;
 
 ident_list:           IDENT                         {$$=alloc_ident("TESTTESTTEST");} /* alloc_list */
-                    | ident_list ',' IDENT          {$$=alloc_ident("TESTTESTTEST");} /* list_append */
+                    | ident_list ',' IDENT          {$$=alloc_ident("TESTTESTTEST");} /* list_append_tail */
                     ;
 
 // type_name:            spec_qualif_list 

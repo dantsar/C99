@@ -125,18 +125,13 @@ ASTNODE alloc_list(ASTNODE elem){
     return ret;
 }
 
-ASTNODE alloc_storage(int storage){
-    ASTNODE ret = astnode_alloc(AST_STORAGE);
-    ret->storage.storage = storage;
-    return ret;
-}
-ASTNODE alloc_qualif(int qualif){
-    ASTNODE ret = astnode_alloc(AST_QUALIF);
-    ret->qualif.type_qualif = qualif;
+ASTNODE alloc_decl_spec(int decl_spec){
+    ASTNODE ret = astnode_alloc(AST_DECL_SPEC);
+    ret->decl_spec.decl_spec = decl_spec;
     return ret;
 }
 
-
+/* TO DO: update later to integrate with symbol table */
 ASTNODE alloc_scalar(int type){
     ASTNODE ret = astnode_alloc(AST_SCALAR);
     switch(type){
@@ -156,7 +151,16 @@ ASTNODE alloc_ptr(ASTNODE ptr_to){
     if(ptr_to) ret->ptr.ptr_to = ptr_to;
     return ret;
 }
-// ASTNODE alloc_array(ASTNODE array_of, int size);
+ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
+    ASTNODE ret = astnode_alloc(AST_ARRAY);
+    ret->array.ptr_to = array_of;
+    /* assuming arrays are only defined as constants of unknown */
+    if(size)
+        ret->array.size = size->num.int_num;
+    else 
+        ret->array.size = 0;
+    return ret;
+}
 // ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
 
 /* last ptr/array in chain */
@@ -175,7 +179,37 @@ ASTNODE last_ptr(ASTNODE ptr_chain){
     return last_elem;
 }
 
-ASTNODE list_append(ASTNODE elem, ASTNODE list){
+/* might destroy the list... again, memory managment is a meme :^) */
+ASTNODE list_to_ptr_chain(ASTNODE list)
+{
+    fprintf(stdout, "list\n");
+    print_ast(list);
+    /* assume list is not NULL, or else a bad time... */
+    if(list == NULL) return NULL;
+    int type = list->type;
+    ASTNODE ptr_chain = list->list.elem;
+    ASTNODE ret = ptr_chain;
+
+    while(type == AST_PTR || type == AST_ARRAY){
+        list = list->list.next;
+        if(type == AST_ARRAY){
+            ptr_chain->array.ptr_to = list->list.elem;
+            // ptr_chain = list->list.elem;
+        }else{
+            ptr_chain->ptr.ptr_to = list->list.elem;
+            // ptr_chain = ptr_chain->ptr.ptr_to;
+        }
+        ptr_chain = list->list.elem;
+        type = list->type;
+    }
+
+    fprintf(stdout, "\nptr_chain\n");
+    print_ast(ret);
+    exit(-1);
+    return ret;
+}
+
+ASTNODE list_append_tail(ASTNODE elem, ASTNODE list){
     if(elem == NULL) return NULL;
     if(list == NULL)
         return alloc_list(elem);
@@ -187,7 +221,14 @@ ASTNODE list_append(ASTNODE elem, ASTNODE list){
     return list;
 }
 
+ASTNODE list_append_head(ASTNODE elem, ASTNODE list){
+    if(list == NULL) return NULL;
+    ASTNODE new_elem = alloc_list(elem);
+    new_elem->list.next = list;
+    return new_elem;
+}
 
+/* mainly for debugging for now */
 int list_size(ASTNODE list){
     int count = 0;
     while(list!= NULL){
@@ -196,7 +237,6 @@ int list_size(ASTNODE list){
     }
     return count;
 }
-
 
 
 static void indent(int indent){
@@ -315,13 +355,21 @@ void print_ast(ASTNODE ast){
             break;
         case AST_PTR:
             fprintf(stdout, "pointer to\n");
-            indent(++space); print_ast(ast->ptr.ptr_to); space--;
+            if(ast->ptr.ptr_to){
+                indent(++space); print_ast(ast->ptr.ptr_to); space--;
+            }
             break;
-        case AST_SCALAR:
+        case AST_ARRAY:
+            fprintf(stdout, "array (%d) of \n", ast->array.size);
+            if(ast->array.ptr_to){
+                indent(++space); print_ast(ast->array.ptr_to); space--;
+            }
+            break;
+        case AST_DECL_SPEC:
             // fprintf(stdout, "AST_SCALAR\n");
             // if(ast->scalar.sign == N_UNSIGNED)
             //     fprintf(stdout, "unsigned ");
-            switch(ast->scalar.type){
+            switch(ast->decl_spec.decl_spec){
                 case TYPE_CHAR:
                     fprintf(stdout, "char ");
                     break;
@@ -361,6 +409,10 @@ void print_ast(ASTNODE ast){
                 case QUALIF_VOLATILE:
                     fprintf(stdout, "volatile ");
                     break;
+                case FUNC_INLINE:
+                    fprintf(stdout, "inline ");
+                    break;
+
             }
             break;
     }

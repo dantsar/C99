@@ -100,7 +100,7 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
     return ret;
 }
 
-/* 
+/**
    this is super convoluted, but basically type is the scalar part of the declaration
    and vars is a list of the pointers and array part of the declaration. I create and enter
    entries into the symbol table. But in the process, I merge type with the corresponding 
@@ -108,6 +108,9 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
 */
 void sym_decl(ASTNODE type, ASTNODE vars)
 {
+    fprintf(stdout, "sym_decl\n");
+    print_ast(vars);
+    // exit(-1);
     ASTNODE last, temp = vars;
     while(temp != NULL){
         char *name;
@@ -169,7 +172,7 @@ void print_sym_ent(SYM_ENT ent)
     /* need to fix this to account for the modified enum tags */
     switch(ent->att_type){
         case ENT_VAR:
-            indent(space); fprintf(stdout, "%s: ", ent->name);
+            indent(space); fprintf(stdout, "%s:\n", ent->name);
             print_ast(ent->var.type);  /* list should be being passed to print_ast */
             putchar('\n');
 

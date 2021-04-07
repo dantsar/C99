@@ -23,9 +23,10 @@ enum AST_TYPE{
     AST_ARRAY,
     AST_FUNC,
     AST_LIST,
-    AST_STORAGE,
-    AST_QUALIF,
-    AST_FUNC_SPEC
+    AST_DECL_SPEC,
+    // AST_STORAGE,
+    // AST_QUALIF,
+    // AST_FUNC_SPEC
 };
 
 /* enum for binary types in ast */
@@ -45,19 +46,22 @@ ASTNODE alloc_fncall(ASTNODE name, ASTNODE params);
 ASTNODE alloc_sizeof(ASTNODE expr);
 ASTNODE alloc_select(ASTNODE expr, char* ident);
 ASTNODE alloc_list(ASTNODE elem);
-ASTNODE alloc_storage(int storage);
-ASTNODE alloc_qualif(int qualif);
+
+ASTNODE alloc_decl_spec(int decl_spec);
+
 ASTNODE alloc_scalar(int type);
 ASTNODE alloc_ptr(ASTNODE ptr_to);
-// ASTNODE alloc_array(ASTNODE array_of, int size);
+ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
 // ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
 // ASTNODE alloc_su();
 ASTNODE last_ptr(ASTNODE ptr_chain);
+ASTNODE list_to_ptr_chain(ASTNODE list);
 
-ASTNODE list_append(ASTNODE elem, ASTNODE list);
+ASTNODE list_append_tail(ASTNODE elem, ASTNODE list);
+ASTNODE list_append_head(ASTNODE elem, ASTNODE list);
 int  list_size(ASTNODE list);
-
 void print_ast(ASTNODE ast);
+
 
 struct astnode_unary{
     int op;
@@ -145,15 +149,19 @@ struct astnode_list{
     ASTNODE elem, next;
 };
 
-struct astnode_storage{
-    int storage;
+struct astnode_decl_spec{
+    int decl_spec;
 };
-struct astnode_qualif{
-    int type_qualif;
-};
-struct astnode_fnc_spec{
-    int func_spec;
-};
+
+// struct astnode_storage{
+//     int storage;
+// };
+// struct astnode_qualif{
+//     int type_qualif;
+// };
+// struct astnode_fnc_spec{
+//     int func_spec;
+// };
 
 struct astnode{
     int type;
@@ -170,9 +178,10 @@ struct astnode{
         struct astnode_select   select;
 
         struct astnode_list     list;
-        struct astnode_storage  storage;
-        struct astnode_qualif   qualif;
-        struct astnode_fnc_spec func_spec;
+        struct astnode_decl_spec decl_spec;
+        // struct astnode_storage  storage;
+        // struct astnode_qualif   qualif;
+        // struct astnode_fnc_spec func_spec;
 
         /* assignment 3 */
         struct astnode_scalar   scalar;
