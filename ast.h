@@ -24,15 +24,13 @@ enum AST_TYPE{
     AST_FUNC,
     AST_LIST,
     AST_DECL_SPEC,
-    // AST_STORAGE,
-    // AST_QUALIF,
-    // AST_FUNC_SPEC
 };
 
 /* enum for binary types in ast */
 enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
 /* TO DO: FIX alloc_num, alloc_str to not be so verbose and accept struct num && struct str */
+void print_ast(ASTNODE ast);
 ASTNODE astnode_alloc(int ast_type);
 ASTNODE alloc_unary(int op, ASTNODE expr);
 ASTNODE alloc_binary(int type, ASTNODE val1, int op, ASTNODE val2);
@@ -47,8 +45,14 @@ ASTNODE alloc_sizeof(ASTNODE expr);
 ASTNODE alloc_select(ASTNODE expr, char* ident);
 ASTNODE alloc_list(ASTNODE elem);
 
-ASTNODE alloc_decl_spec(int decl_spec);
+/* helper functions for dealing with lists */
+ASTNODE list_last(ASTNODE list);
+ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
+ASTNODE list_append(ASTNODE list1, ASTNODE list2);
+int  list_size(ASTNODE list);
 
+/* new functions for assignment 3 and 4 */
+ASTNODE alloc_decl_spec(int decl_spec);
 ASTNODE alloc_scalar(int type);
 ASTNODE alloc_ptr(ASTNODE ptr_to);
 ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
@@ -57,13 +61,6 @@ ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
 ASTNODE last_ptr(ASTNODE ptr_chain);
 ASTNODE list_to_ptr_chain(ASTNODE list);
 
-/* helper functions for dealing with lists */
-ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
-ASTNODE list_append(ASTNODE list1, ASTNODE list2);
-// ASTNODE list_merge(ASTNODE list1, ASTNODE list2);
-ASTNODE list_last(ASTNODE list);
-int  list_size(ASTNODE list);
-void print_ast(ASTNODE ast);
 
 
 struct astnode_unary{
@@ -104,6 +101,7 @@ struct astnode_num{
     long double real;
 };
 
+/* fix later */
 struct astnode_fncall{
     ASTNODE name;
     int num_param;
@@ -134,10 +132,12 @@ struct astnode_scalar{
 };
 
 struct astnode_pointer{
+    // ASTNODE spec;
     ASTNODE ptr_to;
 };
 
 struct astnode_array{
+    // ASTNODE spec;
     ASTNODE ptr_to;
     int size;
 }; 
@@ -156,16 +156,6 @@ struct astnode_decl_spec{
     int decl_spec;
 };
 
-// struct astnode_storage{
-//     int storage;
-// };
-// struct astnode_qualif{
-//     int type_qualif;
-// };
-// struct astnode_fnc_spec{
-//     int func_spec;
-// };
-
 struct astnode{
     int type;
     union{
@@ -179,14 +169,10 @@ struct astnode{
         struct astnode_fncall   fncall;
         struct astnode_sizeof   a_sizeof;
         struct astnode_select   select;
-
         struct astnode_list     list;
-        struct astnode_decl_spec decl_spec;
-        // struct astnode_storage  storage;
-        // struct astnode_qualif   qualif;
-        // struct astnode_fnc_spec func_spec;
 
         /* assignment 3 */
+        struct astnode_decl_spec decl_spec;
         struct astnode_scalar   scalar;
         struct astnode_pointer  ptr;
         struct astnode_array    array;

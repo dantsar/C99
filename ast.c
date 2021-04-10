@@ -183,38 +183,27 @@ ASTNODE last_ptr(ASTNODE ptr_chain){
 /* might destroy the list... again, memory managment is a meme :^) */
 ASTNODE list_to_ptr_chain(ASTNODE list)
 {
-    /* debugging */
-    fprintf(stdout, "list\n");
-    print_ast(list);
-    /* debugging */
-
-    /* assume list is not NULL, or else a bad time... */
+    /* check if is not NULL, or else a bad time... */
     if(list == NULL) return NULL;
+
     int type = list->list.elem->type;
-    ASTNODE ptr_chain = list->list.elem;
+    ASTNODE ptr_chain = list->list.elem; // = list->list.elem;
     ASTNODE ret = ptr_chain; /* head of pointer chain */
 
-    while(type == AST_PTR || type == AST_ARRAY){
-        list = list->list.next;
-        if(type == AST_ARRAY){
-            fprintf(stdout, "array??\n");
-            ptr_chain->array.ptr_to = list->list.elem;
-            // ptr_chain = list->list.elem;
-        }else if(type == AST_PTR){
-            fprintf(stdout, "hehe pointer\n");
+    list = list->list.next;
+    while(list != NULL){
+
+        if(type == AST_PTR){
             ptr_chain->ptr.ptr_to = list->list.elem;
-            // ptr_chain = ptr_chain->ptr.ptr_to;
+        }else if(type == AST_ARRAY){
+            ptr_chain->array.ptr_to = list->list.elem;
         }
+
+        /* type of previous node in ptr_chain */
         ptr_chain = list->list.elem;
         type = list->list.elem->type;
-        // type = list->type;
+        list = list->list.next;
     }
-
-    /* debugging */
-    fprintf(stdout, "\nptr_chain\n");
-    print_ast(ret);
-    exit(-1);
-    /* debugging */
 
     return ret;
 }
@@ -247,17 +236,6 @@ ASTNODE list_append(ASTNODE list1, ASTNODE list2){
     ASTNODE ret = list2;
     list2 = list_last(list2);
     list2->list.next = list1;
-    return ret;
-}
-
-
-/* merge the two lists by chaining list2 to list1 */
-ASTNODE list_merge(ASTNODE list1, ASTNODE list2)
-{
-    /* save head of list1 */
-    ASTNODE ret = list1;
-    list1 = list_last(list1);
-    list1->list.next = list2;
     return ret;
 }
 
@@ -414,9 +392,6 @@ void print_ast(ASTNODE ast){
                 case TYPE_LONG:
                     fprintf(stdout, "long ");
                     break;
-                // case TYPE_LLONG:
-                //     fprintf(stdout, "long long ");
-                //     break;
                 case TYPE_FLOAT:
                     fprintf(stdout, "float ");
                     break;
@@ -429,9 +404,6 @@ void print_ast(ASTNODE ast){
                 case TYPE_UNSIGNED:
                     fprintf(stdout, "unsigned ");
                     break;
-                // case TYPE_LDOUBLE:
-                //     fprintf(stdout, "long double ");
-                //     break;
                 case QUALIF_CONST:
                     fprintf(stdout, "const ");
                     break;

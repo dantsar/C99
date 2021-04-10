@@ -100,12 +100,7 @@ extern_declaration:   declaration                                       {print_s
                     ;
 
 declaration:      declaration_specs ';'                         {yyerror("Empty Declaration");}
-                | declaration_specs init_decl_list ';'          {   
-                                                                    // print_ast($2);
-                                                                    sym_decl($1, $2->list.elem);                                                                   
-                                                                    // fprintf(stdout, "size %d\n", list_size($1));
-                                                    /* loop through linked list and alloc and add symbol table entires */
-                                                                    /* alloc_sym_ent(); sym_*/ }
+                | declaration_specs init_decl_list ';'          {sym_decl($1, $2);}
                 ;   
 
 /* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
@@ -137,8 +132,8 @@ type_spec:        VOID                                          {$$=alloc_decl_s
                 | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL);   }  
                 | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX);}      
                 // | struct_union_spec
-                // | enum_spec /* lmaooo noooo. */
-                // | typedef_name /* you are funny if you think that I have time to worry about this */
+                // | enum_spec /* nope!. */
+                // | typedef_name /* heck nope! */
                 ; 
 
 /* not handling type qualifiers and inline func specifier, but still supporing it in grammar */
@@ -149,15 +144,15 @@ type_qualif:          CONST                                     {$$=alloc_decl_s
 func_spec:            INLINE                                    {$$=alloc_decl_spec(FUNC_INLINE);}       
                     ;
 
-// type_qualif_list:     type_qualif                               
-//                     | type_qualif_list type_qualif              
-//                     ;
+type_qualif_list:     type_qualif                               
+                    | type_qualif_list type_qualif              
+                    ;
 
-init_decl_list:   init_decl                                          {exit(0); $$=alloc_list($1);}
+init_decl_list:   init_decl                                          {$$=alloc_list($1);}
                 | init_decl_list ',' init_decl                       {$$=$1; list_append_elem($3, $1);}
                 ;
 
-init_decl:        decl                                      {fprintf(stdout, "INIT DECL\n"); print_ast($1); putchar('\n');}            
+init_decl:        decl                                      {$$=$1;}            
                 | decl '=' init /* not handling for now... */ {}
                 ;
 
@@ -177,11 +172,11 @@ direct_decl:      IDENT                                         {$$=alloc_list(a
                 | direct_decl '(' ')'                   /* func */
                 ;
 
-/* come back to pointers */
+/* ignoring type qualifieres, but support in grammar */
 pointer:          '*'                                           {$$=alloc_list(alloc_ptr(NULL));} 
                 | '*' pointer                                   {$$=list_append_elem(alloc_ptr(NULL), $2);} 
-                // | '*' type_qualif_list                          {$$=alloc_ptr(NULL);}
-                // | '*' type_qualif_list pointer                  {$$=alloc_ptr(NULL);}
+                | '*' type_qualif_list                          {$$=alloc_list(alloc_ptr(NULL));}  
+                | '*' type_qualif_list pointer                  {$$=list_append_elem(alloc_ptr(NULL), $3);}
                 ;
 
 param_type_list:      param_list                                {}

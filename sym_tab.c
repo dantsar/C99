@@ -106,41 +106,70 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
    entries into the symbol table. But in the process, I merge type with the corresponding 
    elements in vars
 */
-void sym_decl(ASTNODE type, ASTNODE vars)
+void sym_decl(ASTNODE type, ASTNODE var_list)
 {
-    fprintf(stdout, "sym_decl\n");
-    print_ast(vars);
+    /* debugging */
+    // fprintf(stdout, "sym_decl\n");
+    // fprintf(stdout, "type:\n");
+    // print_ast(type);
+    // fprintf(stdout, "\n\nvars:\n");
+    // print_ast(var_list);
     // exit(-1);
-    ASTNODE last, temp = vars;
-    while(temp != NULL){
+
+    ASTNODE ptr_chain, var;
+    while(var_list != NULL){
+        var = var_list->list.elem;
         char *name;
-        /* go down ptrs and arrays to get name */
-        last = temp->list.elem;
-        if(last->type != AST_IDENT){
-            /* get the name from the end */
-            last = last_ptr(last);
-            /* merge the two lists...erasing the ident part, but saving the name */
-            if(last->type == AST_PTR){
-                name = last->ptr.ptr_to->ident.ident;
-                last->ptr.ptr_to = type;
-            }else{
-                name = last->array.ptr_to->ident.ident;
-                last->array.ptr_to = type;
-            }
-            type = temp->list.elem;
-        } else {
-            name = temp->list.elem->ident.ident;
+        /* name of variable is the fist element, as a result of grammar structure */
+        name = var->list.elem->ident.ident;
+        var = var->list.next;
+
+        // fprintf(stdout, "var elem:\n");
+        // print_ast(var->list.next);
+        ptr_chain = list_to_ptr_chain(var);
+
+        var = last_ptr(ptr_chain);
+        if(var->type == AST_PTR){
+            var->ptr.ptr_to = type;
+        }else if(var->type == AST_ARRAY){
+            var->array.ptr_to = type;
         }
 
         SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
-        ent->var.type = type;
+        ent->var.type = ptr_chain;
         if(!sym_enter(curr_scope, ent)){
             yyerror("error: redeclaration of variable\n");
             exit(-1);
         }
+
+
+        // last = var->list.elem;
+        // if(last->type != AST_IDENT){
+        //     /* get the name from the end */
+        //     last = last_ptr(last);
+        //     /* merge the two lists...erasing the ident part, but saving the name */
+        //     if(last->type == AST_PTR){
+        //         name = last->ptr.ptr_to->ident.ident;
+        //         last->ptr.ptr_to = type;
+        //     }else{
+        //         name = last->array.ptr_to->ident.ident;
+        //         last->array.ptr_to = type;
+        //     }
+        //     type = temp->list.elem;
+        // } else {
+        //     name = temp->list.elem->ident.ident;
+        // }
+
+        // SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
+        // ent->var.type = type;
+        // if(!sym_enter(curr_scope, ent)){
+        //     yyerror("error: redeclaration of variable\n");
+        //     exit(-1);
+        // }
         
-        temp = temp->list.next;
+        var_list = var_list->list.next;
     }
+
 }
 
 void print_sym_stack(SYM_TAB curr_scope){
@@ -149,8 +178,8 @@ void print_sym_stack(SYM_TAB curr_scope){
 
 }
 
-void print_sym(SYM_TAB sym){
-
+void print_sym(SYM_TAB sym)
+{
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
         print_sym_ent(temp->entry);
