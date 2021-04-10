@@ -108,31 +108,29 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
 */
 void sym_decl(ASTNODE type, ASTNODE var_list)
 {
-    /* debugging */
-    // fprintf(stdout, "sym_decl\n");
-    // fprintf(stdout, "type:\n");
-    // print_ast(type);
-    // fprintf(stdout, "\n\nvars:\n");
-    // print_ast(var_list);
-    // exit(-1);
-
     ASTNODE ptr_chain, var;
     while(var_list != NULL){
         var = var_list->list.elem;
         char *name;
+
         /* name of variable is the fist element, as a result of grammar structure */
         name = var->list.elem->ident.ident;
-        var = var->list.next;
 
-        // fprintf(stdout, "var elem:\n");
-        // print_ast(var->list.next);
-        ptr_chain = list_to_ptr_chain(var);
+        /* check if there is to the declaration */
+        if(var->list.next != NULL){
+            /* skipping over ident */
+            var = var->list.next;
+            ptr_chain = list_to_ptr_chain(var);
 
-        var = last_ptr(ptr_chain);
-        if(var->type == AST_PTR){
-            var->ptr.ptr_to = type;
-        }else if(var->type == AST_ARRAY){
-            var->array.ptr_to = type;
+            /* add type to the end of the ptr_chain */
+            var = last_ptr(ptr_chain);
+            if(var->type == AST_PTR){
+                var->ptr.ptr_to = type;
+            }else if(var->type == AST_ARRAY){
+                var->array.ptr_to = type;
+            }
+        } else {
+            ptr_chain = type;
         }
 
         SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
@@ -142,31 +140,6 @@ void sym_decl(ASTNODE type, ASTNODE var_list)
             exit(-1);
         }
 
-
-        // last = var->list.elem;
-        // if(last->type != AST_IDENT){
-        //     /* get the name from the end */
-        //     last = last_ptr(last);
-        //     /* merge the two lists...erasing the ident part, but saving the name */
-        //     if(last->type == AST_PTR){
-        //         name = last->ptr.ptr_to->ident.ident;
-        //         last->ptr.ptr_to = type;
-        //     }else{
-        //         name = last->array.ptr_to->ident.ident;
-        //         last->array.ptr_to = type;
-        //     }
-        //     type = temp->list.elem;
-        // } else {
-        //     name = temp->list.elem->ident.ident;
-        // }
-
-        // SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
-        // ent->var.type = type;
-        // if(!sym_enter(curr_scope, ent)){
-        //     yyerror("error: redeclaration of variable\n");
-        //     exit(-1);
-        // }
-        
         var_list = var_list->list.next;
     }
 

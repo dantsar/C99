@@ -357,7 +357,7 @@ void print_ast(ASTNODE ast){
             indent(++space); print_ast(ast->select.tag); space--;
             break;
         case AST_LIST:
-            fprintf(stdout, "AST_LIST\n");
+            // fprintf(stdout, "AST_LIST\n");
             temp = ast;
             while(temp != NULL){
                 print_ast(temp->list.elem);
