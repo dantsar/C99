@@ -57,8 +57,11 @@ ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
 ASTNODE last_ptr(ASTNODE ptr_chain);
 ASTNODE list_to_ptr_chain(ASTNODE list);
 
-ASTNODE list_append_tail(ASTNODE elem, ASTNODE list);
-ASTNODE list_append_head(ASTNODE elem, ASTNODE list);
+/* helper functions for dealing with lists */
+ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
+ASTNODE list_append(ASTNODE list1, ASTNODE list2);
+// ASTNODE list_merge(ASTNODE list1, ASTNODE list2);
+ASTNODE list_last(ASTNODE list);
 int  list_size(ASTNODE list);
 void print_ast(ASTNODE ast);
 

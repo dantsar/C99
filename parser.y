@@ -110,7 +110,7 @@ declaration:      declaration_specs ';'                         {yyerror("Empty 
 
 /* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
 declaration_specs:    declaration_spec                          {$$=alloc_list($1);}
-                    | declaration_specs declaration_spec        {$$=list_append_tail($2, $1);}
+                    | declaration_specs declaration_spec        {$$=list_append_elem($2, $1);}
                     ;
 declaration_spec:     stg_class_spec                            {$$=$1;}
                     | type_spec                                 {$$=$1;}
@@ -153,45 +153,33 @@ func_spec:            INLINE                                    {$$=alloc_decl_s
 //                     | type_qualif_list type_qualif              
 //                     ;
 
-init_decl_list:   init_decl                                          {$$=alloc_list($1);}
-                | init_decl_list ',' init_decl                       {$$=$1; list_append_tail($3, $1);}
+init_decl_list:   init_decl                                          {exit(0); $$=alloc_list($1);}
+                | init_decl_list ',' init_decl                       {$$=$1; list_append_elem($3, $1);}
                 ;
 
-init_decl:        decl                                      {}            
-                | decl '=' init /* not handling initializations for now... */ {}
+init_decl:        decl                                      {fprintf(stdout, "INIT DECL\n"); print_ast($1); putchar('\n');}            
+                | decl '=' init /* not handling for now... */ {}
                 ;
 
 init:             assign_expr
                 ;
 
 decl:             direct_decl                                   {$$=$1;}
-                | pointer direct_decl                           { /* yes, it's convoluted. KLUDGE!!! because of the way that direct_decl works, the first element in the list is the ident */
-                                                                  /* so, I append the ident to the pointer side, and append the pointer side to the direct_decl, skip the ident and convert the list to a "pointer chain" */
-                                                                  list_append_tail($2->list.elem, $1);
-                                                                  list_append_tail($1, $2);
-                                                                  $$=$2->list.next;
-                                                                  $$=list_to_ptr_chain($$);
-                                                                // //  $$=list_append_tail($1, $2);
-                                                                // //  $$=list_to_ptr_chain($$);
-                                                                // /*
-                                                                //  $$=last_ptr($1); 
-                                                                //  $$->ptr.ptr_to = $2;
-                                                                // */
-                                                                 /* $$=reverse_ptr_chain($$);*/}
+                | pointer direct_decl                           {$$=list_append($1, $2);}
                 ;
 
 direct_decl:      IDENT                                         {$$=alloc_list(alloc_ident($1));} //{$$=alloc_list(alloc_ident($1));}
-                | '(' decl ')'                                  {$$=$2;}
-                | direct_decl '[' constant ']'                  {$$=list_append_tail(alloc_array(NULL,$3), $1);}
+                | '(' decl ')'                                  {$$=$2; /* fprintf(stdout, "PAREN\n"); print_ast($$); */}
+                | direct_decl '[' constant ']'                  {$$=list_append_elem(alloc_array(NULL,$3), $1);}
                 | direct_decl '[' ']'                           {yyerror("not supporting variable length arrays");exit(-1);}
                 | direct_decl '(' param_type_list ')'   /* func */
-                | direct_decl '(' ident_list ')'        /* func */
+                | direct_decl '(' ident_list ')'        {fprintf(stdout, "func paren\n");}/* func */
                 | direct_decl '(' ')'                   /* func */
                 ;
 
 /* come back to pointers */
 pointer:          '*'                                           {$$=alloc_list(alloc_ptr(NULL));} 
-                | '*' pointer                                   {$$=list_append_tail(alloc_ptr(NULL), $2);} 
+                | '*' pointer                                   {$$=list_append_elem(alloc_ptr(NULL), $2);} 
                 // | '*' type_qualif_list                          {$$=alloc_ptr(NULL);}
                 // | '*' type_qualif_list pointer                  {$$=alloc_ptr(NULL);}
                 ;
@@ -214,7 +202,7 @@ abstract_decl:        pointer
                     | direct_abstract_decl
                     ;
 
-direct_abstract_decl:     '(' abstract_decl ')'                 {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+direct_abstract_decl:     '(' abstract_decl ')'                 {fprintf(stdout, "ABSTRACT DECL"); $$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
                         |  '[' ']'                              {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
                         |  '[' constant ']'                     {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
                         // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
@@ -244,7 +232,7 @@ ident_list:           IDENT                         {$$=alloc_ident("TESTTESTTES
 // expr_stmnt:       expr ';'                                  {$$=$1;}
 
 // label_stmnt:      IDENT ':' statement                       {$$=$3;}
-//                 | CASE const_expr ':' statement              {$$=$4;}
+//                 | CASE const_expr ':' statement             {$$=$4;}
 //                 | DEFAULT ':' statement                     {$$=$3;}
 //                 ;
 

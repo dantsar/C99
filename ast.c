@@ -122,6 +122,7 @@ ASTNODE alloc_list(ASTNODE elem){
     if(elem == NULL) return NULL;
     ASTNODE ret = astnode_alloc(AST_LIST);
     ret->list.elem = elem;
+    ret->list.next = NULL;
     return ret;
 }
 
@@ -148,9 +149,10 @@ ASTNODE alloc_scalar(int type){
 
 ASTNODE alloc_ptr(ASTNODE ptr_to){
     ASTNODE ret = astnode_alloc(AST_PTR);
-    if(ptr_to) ret->ptr.ptr_to = ptr_to;
+    ret->ptr.ptr_to = ptr_to;
     return ret;
 }
+
 ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
     ASTNODE ret = astnode_alloc(AST_ARRAY);
     ret->array.ptr_to = array_of;
@@ -158,10 +160,9 @@ ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
     if(size)
         ret->array.size = size->num.int_num;
     else 
-        ret->array.size = 0;
+        ret->array.size = 0; /* indicates a VLA: this shouldn't be reachable, but just in case */
     return ret;
 }
-// ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
 
 /* last ptr/array in chain */
 ASTNODE last_ptr(ASTNODE ptr_chain){
@@ -182,34 +183,52 @@ ASTNODE last_ptr(ASTNODE ptr_chain){
 /* might destroy the list... again, memory managment is a meme :^) */
 ASTNODE list_to_ptr_chain(ASTNODE list)
 {
+    /* debugging */
     fprintf(stdout, "list\n");
     print_ast(list);
+    /* debugging */
+
     /* assume list is not NULL, or else a bad time... */
     if(list == NULL) return NULL;
-    int type = list->type;
+    int type = list->list.elem->type;
     ASTNODE ptr_chain = list->list.elem;
-    ASTNODE ret = ptr_chain;
+    ASTNODE ret = ptr_chain; /* head of pointer chain */
 
     while(type == AST_PTR || type == AST_ARRAY){
         list = list->list.next;
         if(type == AST_ARRAY){
+            fprintf(stdout, "array??\n");
             ptr_chain->array.ptr_to = list->list.elem;
             // ptr_chain = list->list.elem;
-        }else{
+        }else if(type == AST_PTR){
+            fprintf(stdout, "hehe pointer\n");
             ptr_chain->ptr.ptr_to = list->list.elem;
             // ptr_chain = ptr_chain->ptr.ptr_to;
         }
         ptr_chain = list->list.elem;
-        type = list->type;
+        type = list->list.elem->type;
+        // type = list->type;
     }
 
+    /* debugging */
     fprintf(stdout, "\nptr_chain\n");
     print_ast(ret);
     exit(-1);
+    /* debugging */
+
     return ret;
 }
 
-ASTNODE list_append_tail(ASTNODE elem, ASTNODE list){
+/* get the last element of a list */
+ASTNODE list_last(ASTNODE list){
+    while(list->list.next != NULL)
+        list = list->list.next;
+
+    return list;
+}
+
+/* add an astnode to the end of list */
+ASTNODE list_append_elem(ASTNODE elem, ASTNODE list){
     if(elem == NULL) return NULL;
     if(list == NULL)
         return alloc_list(elem);
@@ -221,11 +240,25 @@ ASTNODE list_append_tail(ASTNODE elem, ASTNODE list){
     return list;
 }
 
-ASTNODE list_append_head(ASTNODE elem, ASTNODE list){
-    if(list == NULL) return NULL;
-    ASTNODE new_elem = alloc_list(elem);
-    new_elem->list.next = list;
-    return new_elem;
+/* append list1 to list2 (list2 -> list1) */
+ASTNODE list_append(ASTNODE list1, ASTNODE list2){
+    if(list1 == NULL || list2 == NULL) 
+        return NULL;
+    ASTNODE ret = list2;
+    list2 = list_last(list2);
+    list2->list.next = list1;
+    return ret;
+}
+
+
+/* merge the two lists by chaining list2 to list1 */
+ASTNODE list_merge(ASTNODE list1, ASTNODE list2)
+{
+    /* save head of list1 */
+    ASTNODE ret = list1;
+    list1 = list_last(list1);
+    list1->list.next = list2;
+    return ret;
 }
 
 /* mainly for debugging for now */
@@ -346,7 +379,7 @@ void print_ast(ASTNODE ast){
             indent(++space); print_ast(ast->select.tag); space--;
             break;
         case AST_LIST:
-            // fprintf(stdout, "AST_LIST\n");
+            fprintf(stdout, "AST_LIST\n");
             temp = ast;
             while(temp != NULL){
                 print_ast(temp->list.elem);
@@ -355,20 +388,19 @@ void print_ast(ASTNODE ast){
             break;
         case AST_PTR:
             fprintf(stdout, "pointer to\n");
+            /* to avoid exploding from a NULL pointer */
             if(ast->ptr.ptr_to){
                 indent(++space); print_ast(ast->ptr.ptr_to); space--;
             }
             break;
         case AST_ARRAY:
             fprintf(stdout, "array (%d) of \n", ast->array.size);
+            /* to avoid exploding from a NULL pointer */
             if(ast->array.ptr_to){
                 indent(++space); print_ast(ast->array.ptr_to); space--;
             }
             break;
         case AST_DECL_SPEC:
-            // fprintf(stdout, "AST_SCALAR\n");
-            // if(ast->scalar.sign == N_UNSIGNED)
-            //     fprintf(stdout, "unsigned ");
             switch(ast->decl_spec.decl_spec){
                 case TYPE_CHAR:
                     fprintf(stdout, "char ");
