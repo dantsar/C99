@@ -65,7 +65,7 @@ void yyerror(const char*);
 
 /* expressions */
 %type<astnode_p>    expr
-// %type<astnode_p>    const_expr 
+%type<astnode_p>    const_expr 
 %type<astnode_p>    assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr //func_call
 
 /* declarations */
@@ -79,6 +79,8 @@ void yyerror(const char*);
 %type<astnode_p>    ident_list
 %type<astnode_p>    stg_class_spec type_spec declaration_spec  
 %type<astnode_p>    func_spec type_qualif
+%type<astnode_p>    struct_union_spec struct_union struct_declaration_list struct_declaration specific_qualif_list 
+%type<astnode_p>    struct_decl_list struct_decl
 
 /* statements */
 // %type<astnode_p>    statement expr_stmnt
@@ -131,10 +133,41 @@ type_spec:        VOID                                          {$$=alloc_decl_s
                 | UNSIGNED                                      {$$=alloc_decl_spec(TYPE_UNSIGNED);}      
                 | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL);   }  
                 | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX);}      
-                // | struct_union_spec
+                | struct_union_spec                             {$$=$1;}
                 // | enum_spec /* nope!. */
                 // | typedef_name /* heck nope! */
                 ; 
+
+struct_union_spec:    struct_union '{' struct_declaration_list '}'
+                    | struct_union IDENT '{' struct_declaration_list '}'
+                    | struct_union IDENT 
+                    ;
+
+struct_union:         STRUCT    {$$=alloc_ident("BLAHBLAH");}
+                    | UNION     {$$=alloc_ident("BLAHBLAH");}
+                    ;
+                
+struct_declaration_list:      struct_declaration
+                            | struct_declaration_list ',' struct_declaration
+                            ;
+
+struct_declaration:       specific_qualif_list struct_decl_list ';'
+                        ;
+
+specific_qualif_list:     type_spec
+                        | type_spec specific_qualif_list
+                        | type_qualif 
+                        | type_qualif specific_qualif_list 
+                        ;
+
+struct_decl_list:     struct_decl
+                    | struct_decl_list ',' struct_decl_list
+                    ;
+
+struct_decl:          decl
+                    | ':' const_expr                {$$=$2;}
+                    | decl ':' const_expr
+                    ;
 
 /* not handling type qualifiers and inline func specifier, but still supporing it in grammar */
 type_qualif:          CONST                                     {$$=alloc_decl_spec(QUALIF_CONST);}
@@ -210,8 +243,8 @@ ident_list:           IDENT                         {$$=alloc_ident("TESTTESTTES
                     | ident_list ',' IDENT          {$$=alloc_ident("TESTTESTTEST");} /* list_append_tail */
                     ;
 
-// type_name:            spec_qualif_list 
-//                     | spec_qualif_list abstract_decl
+// type_name:            specific_qualif_list 
+//                     | specific_qualif_list abstract_decl
 //                     ;
 
 
@@ -269,8 +302,8 @@ unary_expr:       postfix_expr                              {$$=$1;}
                 | '!' cast_expr                             {$$=alloc_unary('!',$2);}
                 ;
 
-// const_expr:       cond_expr                                 {$$=$1;}
-//                 ;
+const_expr:       cond_expr                                 {$$=$1;}
+                ;
 
 cond_expr:        arith_expr                                {$$=$1;}
                 | arith_expr '?' expr ':' cond_expr         {$$=alloc_ternary($1, $3, $5);}

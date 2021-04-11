@@ -64,7 +64,7 @@ SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent)
 }
 
 
-/* TRUE: successfully entered entry | FALSE: already there*/
+/* TRUE: successfully entered entry | FALSE: already there */
 bool sym_enter(SYM_TAB sym, SYM_ENT ent)
 {
     if(sym_lookup(sym, ent))
@@ -100,12 +100,11 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
     return ret;
 }
 
-/**
-   this is super convoluted, but basically type is the scalar part of the declaration
-   and vars is a list of the pointers and array part of the declaration. I create and enter
-   entries into the symbol table. But in the process, I merge type with the corresponding 
-   elements in vars
-*/
+/** 
+ * function that declares a list of variables with their corresponding declarators 
+ * and enteres the variables into the symbol table. This function takes two lists
+ * type: list of decl_specs|| var_list: list of decalrators 
+ */
 void sym_decl(ASTNODE type, ASTNODE var_list)
 {
     ASTNODE ptr_chain, var;
