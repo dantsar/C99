@@ -21,8 +21,12 @@ enum AST_TYPE{
     AST_SCALAR,
     AST_PTR,
     AST_ARRAY,
+    AST_STRUCT,
+    AST_UNION,
+    AST_ST_UN, /* used for print_ast to save some space */
     AST_FUNC,
     AST_LIST,
+    AST_DECLARATION,
     AST_DECL_SPEC,
 };
 
@@ -31,6 +35,7 @@ enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
 /* TO DO: FIX alloc_num, alloc_str to not be so verbose and accept struct num && struct str */
 void print_ast(ASTNODE ast);
+/* helper functions for assignment three 3: expressions */
 ASTNODE astnode_alloc(int ast_type);
 ASTNODE alloc_unary(int op, ASTNODE expr);
 ASTNODE alloc_binary(int type, ASTNODE val1, int op, ASTNODE val2);
@@ -52,12 +57,15 @@ ASTNODE list_append(ASTNODE list1, ASTNODE list2);
 int  list_size(ASTNODE list);
 
 /* new functions for assignment 3 and 4 */
+ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl);
 ASTNODE alloc_decl_spec(int decl_spec);
 ASTNODE alloc_scalar(int type);
 ASTNODE alloc_ptr(ASTNODE ptr_to);
 ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
+ASTNODE alloc_st_un(int type, int scope);
+
 // ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
-// ASTNODE alloc_su();
+
 ASTNODE last_ptr(ASTNODE ptr_chain);
 ASTNODE list_to_ptr_chain(ASTNODE list);
 
@@ -142,6 +150,13 @@ struct astnode_array{
     int size;
 }; 
 
+struct astnode_st_un{
+    int type; 
+    bool def_complete;
+    char* name; /* if NULL then anonymous struct/union */
+    SYM_TAB mini_tab;
+};
+
 struct astnode_func{
     ASTNODE ret;
     ASTNODE args;
@@ -152,6 +167,12 @@ struct astnode_list{
     ASTNODE elem, next;
 };
 
+/* meant to hold two lists: list of decl_spec and a list of declarators */
+/* used as a temporary storage before the declaration gets processed */
+struct astnode_declaration{
+    ASTNODE qualif, declaration;
+};
+
 struct astnode_decl_spec{
     int decl_spec;
 };
@@ -159,25 +180,27 @@ struct astnode_decl_spec{
 struct astnode{
     int type;
     union{
-        struct astnode_unary    unary;
-        struct astnode_binary   binary;
-        struct astnode_ternary  ternary;
-        struct astnode_ident    ident;
-        struct astnode_num      num;
-        struct astnode_charlit  charlit;
-        struct astnode_string   string;
-        struct astnode_fncall   fncall;
-        struct astnode_sizeof   a_sizeof;
-        struct astnode_select   select;
-        struct astnode_list     list;
+        struct astnode_unary        unary;
+        struct astnode_binary       binary;
+        struct astnode_ternary      ternary;
+        struct astnode_ident        ident;
+        struct astnode_num          num;
+        struct astnode_charlit      charlit;
+        struct astnode_string       string;
+        struct astnode_fncall       fncall;
+        struct astnode_sizeof       a_sizeof;
+        struct astnode_select       select;
+        struct astnode_list         list;
 
         /* assignment 3 */
-        struct astnode_decl_spec decl_spec;
-        struct astnode_scalar   scalar;
-        struct astnode_pointer  ptr;
-        struct astnode_array    array;
-        struct astnode_func     func;
-        // struct astnode_st_un   st_un;
+        struct astnode_declaration  declaration;
+        struct astnode_decl_spec    decl_spec;
+        struct astnode_scalar       scalar;
+        struct astnode_pointer      ptr;
+        struct astnode_array        array;
+        struct astnode_func         func;
+        struct astnode_st_un        st_un; /* struct_union */
+
     };
 };
 

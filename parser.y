@@ -65,7 +65,7 @@ void yyerror(const char*);
 
 /* expressions */
 %type<astnode_p>    expr
-%type<astnode_p>    const_expr 
+// %type<astnode_p>    const_expr 
 %type<astnode_p>    assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr //func_call
 
 /* declarations */
@@ -102,7 +102,7 @@ extern_declaration:   declaration                                       {print_s
                     ;
 
 declaration:      declaration_specs ';'                         {yyerror("Empty Declaration");}
-                | declaration_specs init_decl_list ';'          {sym_decl($1, $2);}
+                | declaration_specs init_decl_list ';'          {sym_declaration($1, $2, curr_scope);}
                 ;   
 
 /* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
@@ -134,40 +134,9 @@ type_spec:        VOID                                          {$$=alloc_decl_s
                 | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL);   }  
                 | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX);}      
                 | struct_union_spec                             {$$=$1;}
-                // | enum_spec /* nope!. */
+                // | enum_spec    /* nope!. */
                 // | typedef_name /* heck nope! */
                 ; 
-
-struct_union_spec:    struct_union '{' struct_declaration_list '}'
-                    | struct_union IDENT '{' struct_declaration_list '}'
-                    | struct_union IDENT 
-                    ;
-
-struct_union:         STRUCT    {$$=alloc_ident("BLAHBLAH");}
-                    | UNION     {$$=alloc_ident("BLAHBLAH");}
-                    ;
-                
-struct_declaration_list:      struct_declaration
-                            | struct_declaration_list ',' struct_declaration
-                            ;
-
-struct_declaration:       specific_qualif_list struct_decl_list ';'
-                        ;
-
-specific_qualif_list:     type_spec
-                        | type_spec specific_qualif_list
-                        | type_qualif 
-                        | type_qualif specific_qualif_list 
-                        ;
-
-struct_decl_list:     struct_decl
-                    | struct_decl_list ',' struct_decl_list
-                    ;
-
-struct_decl:          decl
-                    | ':' const_expr                {$$=$2;}
-                    | decl ':' const_expr
-                    ;
 
 /* not handling type qualifiers and inline func specifier, but still supporing it in grammar */
 type_qualif:          CONST                                     {$$=alloc_decl_spec(QUALIF_CONST);}
@@ -176,6 +145,41 @@ type_qualif:          CONST                                     {$$=alloc_decl_s
                     ;
 func_spec:            INLINE                                    {$$=alloc_decl_spec(FUNC_INLINE);}       
                     ;
+
+struct_union_spec:    struct_union '{' struct_declaration_list '}'              {$$=$1; sym_struct_define($1, $3); /* print_ast($3); */}
+                    | struct_union IDENT '{' struct_declaration_list '}'        {$$=$1; 
+                                                                                 sym_struct_define($1, $4);
+                                                                                 sym_struct_declare($2, $1, curr_scope);
+                                                                                } 
+                    | struct_union IDENT                                        {/* referance to struct in sym_tab, retreive and return struct else NULL, indicating forward declaration */ fprintf(stdout, "yes3\n");} 
+                    ;
+
+struct_union:         STRUCT    {$$=alloc_st_un(AST_STRUCT, curr_scope->scope_type);}
+                    | UNION     {$$=alloc_st_un(AST_UNION, curr_scope->scope_type);}
+                    ;
+                
+struct_declaration_list:      struct_declaration                            {$$=alloc_list($1);}
+                            | struct_declaration_list struct_declaration    {$$=list_append_elem($2, $1);}
+                            ;
+
+struct_declaration:       specific_qualif_list struct_decl_list ';'         {$$=alloc_declaration($1, $2);}
+                        ;
+
+specific_qualif_list:     type_spec                         {$$=alloc_list($1);}
+                        | type_spec specific_qualif_list    {$$=list_append_elem($1, $2);}
+                        | type_qualif                       {$$=alloc_list($1);}
+                        | type_qualif specific_qualif_list  {$$=list_append_elem($1, $2);}
+                        ;
+
+struct_decl_list:     struct_decl                               {$$=alloc_list($1);}
+                    | struct_decl_list ',' struct_decl          {$$=list_append_elem($3, $1);}
+                    ;
+
+struct_decl:          decl                          {$$=$1;}
+                    // | ':' const_expr                {$$=$2;} /* not implementing bit fields */
+                    // | decl ':' const_expr           {$$=$1;} /* no bitfields for you */
+                    ;
+
 
 type_qualif_list:     type_qualif                               
                     | type_qualif_list type_qualif              
@@ -186,7 +190,7 @@ init_decl_list:   init_decl                                          {$$=alloc_l
                 ;
 
 init_decl:        decl                                      {$$=$1;}            
-                | decl '=' init /* not handling for now... */ {}
+                | decl '=' init /* not handling initializers ... */ {}
                 ;
 
 init:             assign_expr
@@ -302,8 +306,8 @@ unary_expr:       postfix_expr                              {$$=$1;}
                 | '!' cast_expr                             {$$=alloc_unary('!',$2);}
                 ;
 
-const_expr:       cond_expr                                 {$$=$1;}
-                ;
+// const_expr:       cond_expr                                 {$$=$1;}
+//                 ;
 
 cond_expr:        arith_expr                                {$$=$1;}
                 | arith_expr '?' expr ':' cond_expr         {$$=alloc_ternary($1, $3, $5);}
@@ -372,7 +376,7 @@ void yyerror(const char *msg){
 int main(){
 
     /* creating global symbol table */
-    curr_scope = sym_create(SCOPE_GLOBAL);
+    curr_scope = sym_tab_create(SCOPE_GLOBAL);
 
     yyparse();
     // print_sym(curr_scope);

@@ -67,10 +67,10 @@ enum SS_SCALAR{
 };
 
 /* symbol table interface functions */
-SYM_TAB sym_create(int att_type);
-void sym_destory(SYM_TAB sym);
-void sym_push(SYM_TAB stack, SYM_TAB sym);
-void sym_pop(SYM_TAB stack);
+SYM_TAB sym_tab_create(int att_type);
+void sym_tab_destory(SYM_TAB sym);
+void sym_tab_push(SYM_TAB stack, SYM_TAB sym);
+void sym_tab_pop(SYM_TAB stack);
 bool sym_enter(SYM_TAB tab, SYM_ENT ent);
 SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent); 
 
@@ -81,11 +81,12 @@ void print_sym_ent(SYM_ENT ent);
 
 /* for populating the symbol table */
 SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);
-SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident);
-void sym_decl(ASTNODE type, ASTNODE vars);
+// SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident);
 
-
-
+void sym_declaration(ASTNODE type, ASTNODE vars, SYM_TAB tab);
+void sym_struct_define(ASTNODE st_un, ASTNODE decl_list);
+void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab);
+// void sym_decl_install(ASTNODE ents, SYM_TAB tab);
 
 /* variable attributes */
 struct var_att{
@@ -97,23 +98,22 @@ struct var_att{
 
 /* function attributes */
 struct func_att{
-    // type 
     int stg_class;
     bool inline_spec;
     bool def_seen;
+    ASTNODE ret_type;
     ASTNODE body;
 };
 
 struct struct_union_tag{
-    SYM_TAB mem_def;
-    bool def_complete;
+    ASTNODE st_un;
 };
 
-struct struct_union_mem{
-    ASTNODE type;
-    int offset; /* only for structs */
-    int bitfield, bitwidth;
-};
+// struct struct_union_mem{
+//     ASTNODE type;
+//     int offset; /* only for structs */
+//     int bitfield, bitwidth;
+// };
 
 struct enum_tag{
     bool def_comp;
@@ -138,14 +138,17 @@ struct sym_entry{
     char *filename;
     int lineno;
 
+    /* for distinguishing between symbol table entries */
     char* name;
     int namespace;
+    
+    /* storing the values for the entry */
     int att_type;
     union{ /* attributes */
         struct var_att              var;
         struct func_att             func;
         struct struct_union_tag     su_tag;
-        struct struct_union_mem     su_mem;
+        // struct struct_union_mem     su_mem;
         struct enum_tag             en_tag;
         struct enum_const           en_val;
         struct statement_label      stmt_l;
@@ -154,7 +157,6 @@ struct sym_entry{
 };
 
 struct sym_tab{
-
     /* stack of symbol table scopes */
     int scope_type;
     SYM_TAB curr_scope;

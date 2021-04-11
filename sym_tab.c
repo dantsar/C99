@@ -9,13 +9,13 @@ extern char filename[256];
 extern int lineno;
 extern void yyerror(const char* msg);
 
-SYM_TAB sym_create(int scope_type){
+SYM_TAB sym_tab_create(int scope_type){
     SYM_TAB ret = calloc(1, sizeof(struct sym_tab));
     ret->scope_type = scope_type;
     return ret;
 }
 
-void sym_destroy(SYM_TAB sym_tab){
+void sym_tab_destroy(SYM_TAB sym_tab){
     /* figure this out later: I have 32G of RAM, so I don't care :^) */
     free(sym_tab);
 }
@@ -88,7 +88,8 @@ bool sym_enter(SYM_TAB sym, SYM_ENT ent)
 }
 
 
-SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
+SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns)
+{
     SYM_ENT ret = calloc(sizeof(struct sym_entry),1);
     ret->name = name;
     ret->namespace = ent_ns;
@@ -105,10 +106,21 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns){
  * and enteres the variables into the symbol table. This function takes two lists
  * type: list of decl_specs|| var_list: list of decalrators 
  */
-void sym_decl(ASTNODE type, ASTNODE var_list)
+void sym_declaration(ASTNODE type, ASTNODE var_list, SYM_TAB tab)
 {
     ASTNODE ptr_chain, var;
-    while(var_list != NULL){
+
+    /* check if there is a struct/union in type */
+    var = type;
+    while(var != NULL){
+        if(var->list.elem->type == AST_ST_UN)
+            fprintf(stderr, "\nSTRUCT_UNION HERE\n");
+
+        var = var->list.next;
+    }
+    
+    while(var_list != NULL)
+    {
         var = var_list->list.elem;
         char *name;
 
@@ -134,12 +146,42 @@ void sym_decl(ASTNODE type, ASTNODE var_list)
 
         SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
         ent->var.type = ptr_chain;
-        if(!sym_enter(curr_scope, ent)){
+        // ent->val = ptr_chain;
+        if(!sym_enter(tab, ent)){
             yyerror("error: redeclaration of variable\n");
             exit(-1);
         }
 
         var_list = var_list->list.next;
+    }
+
+}
+
+void sym_struct_define(ASTNODE st_un, ASTNODE decl_list)
+{
+    st_un->st_un.def_complete = true;
+    /* place holder nodes for readability */
+    ASTNODE qualif, declaration;
+    while(decl_list != NULL){
+        qualif = decl_list->list.elem->declaration.qualif;
+        declaration = decl_list->list.elem->declaration.declaration;
+
+        /* TO DO: in sym_declaration make sure to figure out the symbol table and enter the appropriate namespace */
+        sym_declaration(qualif, declaration, st_un->st_un.mini_tab);
+
+        decl_list = decl_list->list.next;
+    }
+    /* debugging */
+    // fprintf(stdout, "\nprinting symbol table\n");
+    // print_sym(st_un->st_un.mini_tab);
+}
+
+void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
+{
+    SYM_ENT ent = alloc_sym_ent(name, ENT_SU_TAG, NS_SU);
+    if(!sym_enter(tab, ent)){
+        yyerror("error: redeclaration of variable\n");
+        exit(-1);
     }
 
 }

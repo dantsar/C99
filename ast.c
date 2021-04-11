@@ -126,6 +126,13 @@ ASTNODE alloc_list(ASTNODE elem){
     return ret;
 }
 
+ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl){
+    ASTNODE ret = astnode_alloc(AST_DECLARATION);
+    ret->declaration.declaration = decl;
+    ret->declaration.qualif = qualif;
+    return ret;
+}
+
 ASTNODE alloc_decl_spec(int decl_spec){
     ASTNODE ret = astnode_alloc(AST_DECL_SPEC);
     ret->decl_spec.decl_spec = decl_spec;
@@ -162,6 +169,14 @@ ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
     else 
         ret->array.size = 0; /* indicates a VLA: this shouldn't be reachable, but just in case */
     return ret;
+}
+
+ASTNODE alloc_st_un(int type, int scope){
+    ASTNODE ret = astnode_alloc(AST_ST_UN);
+    ret->st_un.type = type;
+    ret->st_un.mini_tab = sym_tab_create(SCOPE_MINI);
+    ret->st_un.def_complete = false;
+    return ret; 
 }
 
 /* last ptr/array in chain */
@@ -250,6 +265,7 @@ int list_size(ASTNODE list){
 }
 
 
+/* going to be put in its own file later */
 static void indent(int indent){
     for(int i = 0; i < indent*2; i++){
         putchar(' ');
@@ -357,7 +373,7 @@ void print_ast(ASTNODE ast){
             indent(++space); print_ast(ast->select.tag); space--;
             break;
         case AST_LIST:
-            // fprintf(stdout, "AST_LIST\n");
+            fprintf(stdout, "AST_LIST\n"); /* for debugging */
             temp = ast;
             while(temp != NULL){
                 print_ast(temp->list.elem);
@@ -377,6 +393,19 @@ void print_ast(ASTNODE ast){
             if(ast->array.ptr_to){
                 indent(++space); print_ast(ast->array.ptr_to); space--;
             }
+            break;
+        case AST_ST_UN:
+            if(ast->st_un.type == AST_STRUCT){
+                fprintf(stdout, "STRUCT\n");
+            }else{
+                fprintf(stdout, "UNION\n");
+            }
+            break;
+        case AST_DECLARATION: /* for debugging */
+            fprintf(stdout, "qualif\n");
+            indent(space); print_ast(ast->declaration.qualif); 
+            fprintf(stdout, "\ndeclaration\n");
+            indent(space); print_ast(ast->declaration.declaration);
             break;
         case AST_DECL_SPEC:
             switch(ast->decl_spec.decl_spec){
@@ -416,7 +445,6 @@ void print_ast(ASTNODE ast){
                 case FUNC_INLINE:
                     fprintf(stdout, "inline ");
                     break;
-
             }
             break;
     }
