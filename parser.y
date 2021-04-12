@@ -151,7 +151,9 @@ struct_union_spec:    struct_union '{' struct_declaration_list '}'              
                                                                                  sym_struct_define($1, $4);
                                                                                  sym_struct_declare($2, $1, curr_scope);
                                                                                 } 
-                    | struct_union IDENT                                        {/* referance to struct in sym_tab, retreive and return struct else NULL, indicating forward declaration */ fprintf(stdout, "yes3\n");} 
+                    | struct_union IDENT                                        { SYM_ENT temp = alloc_sym_ent($2, ENT_SU_TAG, NS_SU);
+                                                                                  $$ = (temp = sym_lookup(curr_scope, temp)) ? temp->su_tag.st_un : alloc_ident($2);
+                                                                                } 
                     ;
 
 struct_union:         STRUCT    {$$=alloc_st_un(AST_STRUCT, curr_scope->scope_type);}

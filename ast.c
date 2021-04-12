@@ -373,7 +373,7 @@ void print_ast(ASTNODE ast){
             indent(++space); print_ast(ast->select.tag); space--;
             break;
         case AST_LIST:
-            fprintf(stdout, "AST_LIST\n"); /* for debugging */
+            // fprintf(stdout, "AST_LIST\n"); /* for debugging */
             temp = ast;
             while(temp != NULL){
                 print_ast(temp->list.elem);
@@ -396,10 +396,12 @@ void print_ast(ASTNODE ast){
             break;
         case AST_ST_UN:
             if(ast->st_un.type == AST_STRUCT){
-                fprintf(stdout, "STRUCT\n");
+                fprintf(stdout, "STRUCT");
             }else{
-                fprintf(stdout, "UNION\n");
+                fprintf(stdout, "UNION");
             }
+            fprintf(stdout, " %s\n", ast->st_un.name);
+            print_sym(ast->st_un.mini_tab);
             break;
         case AST_DECLARATION: /* for debugging */
             fprintf(stdout, "qualif\n");

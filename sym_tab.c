@@ -109,16 +109,6 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns)
 void sym_declaration(ASTNODE type, ASTNODE var_list, SYM_TAB tab)
 {
     ASTNODE ptr_chain, var;
-
-    /* check if there is a struct/union in type */
-    var = type;
-    while(var != NULL){
-        if(var->list.elem->type == AST_ST_UN)
-            fprintf(stderr, "\nSTRUCT_UNION HERE\n");
-
-        var = var->list.next;
-    }
-    
     while(var_list != NULL)
     {
         var = var_list->list.elem;
@@ -178,7 +168,9 @@ void sym_struct_define(ASTNODE st_un, ASTNODE decl_list)
 
 void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
 {
+    st_un->st_un.name = name;
     SYM_ENT ent = alloc_sym_ent(name, ENT_SU_TAG, NS_SU);
+    ent->su_tag.st_un = st_un;
     if(!sym_enter(tab, ent)){
         yyerror("error: redeclaration of variable\n");
         exit(-1);
