@@ -86,6 +86,7 @@ void yyerror(const char*);
 %type<astnode_p>    block_item block_item_list
 %type<astnode_p>    statement expr_stmnt
 %type<astnode_p>    label_stmnt compound_stmnt //selec_stmnt loop_stmnt jmp_stmnt
+%type<astnode_p>    select_stmnt iterat_stmnt jump_stmnt expr_opt 
 
 
 /* External Definitions */
@@ -254,7 +255,8 @@ param_declaration:    declaration_specs decl                    {$$=alloc_declar
 //                         ;
 
 /* manually change compound scope from block to func */
-func_def:                 declaration_specs decl compound_stmnt                     {$$=$2->list.elem;
+func_def:                 declaration_specs decl compound_stmnt                     { /* populate astnode with elements */
+                                                                                     $$=$2->list.elem;
                                                                                      $$->func.ret = list_append($1, $2);
                                                                                      $$->func.ret = $$->func.ret->list.next;
                                                                                      $$->func.block = $3;
@@ -290,10 +292,10 @@ ident_list:           IDENT                         {$$=alloc_list(alloc_ident($
 /* statements... to be worked on later */
 statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
                 | label_stmnt                               {$$=$1;}
-                // | compound_stmnt                            {}
-                // | selec_stmnt                               {}
-                // | loop_stmnt                                {}
-                // | jmp_stmnt                                 {}
+                | compound_stmnt                            {}
+                | select_stmnt                              {}
+                | iterat_stmnt                              {}
+                | jump_stmnt                                 {}
                 ;
 
 expr_stmnt:       expr ';'                                  {$$=$1;}
@@ -301,6 +303,26 @@ expr_stmnt:       expr ';'                                  {$$=$1;}
 label_stmnt:      IDENT ':' statement                       {$$=$3;}
                 | CASE const_expr ':' statement             {$$=$4;}
                 | DEFAULT ':' statement                     {$$=$3;}
+                ;
+
+select_stmnt:     IF '(' expr ')' statement                 {$$=astnode_alloc(AST_IDENT);} 
+                | IF '(' expr ')' ELSE statement            {$$=astnode_alloc(AST_IDENT);}         
+                | SWITCH '(' expr ')' statement             {$$=astnode_alloc(AST_IDENT);}     
+                ;
+
+iterat_stmnt:     WHILE '(' expr ')' statement                             {$$=astnode_alloc(AST_IDENT);} 
+                | DO statement WHILE '(' expr ')'  ';'                     {$$=astnode_alloc(AST_IDENT);}         
+                | FOR '(' expr_opt ';' expr_opt ';' expr_opt ')' statement {$$=astnode_alloc(AST_IDENT);}                             
+                | FOR '(' declaration expr_opt ';' expr_opt ')' statement  {$$=astnode_alloc(AST_IDENT);}                             
+                ;
+expr_opt:           expr            {$$=$1;}
+                | /* empty */       {$$=NULL;}
+                ;
+
+jump_stmnt:       GOTO IDENT ';'                        {$$=astnode_alloc(AST_IDENT);}         
+                | CONTINUE ';'                          {$$=astnode_alloc(AST_IDENT);}      
+                | BREAK ';'                             {$$=astnode_alloc(AST_IDENT);}  
+                | RETURN expr_opt ';'                   {$$=astnode_alloc(AST_IDENT);}              
                 ;
 
 expr:             assign_expr                               {$$=$1;}
@@ -409,6 +431,5 @@ int main(){
     curr_scope = sym_tab_create(SCOPE_GLOBAL);
 
     yyparse();
-    // print_sym(curr_scope);
     return 1;
 }
