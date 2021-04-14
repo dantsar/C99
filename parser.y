@@ -99,8 +99,9 @@ translation_unit:     extern_declaration                                {print_s
                     | translation_unit extern_declaration               {print_sym(curr_scope);}
                     ;
 
-extern_declaration:   declaration                                       {sym_declaration($1->declaration.qualif, $1->declaration.declaration, curr_scope);}
-                    | func_def                                          {}
+extern_declaration:   declaration                                       {sym_declaration($1, curr_scope);}
+                    | func_def                                          {sym_func_def($1, curr_scope);}
+                                                                                     
                     ;
 
 declaration:      declaration_specs ';'                         {yyerror("Empty Declaration");}
@@ -148,10 +149,9 @@ type_qualif:          CONST                                     {$$=alloc_decl_s
 func_spec:            INLINE                                    {$$=alloc_decl_spec(FUNC_INLINE);}       
                     ;
 
-struct_union_spec:    struct_union '{' struct_declaration_list '}'              {$$=$1; sym_struct_define($1, $3); /* print_ast($3); */}
+struct_union_spec:    struct_union '{' struct_declaration_list '}'              {$$=$1; sym_struct_define($1, $3);}
                     | struct_union IDENT '{' struct_declaration_list '}'        {$$=$1; 
                                                                                  sym_struct_define($1, $4);
-                                                                                //  fprintf(stdout, "STRUCT NAME %s\n", $2);
                                                                                  sym_struct_declare($2, $1, curr_scope);
                                                                                 } 
                     | struct_union IDENT                                        { SYM_ENT temp = alloc_sym_ent($2, ENT_SU_TAG, NS_SU);
@@ -254,7 +254,12 @@ param_declaration:    declaration_specs decl                    {$$=alloc_declar
 //                         ;
 
 /* manually change compound scope from block to func */
-func_def:                 declaration_specs decl compound_stmnt                     {sym_func_def($1, $2, $3);}
+func_def:                 declaration_specs decl compound_stmnt                     {$$=$2->list.elem;
+                                                                                     $$->func.ret = list_append($1, $2);
+                                                                                     $$->func.ret = $$->func.ret->list.next;
+                                                                                     $$->func.block = $3;
+                                                                                     $$->func.block->comp.type = SCOPE_FUNC;
+                                                                                    }
                         | declaration_specs decl declaration_list compound_stmnt    {yyerror("not handling old c style function definitions :'("); exit(-1);}
                         ;
 declaration_list:         declaration
@@ -262,14 +267,14 @@ declaration_list:         declaration
                         ;
 
 compound_stmnt:           '{' '}'                   {$$=alloc_compound(NULL, NULL);}
-                        | '{' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list {curr_scope=sym_tab_pop(curr_scope);} '}'   {$$=alloc_compound($3, curr_scope);}
+                        | '{' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list  '}'   {print_sym(curr_scope); $$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
                         ;
 
 block_item_list:          block_item                    {$$=alloc_list($1);}
                         | block_item_list block_item    {$$=list_append_elem($2, $1);}
                         ;
 
-block_item:               declaration                   {$$=$1;}
+block_item:               declaration                   {$$=$1; sym_declaration($1, curr_scope);}
                         | statement                     {$$=$1;}
                         ;
 

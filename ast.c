@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+
 #include "def.h"
 #include "ast.h"
 
@@ -178,7 +180,6 @@ ASTNODE alloc_st_un(int type, int scope){
     ret->st_un.def_complete = false;
     return ret; 
 }
-
 
 ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab){
     ASTNODE ret = astnode_alloc(AST_COMPOUND);
@@ -420,19 +421,24 @@ void print_ast(ASTNODE ast){
             print_sym(ast->st_un.mini_tab);
             break;
         case AST_FUNC:
-            fprintf(stdout, "AST_FUNC\n");
+            fprintf(stdout, "function: %s\n", ast->func.name->ident.ident);
             break;
         case AST_COMPOUND:
-            fprintf(stdout, "AST_COMPOUND\n");
-            ASTNODE stmnts = ast->comp.states;
-            while(stmnts != NULL){
+            // fprintf(stdout, "AST_COMPOUND\n");
+            if(ast->comp.states == NULL){ 
+                fprintf(stdout, "empty block");
+                return;
+            }
+            temp = ast->comp.states;
+            while(temp != NULL){
                 indent(space);
-                print_ast(stmnts->list.elem);
+                print_ast(temp->list.elem);
                 putchar('\n');
-                stmnts = stmnts->list.next;
+                temp = temp->list.next;
             }
             break;
         case AST_DECLARATION: /* for debugging */
+            // fprintf(stdout, "AST_DECLARATION\n");
             fprintf(stdout, "qualif\n");
             indent(space); print_ast(ast->declaration.qualif); 
             fprintf(stdout, "\ndeclaration\n");

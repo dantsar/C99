@@ -83,10 +83,10 @@ void print_sym_ent(SYM_ENT ent);
 SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);
 // SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident);
 
-void sym_declaration(ASTNODE type, ASTNODE vars, SYM_TAB tab);
+void sym_declaration(ASTNODE declaration, SYM_TAB tab);
 void sym_struct_define(ASTNODE st_un, ASTNODE decl_list);
 void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab);
-void sym_func_def(ASTNODE specs, ASTNODE decl, ASTNODE comp_stmnt);
+void sym_func_def(ASTNODE func_def, SYM_TAB tab);
 
 /* variable attributes */
 struct var_att{
@@ -101,8 +101,7 @@ struct func_att{
     int stg_class;
     bool inline_spec;
     bool def_seen;
-    ASTNODE ret_type;
-    ASTNODE body;
+    ASTNODE func_def;
 };
 
 struct struct_union_tag{

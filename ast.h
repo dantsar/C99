@@ -163,6 +163,7 @@ struct astnode_func{
     ASTNODE name; /* ASTNODE ident */
     ASTNODE ret;
     ASTNODE args; /* list of arguments */
+    ASTNODE block;
     SYM_TAB sym;  /* associated symbol table */
 };
 

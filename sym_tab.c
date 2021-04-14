@@ -109,8 +109,10 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns)
  * and enteres the variables into the symbol table. This function takes two lists
  * type: list of decl_specs|| var_list: list of decalrators 
  */
-void sym_declaration(ASTNODE type, ASTNODE var_list, SYM_TAB tab)
+void sym_declaration(ASTNODE declaration, SYM_TAB tab)
 {
+    ASTNODE type = declaration->declaration.qualif;
+    ASTNODE var_list = declaration->declaration.declaration;
     ASTNODE ptr_chain, var;
     while(var_list != NULL)
     {
@@ -139,7 +141,6 @@ void sym_declaration(ASTNODE type, ASTNODE var_list, SYM_TAB tab)
 
         SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
         ent->var.type = ptr_chain;
-        // ent->val = ptr_chain;
         if(!sym_enter(tab, ent)){
             yyerror("error: redeclaration of variable\n");
             exit(-1);
@@ -160,13 +161,10 @@ void sym_struct_define(ASTNODE st_un, ASTNODE decl_list)
         declaration = decl_list->list.elem->declaration.declaration;
 
         /* TO DO: in sym_declaration make sure to figure out the symbol table and enter the appropriate namespace */
-        sym_declaration(qualif, declaration, st_un->st_un.mini_tab);
+        sym_declaration(alloc_declaration(qualif, declaration), st_un->st_un.mini_tab);
 
         decl_list = decl_list->list.next;
     }
-    /* debugging */
-    // fprintf(stdout, "\nprinting symbol table\n");
-    // print_sym(st_un->st_un.mini_tab);
 }
 
 void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
@@ -182,14 +180,22 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
 
 }
 
-void sym_func_def(ASTNODE specs, ASTNODE decl, ASTNODE comp_stmnt){
-    fprintf(stdout, "func def specs\n");
-    print_ast(specs);
-    fprintf(stdout, "func def decl\n");
-    print_ast(decl);
-    fprintf(stdout, "func def comp_stmnt\n");
-    print_ast(comp_stmnt);
-    exit(-1);
+void sym_func_def(ASTNODE func_def, SYM_TAB tab){
+    if(tab->scope_type != SCOPE_GLOBAL){
+        yyerror("function definition not in global scope");
+        exit(-1);
+    }
+
+    SYM_ENT ent = alloc_sym_ent(func_def->func.name->ident.ident, ENT_FUNC, NS_MISC);
+    ent->func.stg_class = STG_EXTERN;
+    ent->func.def_seen = true;
+    ent->func.inline_spec = false;
+    ent->func.func_def = func_def;
+    
+    if(!sym_enter(tab, ent)){
+        yyerror("error: redeclaration of variable\n");
+        exit(-1);
+    }
 
 }
 
@@ -198,6 +204,17 @@ void sym_func_def(ASTNODE specs, ASTNODE decl, ASTNODE comp_stmnt){
 
 void print_sym(SYM_TAB sym)
 {
+    switch(sym->scope_type){
+        case SCOPE_GLOBAL:
+            fprintf(stdout, "SCOPE_GLOBAL\n");
+            break;
+        case SCOPE_FUNC:
+            fprintf(stdout, "SCOPE_FUNC\n");
+            break;
+        case SCOPE_BLOCK:
+            fprintf(stdout, "SCOPE_BLOCK\n");
+            break;
+    };
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
         fprintf(stdout, "%s:%d ", temp->entry->filename, temp->entry->lineno);
@@ -227,6 +244,16 @@ void print_sym_ent(SYM_ENT ent)
             print_ast(ent->su_tag.st_un);
             putchar('\n');
             break;
+        case ENT_FUNC:
+            print_ast(ent->func.func_def);
+            fprintf(stdout,"\nreturns:\n");
+            print_ast(ent->func.func_def->func.ret);
+            fprintf(stdout,"\ntaking args:\n");
+            print_ast(ent->func.func_def->func.args);
+            fprintf(stdout, "\nwith body:\n");
+            print_ast(ent->func.func_def->func.block);
+            break;
+
     }
 
 }
