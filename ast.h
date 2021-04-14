@@ -28,6 +28,7 @@ enum AST_TYPE{
     AST_LIST,
     AST_DECLARATION,
     AST_DECL_SPEC,
+    AST_COMPOUND
 };
 
 /* enum for binary types in ast */
@@ -63,8 +64,9 @@ ASTNODE alloc_scalar(int type);
 ASTNODE alloc_ptr(ASTNODE ptr_to);
 ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
 ASTNODE alloc_st_un(int type, int scope);
+ASTNODE alloc_func(ASTNODE name, ASTNODE param_list);
 
-// ASTNODE alloc_func(ASTNODE ret, ASTNODE args);
+ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab);
 
 ASTNODE last_ptr(ASTNODE ptr_chain);
 ASTNODE list_to_ptr_chain(ASTNODE list);
@@ -158,9 +160,10 @@ struct astnode_st_un{
 };
 
 struct astnode_func{
+    ASTNODE name; /* ASTNODE ident */
     ASTNODE ret;
-    ASTNODE args;
-    SYM_TAB sym;
+    ASTNODE args; /* list of arguments */
+    SYM_TAB sym;  /* associated symbol table */
 };
 
 struct astnode_list{
@@ -175,6 +178,13 @@ struct astnode_declaration{
 
 struct astnode_decl_spec{
     int decl_spec;
+};
+
+struct astnode_compound{
+    /* basically just a list of expressions */
+    ASTNODE states;
+    int type; /* block scope or function scope */
+    SYM_TAB tab;
 };
 
 struct astnode{
@@ -200,6 +210,9 @@ struct astnode{
         struct astnode_array        array;
         struct astnode_func         func;
         struct astnode_st_un        st_un; /* struct_union */
+        
+        /* statements */
+        struct astnode_compound     comp;
 
     };
 };

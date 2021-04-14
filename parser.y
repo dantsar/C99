@@ -65,17 +65,17 @@ void yyerror(const char*);
 
 /* expressions */
 %type<astnode_p>    expr
-// %type<astnode_p>    const_expr 
+%type<astnode_p>    const_expr 
 %type<astnode_p>    assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr //func_call
 
 /* declarations */
 /* delc: declarator */
-%type<astnode_p>    declaration 
+%type<astnode_p>    declaration declaration_list 
 %type<astnode_p>    declaration_specs init_decl_list 
 %type<astnode_p>    decl direct_decl
 %type<astnode_p>    init_decl
 %type<astnode_p>    pointer
-%type<astnode_p>    param_type_list param_list param_declaration abstract_decl direct_abstract_decl 
+%type<astnode_p>    param_type_list param_list param_declaration //abstract_decl direct_abstract_decl 
 %type<astnode_p>    ident_list
 %type<astnode_p>    stg_class_spec type_spec declaration_spec  
 %type<astnode_p>    func_spec type_qualif
@@ -83,26 +83,28 @@ void yyerror(const char*);
 %type<astnode_p>    struct_decl_list struct_decl
 
 /* statements */
-// %type<astnode_p>    statement expr_stmnt
-// %type<astnode_p>    label_stmnt //compound_stmnt selec_stmnt loop_stmnt jmp_stmnt
+%type<astnode_p>    block_item block_item_list
+%type<astnode_p>    statement expr_stmnt
+%type<astnode_p>    label_stmnt compound_stmnt //selec_stmnt loop_stmnt jmp_stmnt
+
 
 /* External Definitions */
-%type<astnode_p>    translation_unit extern_declaration //func_def
+%type<astnode_p>    translation_unit extern_declaration func_def
 // %type<astode_p>     decl_list
 
 
 %%
 
-translation_unit:     extern_declaration                                {} 
-                    | translation_unit extern_declaration               {}
+translation_unit:     extern_declaration                                {print_sym(curr_scope);} 
+                    | translation_unit extern_declaration               {print_sym(curr_scope);}
                     ;
 
-extern_declaration:   declaration                                       {print_sym(curr_scope);}
-                    // | func_def                                       {}
+extern_declaration:   declaration                                       {sym_declaration($1->declaration.qualif, $1->declaration.declaration, curr_scope);}
+                    | func_def                                          {}
                     ;
 
 declaration:      declaration_specs ';'                         {yyerror("Empty Declaration");}
-                | declaration_specs init_decl_list ';'          {sym_declaration($1, $2, curr_scope);}
+                | declaration_specs init_decl_list ';'          {$$=alloc_declaration($1, $2);}
                 ;   
 
 /* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
@@ -149,6 +151,7 @@ func_spec:            INLINE                                    {$$=alloc_decl_s
 struct_union_spec:    struct_union '{' struct_declaration_list '}'              {$$=$1; sym_struct_define($1, $3); /* print_ast($3); */}
                     | struct_union IDENT '{' struct_declaration_list '}'        {$$=$1; 
                                                                                  sym_struct_define($1, $4);
+                                                                                //  fprintf(stdout, "STRUCT NAME %s\n", $2);
                                                                                  sym_struct_declare($2, $1, curr_scope);
                                                                                 } 
                     | struct_union IDENT                                        { SYM_ENT temp = alloc_sym_ent($2, ENT_SU_TAG, NS_SU);
@@ -206,9 +209,14 @@ direct_decl:      IDENT                                         {$$=alloc_list(a
                 | '(' decl ')'                                  {$$=$2; /* fprintf(stdout, "PAREN\n"); print_ast($$); */}
                 | direct_decl '[' constant ']'                  {$$=list_append_elem(alloc_array(NULL,$3), $1);}
                 | direct_decl '[' ']'                           {yyerror("not supporting variable length arrays");exit(-1);}
-                | direct_decl '(' param_type_list ')'   /* func */
-                | direct_decl '(' ident_list ')'        {fprintf(stdout, "func paren\n");}/* func */
-                | direct_decl '(' ')'                   /* func */
+
+                | direct_decl '(' param_type_list ')'           { /* replace the first element(IDENT) with a ast_func */
+                                                                 $$=alloc_list(alloc_func($1->list.elem, $3));
+                                                                 $$->list.next = $1->list.next;
+                                                                 free($1); /* SOME semblance of memory managment :^) */
+                                                                }
+                | direct_decl '(' ident_list ')'                {yyerror("Not supporting old c style function definitons :'("); exit(-1);}/* func */
+                | direct_decl '(' ')'                           {yyerror("please define your funciton"); exit(-1);} /* error for now */
                 ;
 
 /* ignoring type qualifieres, but support in grammar */
@@ -222,31 +230,51 @@ param_type_list:      param_list                                {}
                     | param_list ',' ELLIPSIS                   {}
                     ;
 
-param_list:           param_declaration                         {}
-                    | param_list ',' param_declaration          {}
+param_list:           param_declaration                         {$$=alloc_list($1);}
+                    | param_list ',' param_declaration          {$$=list_append_elem($3, $1);}
                     ;
 
-param_declaration:    declaration_specs decl
-                    | declaration_specs 
-                    | declaration_specs abstract_decl
+param_declaration:    declaration_specs decl                    {$$=alloc_declaration($1, $2);}
+                    | declaration_specs                         {yyerror("incomplete definition");}
+                    // | declaration_specs abstract_decl
                     ;
 
-abstract_decl:        pointer
-                    | pointer direct_abstract_decl
-                    | direct_abstract_decl
-                    ;
+// abstract_decl:        pointer
+//                     | pointer direct_abstract_decl
+//                     | direct_abstract_decl
+//                     ;
 
-direct_abstract_decl:     '(' abstract_decl ')'                 {fprintf(stdout, "ABSTRACT DECL"); $$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
-                        |  '[' ']'                              {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
-                        |  '[' constant ']'                     {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
-                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
-                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
-                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
-                        // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+// direct_abstract_decl:     '(' abstract_decl ')'                 {fprintf(stdout, "ABSTRACT DECL"); $$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+//                         |  '[' ']'                              {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+//                         |  '[' constant ']'                     {$$=alloc_ident("TESTTESTTEST"); /* PLACE HOLDER FOR NOW!!!*/}
+//                         // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+//                         // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+//                         // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+//                         // |  direct_abstract_decl '[' type_qualif_list assign_expr ']'direct_abstract_decl
+//                         ;
+
+/* manually change compound scope from block to func */
+func_def:                 declaration_specs decl compound_stmnt                     {sym_func_def($1, $2, $3);}
+                        | declaration_specs decl declaration_list compound_stmnt    {yyerror("not handling old c style function definitions :'("); exit(-1);}
+                        ;
+declaration_list:         declaration
+                        | declaration_list declaration
                         ;
 
-ident_list:           IDENT                         {$$=alloc_ident("TESTTESTTEST");} /* alloc_list */
-                    | ident_list ',' IDENT          {$$=alloc_ident("TESTTESTTEST");} /* list_append_tail */
+compound_stmnt:           '{' '}'                   {$$=alloc_compound(NULL, NULL);}
+                        | '{' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list {curr_scope=sym_tab_pop(curr_scope);} '}'   {$$=alloc_compound($3, curr_scope);}
+                        ;
+
+block_item_list:          block_item                    {$$=alloc_list($1);}
+                        | block_item_list block_item    {$$=list_append_elem($2, $1);}
+                        ;
+
+block_item:               declaration                   {$$=$1;}
+                        | statement                     {$$=$1;}
+                        ;
+
+ident_list:           IDENT                         {$$=alloc_list(alloc_ident($1));} /* alloc_list */
+                    | ident_list ',' IDENT          {$$=list_append_elem(alloc_ident($3), $1);} /* list_append_tail */
                     ;
 
 // type_name:            specific_qualif_list 
@@ -254,27 +282,22 @@ ident_list:           IDENT                         {$$=alloc_ident("TESTTESTTES
 //                     ;
 
 
-// /* statements... to be worked on later */
-// statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
-//                 | label_stmnt                               {$$=$1;}
-//                 // | compound_stmnt                            {}
-//                 // | selec_stmnt                               {}
-//                 // | loop_stmnt                                {}
-//                 // | jmp_stmnt                                 {}
-//                 ;
+/* statements... to be worked on later */
+statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
+                | label_stmnt                               {$$=$1;}
+                // | compound_stmnt                            {}
+                // | selec_stmnt                               {}
+                // | loop_stmnt                                {}
+                // | jmp_stmnt                                 {}
+                ;
 
-// expr_stmnt:       expr ';'                                  {$$=$1;}
+expr_stmnt:       expr ';'                                  {$$=$1;}
 
-// label_stmnt:      IDENT ':' statement                       {$$=$3;}
-//                 | CASE const_expr ':' statement             {$$=$4;}
-//                 | DEFAULT ':' statement                     {$$=$3;}
-//                 ;
+label_stmnt:      IDENT ':' statement                       {$$=$3;}
+                | CASE const_expr ':' statement             {$$=$4;}
+                | DEFAULT ':' statement                     {$$=$3;}
+                ;
 
-
-// /* old stuff going to delete later
-// //                   expr ';'                                  {print_ast($1); putchar('\n');}
-// //                 | statement expr ';'                        {print_ast($2); putchar('\n');}
-// */
 expr:             assign_expr                               {$$=$1;}
                 | expr ',' assign_expr                      {$$=alloc_binary(BINOP, $1, ',', $3);}
                 ;
@@ -308,8 +331,8 @@ unary_expr:       postfix_expr                              {$$=$1;}
                 | '!' cast_expr                             {$$=alloc_unary('!',$2);}
                 ;
 
-// const_expr:       cond_expr                                 {$$=$1;}
-//                 ;
+const_expr:       cond_expr                                 {$$=$1;}
+                ;
 
 cond_expr:        arith_expr                                {$$=$1;}
                 | arith_expr '?' expr ':' cond_expr         {$$=alloc_ternary($1, $3, $5);}

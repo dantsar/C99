@@ -4,7 +4,7 @@
 
 #include "sym_tab.h"
 
-extern SYM_TAB curr_scope;
+// extern SYM_TAB curr_scope;
 extern char filename[256];
 extern int lineno;
 extern void yyerror(const char* msg);
@@ -20,15 +20,17 @@ void sym_tab_destroy(SYM_TAB sym_tab){
     free(sym_tab);
 }
 
-// SYM_TAB sym_push(SYM_TAB stack, SYM_TAB sym){
 
+SYM_TAB sym_tab_push(int scope_type, SYM_TAB sym_tab){
+    SYM_TAB new_tab = sym_tab_create(scope_type);
+    new_tab->next = sym_tab;
+    return new_tab;
+}
 
-// }
-
-// SYM_TAB sym_pop(SYM_TAB stack){
-
-
-// }
+SYM_TAB sym_tab_pop(SYM_TAB stack){
+    /* free current scope? ... probably not... */
+    return stack->next;
+}
 
 bool sym_ent_compare(SYM_ENT ent1, SYM_ENT ent2)
 {
@@ -95,8 +97,9 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns)
     ret->namespace = ent_ns;
     ret->att_type = ent_type;
 
-    ret->filename = malloc(strlen(filename));
-    strcpy(filename, ret->filename);
+    ret->filename = strdup(filename);
+    // ret->filename = malloc(strlen(filename));
+    // strcpy(filename, ret->filename);
     ret->lineno = lineno;
     return ret;
 }
@@ -170,6 +173,7 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
 {
     st_un->st_un.name = name;
     SYM_ENT ent = alloc_sym_ent(name, ENT_SU_TAG, NS_SU);
+    ent->name = name;
     ent->su_tag.st_un = st_un;
     if(!sym_enter(tab, ent)){
         yyerror("error: redeclaration of variable\n");
@@ -178,22 +182,30 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
 
 }
 
-void print_sym_stack(SYM_TAB curr_scope){
-
-
+void sym_func_def(ASTNODE specs, ASTNODE decl, ASTNODE comp_stmnt){
+    fprintf(stdout, "func def specs\n");
+    print_ast(specs);
+    fprintf(stdout, "func def decl\n");
+    print_ast(decl);
+    fprintf(stdout, "func def comp_stmnt\n");
+    print_ast(comp_stmnt);
+    exit(-1);
 
 }
+
+// void print_sym_stack(SYM_TAB curr_scope){
+// }
 
 void print_sym(SYM_TAB sym)
 {
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
+        fprintf(stdout, "%s:%d ", temp->entry->filename, temp->entry->lineno);
         print_sym_ent(temp->entry);
         temp = temp->next;
     }
 
 }
-
 
 
 static void indent(int indent){
@@ -202,15 +214,18 @@ static void indent(int indent){
 }
 void print_sym_ent(SYM_ENT ent)
 {
-    static int space = 0;
+    static int space = 1;
 
+    indent(space); fprintf(stdout, "%s:\n", ent->name);
     /* need to fix this to account for the modified enum tags */
     switch(ent->att_type){
         case ENT_VAR:
-            indent(space); fprintf(stdout, "%s:\n", ent->name);
             print_ast(ent->var.type);  /* list should be being passed to print_ast */
             putchar('\n');
-
+            break;
+        case ENT_SU_TAG:
+            print_ast(ent->su_tag.st_un);
+            putchar('\n');
             break;
     }
 

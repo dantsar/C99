@@ -179,6 +179,23 @@ ASTNODE alloc_st_un(int type, int scope){
     return ret; 
 }
 
+
+ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab){
+    ASTNODE ret = astnode_alloc(AST_COMPOUND);
+    ret->comp.states = exprs;
+    ret->comp.type = SCOPE_BLOCK;
+    ret->comp.tab = tab;
+    return ret;
+}
+
+ASTNODE alloc_func(ASTNODE name, ASTNODE param_list){
+    ASTNODE ret = astnode_alloc(AST_FUNC);
+    ret->func.sym = sym_tab_create(SCOPE_FUNC);
+    ret->func.name = name;
+    ret->func.args = param_list;
+    return ret;
+}
+
 /* last ptr/array in chain */
 ASTNODE last_ptr(ASTNODE ptr_chain){
     if(!ptr_chain) return NULL;
@@ -263,7 +280,6 @@ int list_size(ASTNODE list){
     }
     return count;
 }
-
 
 /* going to be put in its own file later */
 static void indent(int indent){
@@ -402,6 +418,19 @@ void print_ast(ASTNODE ast){
             }
             fprintf(stdout, " %s\n", ast->st_un.name);
             print_sym(ast->st_un.mini_tab);
+            break;
+        case AST_FUNC:
+            fprintf(stdout, "AST_FUNC\n");
+            break;
+        case AST_COMPOUND:
+            fprintf(stdout, "AST_COMPOUND\n");
+            ASTNODE stmnts = ast->comp.states;
+            while(stmnts != NULL){
+                indent(space);
+                print_ast(stmnts->list.elem);
+                putchar('\n');
+                stmnts = stmnts->list.next;
+            }
             break;
         case AST_DECLARATION: /* for debugging */
             fprintf(stdout, "qualif\n");
