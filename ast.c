@@ -296,21 +296,11 @@ void print_ast(ASTNODE ast){
     switch(ast->type){
         case AST_UNARY:
             switch(ast->unary.op){
-                case '&':
-                    fprintf(stdout, "ADDRESSOF\n");
-                    break;
-                case '*':
-                    fprintf(stdout, "DEREF\n");
-                    break;
-                case PLUSPLUS:
-                    fprintf(stdout, "POSTINC\n");
-                    break;
-                case MINUSMINUS:
-                    fprintf(stdout, "POSTDEC\n");
-                    break;
-                default:
-                    fprintf(stdout, "UNARY OP %c\n",ast->unary.op);
-                    break;
+                case '&':           fprintf(stdout, "ADDRESSOF\n"); break;
+                case '*':           fprintf(stdout, "DEREF\n"); break;
+                case PLUSPLUS:      fprintf(stdout, "POSTINC\n"); break;
+                case MINUSMINUS:    fprintf(stdout, "POSTDEC\n"); break;
+                default:            fprintf(stdout, "UNARY OP %c\n",ast->unary.op); break;
             }
             indent(++space); print_ast(ast->unary.expr); space--;
             break;
@@ -328,16 +318,12 @@ void print_ast(ASTNODE ast){
             }
             space++;
             indent(space); print_ast(ast->binary.left);
-            // if(ast->binary.right == NULL){--space; return;}
             indent(space); print_ast(ast->binary.right);
             space--;
             break;
         case AST_TERNARY:
             fprintf(stdout, "TERNARY OP, IF:\n");
-
-            indent(++space); 
-            print_ast(ast->ternary.cond); 
-            space--;
+            indent(++space); print_ast(ast->ternary.cond); space--;
 
             indent(space); 
             fprintf(stdout, "THEN:\n");
@@ -411,6 +397,29 @@ void print_ast(ASTNODE ast){
                 indent(++space); print_ast(ast->array.ptr_to); space--;
             }
             break;
+        case AST_DECLARATION: /* for debugging */
+            // fprintf(stdout, "AST_DECLARATION\n");
+            fprintf(stdout, "qualif\n");
+            indent(space); print_ast(ast->declaration.qualif); 
+            fprintf(stdout, "\ndeclaration\n");
+            indent(space); print_ast(ast->declaration.declaration);
+            break;
+        case AST_DECL_SPEC:
+            switch(ast->decl_spec.decl_spec){
+                case TYPE_CHAR:     fprintf(stdout, "char "); break;
+                case TYPE_SHORT:    fprintf(stdout, "short "); break;
+                case TYPE_INT:      fprintf(stdout, "int "); break;
+                case TYPE_LONG:     fprintf(stdout, "long "); break;
+                case TYPE_FLOAT:    fprintf(stdout, "float "); break;
+                case TYPE_DOUBLE:   fprintf(stdout, "double "); break;
+                case TYPE_SIGNED:   fprintf(stdout, "signed "); break;
+                case TYPE_UNSIGNED: fprintf(stdout, "unsigned "); break;
+                case QUALIF_CONST:  fprintf(stdout, "const "); break;
+                case QUALIF_RESTRICT: fprintf(stdout, "restrict "); break;
+                case QUALIF_VOLATILE: fprintf(stdout, "volatile "); break;
+                case FUNC_INLINE:   fprintf(stdout, "inline "); break;
+            }
+            break;
         case AST_ST_UN:
             if(ast->st_un.type == AST_STRUCT){
                 fprintf(stdout, "STRUCT");
@@ -437,52 +446,8 @@ void print_ast(ASTNODE ast){
                 temp = temp->list.next;
             }
             break;
-        case AST_DECLARATION: /* for debugging */
-            // fprintf(stdout, "AST_DECLARATION\n");
-            fprintf(stdout, "qualif\n");
-            indent(space); print_ast(ast->declaration.qualif); 
-            fprintf(stdout, "\ndeclaration\n");
-            indent(space); print_ast(ast->declaration.declaration);
-            break;
-        case AST_DECL_SPEC:
-            switch(ast->decl_spec.decl_spec){
-                case TYPE_CHAR:
-                    fprintf(stdout, "char ");
-                    break;
-                case TYPE_SHORT:
-                    fprintf(stdout, "short ");
-                    break;
-                case TYPE_INT:
-                    fprintf(stdout, "int ");
-                    break;
-                case TYPE_LONG:
-                    fprintf(stdout, "long ");
-                    break;
-                case TYPE_FLOAT:
-                    fprintf(stdout, "float ");
-                    break;
-                case TYPE_DOUBLE:
-                    fprintf(stdout, "double ");
-                    break;
-                case TYPE_SIGNED:
-                    fprintf(stdout, "signed ");
-                    break;
-                case TYPE_UNSIGNED:
-                    fprintf(stdout, "unsigned ");
-                    break;
-                case QUALIF_CONST:
-                    fprintf(stdout, "const ");
-                    break;
-                case QUALIF_RESTRICT:
-                    fprintf(stdout, "restrict ");
-                    break;
-                case QUALIF_VOLATILE:
-                    fprintf(stdout, "volatile ");
-                    break;
-                case FUNC_INLINE:
-                    fprintf(stdout, "inline ");
-                    break;
-            }
+        case AST_IF_STMNT:
+            
             break;
     }
 }

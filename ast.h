@@ -28,7 +28,11 @@ enum AST_TYPE{
     AST_LIST,
     AST_DECLARATION,
     AST_DECL_SPEC,
-    AST_COMPOUND
+    AST_COMPOUND,
+    AST_IF_STMNT,
+    AST_WHILE_STMNT,
+    AST_DO_STMNT,
+    AST_FOR_STMNT,
 };
 
 /* enum for binary types in ast */
@@ -188,6 +192,22 @@ struct astnode_compound{
     SYM_TAB tab;
 };
 
+struct astnode_if_stmnt{
+    ASTNODE cond, stmnt, else_stmnt;
+};
+
+struct astnode_while_stmnt{
+    ASTNODE cond, stmnt;
+};
+
+struct astnode_do_stmnt{
+    ASTNODE cond, stmnt;
+};
+
+struct astnode_for_stmnt{
+    ASTNODE init, cond, update;
+};
+
 struct astnode{
     int type;
     union{
@@ -214,6 +234,10 @@ struct astnode{
         
         /* statements */
         struct astnode_compound     comp;
+        struct astnode_if_stmnt     if_stmnt;
+        struct astnode_while_stmnt  while_stmnt;
+        struct astnode_do_stmnt     do_stmnt;
+        struct astnode_for_stmnt    for_stmnt;
 
     };
 };
