@@ -4,7 +4,6 @@
 
 #include "sym_tab.h"
 
-// extern SYM_TAB curr_scope;
 extern char filename[256];
 extern int lineno;
 extern void yyerror(const char* msg);
@@ -19,7 +18,6 @@ void sym_tab_destroy(SYM_TAB sym_tab){
     /* figure this out later: I have 32G of RAM, so I don't care :^) */
     free(sym_tab);
 }
-
 
 SYM_TAB sym_tab_push(int scope_type, SYM_TAB sym_tab){
     SYM_TAB new_tab = sym_tab_create(scope_type);
@@ -40,7 +38,6 @@ bool sym_ent_compare(SYM_ENT ent1, SYM_ENT ent2)
 
     return false;
 }
-
 
 /* returns the entry in the symbol table if present. ELSE returns NULL */
 SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent)
@@ -143,10 +140,8 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
             yyerror("error: redeclaration of variable\n");
             exit(-1);
         }
-
         var_list = var_list->list.next;
     }
-
 }
 
 void sym_struct_define(ASTNODE st_un, ASTNODE decl_list)
@@ -160,7 +155,6 @@ void sym_struct_define(ASTNODE st_un, ASTNODE decl_list)
 
         /* TO DO: in sym_declaration make sure to figure out the symbol table and enter the appropriate namespace */
         sym_declaration(alloc_declaration(qualif, declaration), st_un->st_un.mini_tab);
-
         decl_list = decl_list->list.next;
     }
 }
@@ -175,7 +169,6 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
         yyerror("error: redeclaration of variable\n");
         exit(-1);
     }
-
 }
 
 void sym_func_def(ASTNODE func_def, SYM_TAB tab){
@@ -194,64 +187,4 @@ void sym_func_def(ASTNODE func_def, SYM_TAB tab){
         yyerror("error: redeclaration of variable\n");
         exit(-1);
     }
-
-}
-
-// void print_sym_stack(SYM_TAB curr_scope){
-// }
-
-void print_sym(SYM_TAB sym)
-{
-    switch(sym->scope_type){
-        case SCOPE_GLOBAL:
-            fprintf(stdout, "SCOPE_GLOBAL\n");
-            break;
-        case SCOPE_FUNC:
-            fprintf(stdout, "SCOPE_FUNC\n");
-            break;
-        case SCOPE_BLOCK:
-            fprintf(stdout, "SCOPE_BLOCK\n");
-            break;
-    };
-    SYM_ENT_LL temp = sym->ent_ll;
-    while(temp != NULL){
-        fprintf(stdout, "%s:%d ", temp->entry->filename, temp->entry->lineno);
-        print_sym_ent(temp->entry);
-        temp = temp->next;
-    }
-
-}
-
-
-static void indent(int indent){
-    for(int i = 0; i < indent*2; i++)
-        putchar(' ');
-}
-void print_sym_ent(SYM_ENT ent)
-{
-    static int space = 1;
-
-    indent(space); fprintf(stdout, "%s:\n", ent->name);
-    /* need to fix this to account for the modified enum tags */
-    switch(ent->att_type){
-        case ENT_VAR:
-            print_ast(ent->var.type);  /* list should be being passed to print_ast */
-            putchar('\n');
-            break;
-        case ENT_SU_TAG:
-            print_ast(ent->su_tag.st_un);
-            putchar('\n');
-            break;
-        case ENT_FUNC:
-            print_ast(ent->func.func_def);
-            fprintf(stdout,"\nreturns:\n");
-            print_ast(ent->func.func_def->func.ret);
-            fprintf(stdout,"\ntaking args:\n");
-            print_ast(ent->func.func_def->func.args);
-            fprintf(stdout, "\nwith body:\n");
-            print_ast(ent->func.func_def->func.block);
-            break;
-
-    }
-
 }

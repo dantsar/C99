@@ -29,7 +29,10 @@ ast.o: ast.h ast.c sym_tab.h
 sym_tab.o: sym_tab.c sym_tab.h
 	$(CC) $(CFLAGS) -c -o sym_tab.o sym_tab.c
 
-parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o
+parser_print.o: parser_print.c parser_print.h
+	$(CC) $(CFLAGS) -c -o parser_print.o parser_print.c
+
+parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o parser_print.o
 	$(CC) $(CFLAGS) -o parser $^
 
 clean: 

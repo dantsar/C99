@@ -5,6 +5,7 @@
 #include "def.h"
 #include "sym_tab.h"
 #include "ast.h"
+#include "parser.tab.h"
 
 /* stuff from lex */
 extern int yylex();
