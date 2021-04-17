@@ -8,34 +8,14 @@
 
 /* Abstract Symbol Table node types */
 enum AST_TYPE{ 
-    AST_UNARY=0, 
-    AST_BINARY, 
-    AST_TERNARY, 
-    AST_IDENT, 
-    AST_NUM, 
-    AST_SIZEOF, 
-    AST_FNCALL, 
-    AST_CHARLIT, 
-    AST_STRING, 
-    AST_SELECT,
-    AST_SCALAR,
-    AST_PTR,
-    AST_ARRAY,
-    AST_STRUCT,
-    AST_UNION,
-    AST_ST_UN, /* used for print_ast to save some space */
-    AST_FUNC,
-    AST_LIST,
-    AST_DECLARATION,
-    AST_DECL_SPEC,
-    AST_COMPOUND,
-    AST_SELECT_STMNT,
-    AST_IF_STMNT,
-    AST_SWITCH_STMNT,
-    AST_ITERAT_STMNT,
-    AST_DO_STMNT, 
-    AST_WHILE_STMNT, 
-    AST_FOR_STMNT
+    AST_UNARY=0, AST_BINARY, AST_TERNARY, AST_IDENT, AST_NUM, AST_SIZEOF, 
+    AST_FNCALL, AST_CHARLIT, AST_STRING, AST_SELECT,
+    AST_SCALAR, AST_PTR, AST_ARRAY, AST_ST_UN, AST_STRUCT, AST_UNION, 
+    AST_FUNC, AST_LIST, AST_DECLARATION, AST_DECL_SPEC, AST_COMPOUND, AST_SELECT_STMNT,
+    AST_IF_STMNT, AST_SWITCH_STMNT, AST_ITERAT_STMNT,
+    AST_DO_STMNT, AST_WHILE_STMNT, AST_FOR_STMNT,
+    AST_LABEL_STMNT, AST_LABEL, AST_LABEL_CASE, AST_LABEL_DEFAULT,
+    AST_JUMP_STMNT, AST_GOTO, AST_CONTINUE, AST_BREAK, AST_RETURN
 };
 
 /* enum for binary types in ast */
@@ -77,8 +57,10 @@ ASTNODE alloc_func(ASTNODE name, ASTNODE param_list);
 
 /* new functions for assignment 4 */
 ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab);
-ASTNODE alloc_label_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt);
+ASTNODE alloc_select_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt);
 ASTNODE alloc_iterat_stmnt(int type, ASTNODE cont, ASTNODE stmnt, ASTNODE init, ASTNODE update);
+ASTNODE alloc_label_stmnt(int type, ASTNODE stmnt, char* label, ASTNODE cond);
+ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr);
 
 struct astnode_unary{
     int op;
@@ -195,7 +177,7 @@ struct astnode_compound{
     SYM_TAB tab;
 };
 
-struct astnode_label_stmnt{
+struct astnode_select_stmnt{
     int type; /* either an AST_IF_STMNT or AST_SWITCH_STMNT */
     ASTNODE cond, then, else_stmnt;
 };
@@ -203,8 +185,21 @@ struct astnode_label_stmnt{
 struct astnode_iterat_stmnt{
     int type; /* three types AST_DO_STMNT, AST_WHILE_STMNT, AST_FOR_STMNT */
     ASTNODE cond, stmnt;
-    /* only present for for-loops */
+    /* only used for for-loops */
     ASTNODE init, update;
+};
+
+struct astnode_label_stmnt{
+    int type;
+    ASTNODE stmnt; 
+    char* label; /* used for goto labels(meant store ident) */
+    ASTNODE cond; /* used for case */
+};
+
+struct astnode_jump_stmnt{
+    int type;
+    char* goto_label;
+    ASTNODE ret_expr;
 };
 
 
@@ -234,8 +229,10 @@ struct astnode{
         
         /* statements */
         struct astnode_compound     comp;
-        struct astnode_label_stmnt  select_stmnt;
+        struct astnode_select_stmnt select_stmnt;
         struct astnode_iterat_stmnt iterat_stmnt;
+        struct astnode_label_stmnt  label_stmnt;
+        struct astnode_jump_stmnt   jump_stmnt;
     };
 };
 

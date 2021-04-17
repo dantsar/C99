@@ -283,7 +283,7 @@ ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab){
     return ret;
 }
 
-ASTNODE alloc_label_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt){
+ASTNODE alloc_select_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt){
     ASTNODE ret = astnode_alloc(AST_SELECT_STMNT);
     ret->select_stmnt.type = type;
     ret->select_stmnt.cond = cond;
@@ -302,6 +302,23 @@ ASTNODE alloc_iterat_stmnt(int type, ASTNODE cond, ASTNODE stmnt, ASTNODE init, 
     return ret;
 }
 
+ASTNODE alloc_label_stmnt(int type, ASTNODE stmnt, char* label, ASTNODE cond){
+    ASTNODE ret = astnode_alloc(AST_LABEL_STMNT);
+    ret->label_stmnt.type = type;
+    ret->label_stmnt.stmnt = stmnt;
+    ret->label_stmnt.label = label; 
+    ret->label_stmnt.cond = cond;
+    return ret;
+}
+
+ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr){
+    ASTNODE ret = astnode_alloc(AST_JUMP_STMNT);
+    ret->jump_stmnt.type = type;
+    ret->jump_stmnt.goto_label = label;
+    ret->jump_stmnt.ret_expr = ret_expr;
+    return ret;
+}
+
 /* going to be put in its own file later */
 static void indent(int indent){
     for(int i = 0; i < indent*2; i++){
@@ -311,9 +328,11 @@ static void indent(int indent){
 
 void print_ast(ASTNODE ast){
     /* int for storing indentation in the output */
+    if(ast == NULL) return;
     static int space = 0;
     ASTNODE temp;
     char* temp_str;
+
     switch(ast->type){
         case AST_UNARY:
             switch(ast->unary.op){
@@ -503,6 +522,42 @@ void print_ast(ASTNODE ast){
                     indent(++space); print_ast(ast->iterat_stmnt.cond); space--;
                     indent(space); fprintf(stdout, "UPDATE:\n"); 
                     indent(++space); print_ast(ast->iterat_stmnt.update); space--;
+                    indent(space); fprintf(stdout, "BODY:\n"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.stmnt); space--;
+                    break;
+            }
+            break;
+        case AST_LABEL_STMNT:
+            switch(ast->label_stmnt.type){
+                case AST_LABEL:
+                    fprintf(stdout, "LABEL(%s)\n", ast->label_stmnt.label);
+                    indent(++space); print_ast(ast->label_stmnt.stmnt); space--;
+                    break;
+                case AST_LABEL_CASE:
+                    fprintf(stdout, "CASE\n");
+                    indent(++space); print_ast(ast->label_stmnt.cond); space--;
+                    indent(++space); print_ast(ast->label_stmnt.stmnt); space--;
+                    break;
+                case AST_LABEL_DEFAULT:
+                    fprintf(stdout, "DEFAULT\n");
+                    indent(++space); print_ast(ast->label_stmnt.stmnt); space--;
+                    break;
+            }
+            break;
+        case AST_JUMP_STMNT:
+            switch(ast->jump_stmnt.type){
+                case AST_GOTO:
+                    fprintf(stdout, "GOTO (%s)\n", ast->jump_stmnt.goto_label);
+                    break;
+                case AST_CONTINUE:
+                    fprintf(stdout, "CONTINUE\n");
+                    break;
+                case AST_BREAK:
+                    fprintf(stdout, "BREAK\n");
+                    break;
+                case AST_RETURN:
+                    fprintf(stdout, "RETURN\n");
+                    indent(++space); print_ast(ast->jump_stmnt.ret_expr); space--;
                     break;
             }
             break;

@@ -118,7 +118,7 @@ declaration_specs:    declaration_spec                          {$$=alloc_list($
                     ;
 declaration_spec:     stg_class_spec                            {$$=$1;}
                     | type_spec                                 {$$=$1;}
-                    | type_qualif                               {$$=$1;} /* indicate that being ignored */
+                    | type_qualif                               {$$=$1;} /* going to be ignored */
                     | func_spec                                 {$$=$1;}
                     ;
 
@@ -303,14 +303,14 @@ statement:       expr_stmnt                                 {$$=$1;}
 
 expr_stmnt:       expr ';'                                  {$$=$1;}
 
-label_stmnt:      IDENT ':' statement                       {}
-                | CASE const_expr ':' statement             {}
-                | DEFAULT ':' statement                     {}
+label_stmnt:      IDENT ':' statement                       {$$=alloc_label_stmnt(AST_LABEL, $3, $1, NULL);}
+                | CASE const_expr ':' statement             {$$=alloc_label_stmnt(AST_LABEL_CASE, $4, NULL, $2);}
+                | DEFAULT ':' statement                     {$$=alloc_label_stmnt(AST_LABEL_DEFAULT, $3, NULL, NULL);}
                 ;
 
-select_stmnt:     IF '(' expr ')' statement                 {$$=alloc_label_stmnt(AST_IF_STMNT, $3, $5, NULL);} 
-                | IF '(' expr ')' statement ELSE statement  {$$=alloc_label_stmnt(AST_IF_STMNT, $3, $5, $7);}         
-                | SWITCH '(' expr ')' statement             {$$=alloc_label_stmnt(AST_SWITCH_STMNT, $3, $5, NULL);}     
+select_stmnt:     IF '(' expr ')' statement                 {$$=alloc_select_stmnt(AST_IF_STMNT, $3, $5, NULL);} 
+                | IF '(' expr ')' statement ELSE statement  {$$=alloc_select_stmnt(AST_IF_STMNT, $3, $5, $7);}         
+                | SWITCH '(' expr ')' statement             {$$=alloc_select_stmnt(AST_SWITCH_STMNT, $3, $5, NULL);}     
                 ;
 
 iterat_stmnt:     WHILE '(' expr ')' statement                             {$$=alloc_iterat_stmnt(AST_WHILE_STMNT, $3, $5, NULL, NULL);} 
@@ -322,10 +322,11 @@ expr_opt:           expr            {$$=$1;}
                 | /* empty */       {$$=NULL;}
                 ;
 
-jump_stmnt:       GOTO IDENT ';'                        {$$=astnode_alloc(AST_IDENT);}         
-                | CONTINUE ';'                          {$$=astnode_alloc(AST_IDENT);}      
-                | BREAK ';'                             {$$=astnode_alloc(AST_IDENT);}  
-                | RETURN expr_opt ';'                   {$$=astnode_alloc(AST_IDENT);}              
+/* for GOTO ident, if not in sym_tab, enter a forward declartion for the label */
+jump_stmnt:       GOTO IDENT ';'                        {$$=alloc_jump_stmnt(AST_GOTO, $2, NULL);}         
+                | CONTINUE ';'                          {$$=alloc_jump_stmnt(AST_CONTINUE, NULL, NULL);}      
+                | BREAK ';'                             {$$=alloc_jump_stmnt(AST_BREAK, NULL, NULL);}  
+                | RETURN expr_opt ';'                   {$$=alloc_jump_stmnt(AST_RETURN, NULL, $2);}              
                 ;
 
 expr:             assign_expr                               {$$=$1;}
@@ -402,8 +403,8 @@ postfix_expr:     prim_expr                                 {$$=$1;}
                 | postfix_expr '.' IDENT                    {$$=alloc_select($1, $3);}
                 | postfix_expr INDSEL IDENT                 {$$=alloc_unary('*', $1);
                                                                 $$=alloc_select($$, $3);}
-                | postfix_expr '(' ')'                        {$$=alloc_fncall($1, NULL);}
-                | postfix_expr '(' expr ')'                   {$$=alloc_fncall($1, $3);}
+                | postfix_expr '(' ')'                      {$$=alloc_fncall($1, NULL);}
+                | postfix_expr '(' expr ')'                 {$$=alloc_fncall($1, $3);}
                 // | '(' type_name ')' '{' init_list '}'       {/* shtuff */}
                 // | '(' type_name ')' '{' init_list ',' '}'   {/* shtuff */}
                 ;
