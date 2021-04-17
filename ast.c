@@ -128,74 +128,6 @@ ASTNODE alloc_list(ASTNODE elem){
     return ret;
 }
 
-ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl){
-    ASTNODE ret = astnode_alloc(AST_DECLARATION);
-    ret->declaration.declaration = decl;
-    ret->declaration.qualif = qualif;
-    return ret;
-}
-
-ASTNODE alloc_decl_spec(int decl_spec){
-    ASTNODE ret = astnode_alloc(AST_DECL_SPEC);
-    ret->decl_spec.decl_spec = decl_spec;
-    return ret;
-}
-
-/* TO DO: update later to integrate with symbol table */
-ASTNODE alloc_scalar(int type){
-    ASTNODE ret = astnode_alloc(AST_SCALAR);
-    switch(type){
-        case TYPE_SIGNED:
-            ret->scalar.sign = N_SIGNED;
-            break;
-        case TYPE_UNSIGNED: 
-            ret->scalar.sign = N_UNSIGNED;
-            break;
-    };
-    ret->scalar.type = type;
-    return ret;
-}
-
-ASTNODE alloc_ptr(ASTNODE ptr_to){
-    ASTNODE ret = astnode_alloc(AST_PTR);
-    ret->ptr.ptr_to = ptr_to;
-    return ret;
-}
-
-ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
-    ASTNODE ret = astnode_alloc(AST_ARRAY);
-    ret->array.ptr_to = array_of;
-    /* assuming arrays are only defined as constants of unknown */
-    if(size)
-        ret->array.size = size->num.int_num;
-    else 
-        ret->array.size = 0; /* indicates a VLA: this shouldn't be reachable, but just in case */
-    return ret;
-}
-
-ASTNODE alloc_st_un(int type, int scope){
-    ASTNODE ret = astnode_alloc(AST_ST_UN);
-    ret->st_un.type = type;
-    ret->st_un.mini_tab = sym_tab_create(SCOPE_MINI);
-    ret->st_un.def_complete = false;
-    return ret; 
-}
-
-ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab){
-    ASTNODE ret = astnode_alloc(AST_COMPOUND);
-    ret->comp.states = exprs;
-    ret->comp.type = SCOPE_BLOCK;
-    ret->comp.tab = tab;
-    return ret;
-}
-
-ASTNODE alloc_func(ASTNODE name, ASTNODE param_list){
-    ASTNODE ret = astnode_alloc(AST_FUNC);
-    ret->func.sym = sym_tab_create(SCOPE_FUNC);
-    ret->func.name = name;
-    ret->func.args = param_list;
-    return ret;
-}
 
 /* last ptr/array in chain */
 ASTNODE last_ptr(ASTNODE ptr_chain){
@@ -282,6 +214,94 @@ int list_size(ASTNODE list){
     return count;
 }
 
+ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl){
+    ASTNODE ret = astnode_alloc(AST_DECLARATION);
+    ret->declaration.declaration = decl;
+    ret->declaration.qualif = qualif;
+    return ret;
+}
+
+ASTNODE alloc_decl_spec(int decl_spec){
+    ASTNODE ret = astnode_alloc(AST_DECL_SPEC);
+    ret->decl_spec.decl_spec = decl_spec;
+    return ret;
+}
+
+/* TO DO: update later to integrate with symbol table */
+ASTNODE alloc_scalar(int type){
+    ASTNODE ret = astnode_alloc(AST_SCALAR);
+    switch(type){
+        case TYPE_SIGNED:
+            ret->scalar.sign = N_SIGNED;
+            break;
+        case TYPE_UNSIGNED: 
+            ret->scalar.sign = N_UNSIGNED;
+            break;
+    };
+    ret->scalar.type = type;
+    return ret;
+}
+
+ASTNODE alloc_ptr(ASTNODE ptr_to){
+    ASTNODE ret = astnode_alloc(AST_PTR);
+    ret->ptr.ptr_to = ptr_to;
+    return ret;
+}
+
+ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
+    ASTNODE ret = astnode_alloc(AST_ARRAY);
+    ret->array.ptr_to = array_of;
+    /* assuming arrays are only defined as constants of unknown */
+    if(size)
+        ret->array.size = size->num.int_num;
+    else 
+        ret->array.size = 0; /* indicates a VLA: this shouldn't be reachable, but just in case */
+    return ret;
+}
+
+ASTNODE alloc_st_un(int type, int scope){
+    ASTNODE ret = astnode_alloc(AST_ST_UN);
+    ret->st_un.type = type;
+    ret->st_un.mini_tab = sym_tab_create(SCOPE_MINI);
+    ret->st_un.def_complete = false;
+    return ret; 
+}
+
+ASTNODE alloc_func(ASTNODE name, ASTNODE param_list){
+    ASTNODE ret = astnode_alloc(AST_FUNC);
+    ret->func.sym = sym_tab_create(SCOPE_FUNC);
+    ret->func.name = name;
+    ret->func.args = param_list;
+    return ret;
+}
+
+ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab){
+    ASTNODE ret = astnode_alloc(AST_COMPOUND);
+    ret->comp.states = exprs;
+    ret->comp.type = SCOPE_BLOCK;
+    ret->comp.tab = tab;
+    return ret;
+}
+
+ASTNODE alloc_label_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt){
+    ASTNODE ret = astnode_alloc(AST_SELECT_STMNT);
+    ret->select_stmnt.type = type;
+    ret->select_stmnt.cond = cond;
+    ret->select_stmnt.then = then;
+    ret->select_stmnt.else_stmnt = else_stmnt;
+    return ret;
+}
+
+ASTNODE alloc_iterat_stmnt(int type, ASTNODE cond, ASTNODE stmnt, ASTNODE init, ASTNODE update){
+    ASTNODE ret = astnode_alloc(AST_ITERAT_STMNT);
+    ret->iterat_stmnt.type = type;
+    ret->iterat_stmnt.cond = cond;
+    ret->iterat_stmnt.stmnt = stmnt;
+    ret->iterat_stmnt.init = init;
+    ret->iterat_stmnt.update = update;
+    return ret;
+}
+
 /* going to be put in its own file later */
 static void indent(int indent){
     for(int i = 0; i < indent*2; i++){
@@ -293,6 +313,7 @@ void print_ast(ASTNODE ast){
     /* int for storing indentation in the output */
     static int space = 0;
     ASTNODE temp;
+    char* temp_str;
     switch(ast->type){
         case AST_UNARY:
             switch(ast->unary.op){
@@ -446,8 +467,44 @@ void print_ast(ASTNODE ast){
                 temp = temp->list.next;
             }
             break;
-        case AST_IF_STMNT:
-            
+        case AST_SELECT_STMNT:
+            temp_str = (ast->select_stmnt.type == AST_IF_STMNT) ? "IF" : "SWITCH";
+            fprintf(stdout, "%s:\n",temp_str);
+            indent(++space); print_ast(ast->select_stmnt.cond); space--;
+
+            temp_str = (ast->select_stmnt.type == AST_IF_STMNT) ? "THEN" : "BODY";
+            fprintf(stdout, "%s:\n",temp_str);
+            indent(++space); print_ast(ast->select_stmnt.then); space--;
+
+            if(ast->select_stmnt.else_stmnt){
+                fprintf(stdout, "ELSE:\n");
+                indent(++space); print_ast(ast->select_stmnt.else_stmnt); space--;
+            }
+            break;
+        case AST_ITERAT_STMNT:
+            switch(ast->iterat_stmnt.type){
+                case AST_DO_STMNT:      
+                    fprintf(stdout, "DO:"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.stmnt); space--;
+                    indent(space); fprintf(stdout, "WHILE:\n"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.cond); space--;
+                    break;
+                case AST_WHILE_STMNT:   
+                    indent(space); fprintf(stdout, "WHILE:\n"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.cond); space--;
+                    fprintf(stdout, "DO:"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.stmnt); space--;
+                    break;
+                case AST_FOR_STMNT:     
+                    fprintf(stdout, "FOR:\n"); 
+                    indent(space); fprintf(stdout, "INIT:\n"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.init); space--;
+                    indent(space); fprintf(stdout, "COND:\n"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.cond); space--;
+                    indent(space); fprintf(stdout, "UPDATE:\n"); 
+                    indent(++space); print_ast(ast->iterat_stmnt.update); space--;
+                    break;
+            }
             break;
     }
 }

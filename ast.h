@@ -29,10 +29,13 @@ enum AST_TYPE{
     AST_DECLARATION,
     AST_DECL_SPEC,
     AST_COMPOUND,
+    AST_SELECT_STMNT,
     AST_IF_STMNT,
-    AST_WHILE_STMNT,
-    AST_DO_STMNT,
-    AST_FOR_STMNT,
+    AST_SWITCH_STMNT,
+    AST_ITERAT_STMNT,
+    AST_DO_STMNT, 
+    AST_WHILE_STMNT, 
+    AST_FOR_STMNT
 };
 
 /* enum for binary types in ast */
@@ -59,9 +62,11 @@ ASTNODE alloc_list(ASTNODE elem);
 ASTNODE list_last(ASTNODE list);
 ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
 ASTNODE list_append(ASTNODE list1, ASTNODE list2);
-int  list_size(ASTNODE list);
+int list_size(ASTNODE list);
+ASTNODE last_ptr(ASTNODE ptr_chain);
+ASTNODE list_to_ptr_chain(ASTNODE list);
 
-/* new functions for assignment 3 and 4 */
+/* new functions for assignment 3 */
 ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl);
 ASTNODE alloc_decl_spec(int decl_spec);
 ASTNODE alloc_scalar(int type);
@@ -70,12 +75,10 @@ ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
 ASTNODE alloc_st_un(int type, int scope);
 ASTNODE alloc_func(ASTNODE name, ASTNODE param_list);
 
+/* new functions for assignment 4 */
 ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab);
-
-ASTNODE last_ptr(ASTNODE ptr_chain);
-ASTNODE list_to_ptr_chain(ASTNODE list);
-
-
+ASTNODE alloc_label_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt);
+ASTNODE alloc_iterat_stmnt(int type, ASTNODE cont, ASTNODE stmnt, ASTNODE init, ASTNODE update);
 
 struct astnode_unary{
     int op;
@@ -192,21 +195,18 @@ struct astnode_compound{
     SYM_TAB tab;
 };
 
-struct astnode_if_stmnt{
-    ASTNODE cond, stmnt, else_stmnt;
+struct astnode_label_stmnt{
+    int type; /* either an AST_IF_STMNT or AST_SWITCH_STMNT */
+    ASTNODE cond, then, else_stmnt;
 };
 
-struct astnode_while_stmnt{
+struct astnode_iterat_stmnt{
+    int type; /* three types AST_DO_STMNT, AST_WHILE_STMNT, AST_FOR_STMNT */
     ASTNODE cond, stmnt;
+    /* only present for for-loops */
+    ASTNODE init, update;
 };
 
-struct astnode_do_stmnt{
-    ASTNODE cond, stmnt;
-};
-
-struct astnode_for_stmnt{
-    ASTNODE init, cond, update;
-};
 
 struct astnode{
     int type;
@@ -234,11 +234,8 @@ struct astnode{
         
         /* statements */
         struct astnode_compound     comp;
-        struct astnode_if_stmnt     if_stmnt;
-        struct astnode_while_stmnt  while_stmnt;
-        struct astnode_do_stmnt     do_stmnt;
-        struct astnode_for_stmnt    for_stmnt;
-
+        struct astnode_label_stmnt  select_stmnt;
+        struct astnode_iterat_stmnt iterat_stmnt;
     };
 };
 

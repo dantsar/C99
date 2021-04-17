@@ -98,8 +98,6 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns)
     ret->att_type = ent_type;
 
     ret->filename = strdup(filename);
-    // ret->filename = malloc(strlen(filename));
-    // strcpy(filename, ret->filename);
     ret->lineno = lineno;
     return ret;
 }

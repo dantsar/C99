@@ -56,6 +56,9 @@ void yyerror(const char*);
 %left<c>    '~' '!'
 %left<c>     PLUSPLUS MINUSMINUS '(' ')' '.' '[' ']' INDSEL
 
+%left IF
+%left ELSE
+
 /* values */
 %type<ident>        IDENT 
 %type<num>          NUMBER 
@@ -269,7 +272,7 @@ declaration_list:         declaration
                         ;
 
 compound_stmnt:           '{' '}'                   {$$=alloc_compound(NULL, NULL);}
-                        | '{' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list  '}'   {print_sym(curr_scope); $$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
+                        | '{' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list  '}'   {$$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
                         ;
 
 block_item_list:          block_item                    {$$=alloc_list($1);}
@@ -290,30 +293,30 @@ ident_list:           IDENT                         {$$=alloc_list(alloc_ident($
 
 
 /* statements... to be worked on later */
-statement:       expr_stmnt                                    {print_ast($1); putchar('\n');}
+statement:       expr_stmnt                                 {$$=$1;}
                 | label_stmnt                               {$$=$1;}
-                | compound_stmnt                            {}
-                | select_stmnt                              {}
-                | iterat_stmnt                              {}
-                | jump_stmnt                                 {}
+                | compound_stmnt                            {$$=$1;}
+                | select_stmnt                              {$$=$1;}
+                | iterat_stmnt                              {$$=$1;}
+                | jump_stmnt                                {$$=$1;}
                 ;
 
 expr_stmnt:       expr ';'                                  {$$=$1;}
 
-label_stmnt:      IDENT ':' statement                       {$$=$3;}
-                | CASE const_expr ':' statement             {$$=$4;}
-                | DEFAULT ':' statement                     {$$=$3;}
+label_stmnt:      IDENT ':' statement                       {}
+                | CASE const_expr ':' statement             {}
+                | DEFAULT ':' statement                     {}
                 ;
 
-select_stmnt:     IF '(' expr ')' statement                 {$$=astnode_alloc(AST_IDENT);} 
-                | IF '(' expr ')' ELSE statement            {$$=astnode_alloc(AST_IDENT);}         
-                | SWITCH '(' expr ')' statement             {$$=astnode_alloc(AST_IDENT);}     
+select_stmnt:     IF '(' expr ')' statement                 {$$=alloc_label_stmnt(AST_IF_STMNT, $3, $5, NULL);} 
+                | IF '(' expr ')' statement ELSE statement  {$$=alloc_label_stmnt(AST_IF_STMNT, $3, $5, $7);}         
+                | SWITCH '(' expr ')' statement             {$$=alloc_label_stmnt(AST_SWITCH_STMNT, $3, $5, NULL);}     
                 ;
 
-iterat_stmnt:     WHILE '(' expr ')' statement                             {$$=astnode_alloc(AST_IDENT);} 
-                | DO statement WHILE '(' expr ')'  ';'                     {$$=astnode_alloc(AST_IDENT);}         
-                | FOR '(' expr_opt ';' expr_opt ';' expr_opt ')' statement {$$=astnode_alloc(AST_IDENT);}                             
-                | FOR '(' declaration expr_opt ';' expr_opt ')' statement  {$$=astnode_alloc(AST_IDENT);}                             
+iterat_stmnt:     WHILE '(' expr ')' statement                             {$$=alloc_iterat_stmnt(AST_WHILE_STMNT, $3, $5, NULL, NULL);} 
+                | DO statement WHILE '(' expr ')'  ';'                     {$$=alloc_iterat_stmnt(AST_DO_STMNT, $5, $2, NULL, NULL);}         
+                | FOR '(' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} expr_opt ';' expr_opt ';' expr_opt ')' statement {$$=alloc_iterat_stmnt(AST_FOR_STMNT, $6, $10, $4, $8); curr_scope=sym_tab_pop(curr_scope);}                             
+                // | FOR '(' declaration expr_opt ';' expr_opt ')' statement  {}                             
                 ;
 expr_opt:           expr            {$$=$1;}
                 | /* empty */       {$$=NULL;}
