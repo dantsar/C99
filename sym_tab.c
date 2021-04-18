@@ -66,7 +66,7 @@ SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent)
 /* TRUE: successfully entered entry | FALSE: already there */
 bool sym_enter(SYM_TAB sym, SYM_ENT ent)
 {
-    if(sym_lookup(sym, ent))
+    if(sym->scope_type == SCOPE_GLOBAL && sym_lookup(sym, ent))
         return false;
 
     SYM_ENT_LL temp_ent_ll = calloc(sizeof(struct sym_entries),1);
