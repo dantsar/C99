@@ -90,7 +90,6 @@ void sym_func_def(ASTNODE func_def, SYM_TAB tab);
 
 /* variable attributes */
 struct var_att{
-    // ASTNODE val;
     ASTNODE type;
     int stg_class;
     int offset;     /* offset in stackframe: only for type auto */
@@ -107,12 +106,6 @@ struct func_att{
 struct struct_union_tag{
     ASTNODE st_un;
 };
-
-// struct struct_union_mem{
-//     ASTNODE type;
-//     int offset; /* only for structs */
-//     int bitfield, bitwidth;
-// };
 
 struct enum_tag{
     bool def_comp;

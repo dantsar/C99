@@ -2,10 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <unistd.h>
-
 #include "def.h"
 #include "ast.h"
+
+bool ast_compare_type(ASTNODE t1, ASTNODE t2){
+    ASTNODE temp;
+    if(t1 == NULL && t2 == NULL) return true; /* should be error? ¯\_(ツ)_/¯ */
+    /* there is probably a more elegant method, but don't care! */
+    do{
+        /* compare type: should only be of three types: 
+           AST_PTR, AST_ARRAY, or AST_LIST(of decl_spec) */
+        if(t1->type == t2->type){
+            if(t1->type == AST_LIST){
+                if(t1->list.elem->decl_spec.decl_spec == t2->list.elem->decl_spec.decl_spec)
+                    continue;
+                else
+                    return false;
+            }
+        } else{
+            return false;
+        }
+    }while((t1 = next_ptr(t1)) &&  (t2 = next_ptr(t2)));
+
+    return true;
+}
 
 ASTNODE astnode_alloc(int astnode_type){
     ASTNODE ret = calloc(1, sizeof(struct astnode));
@@ -128,6 +148,15 @@ ASTNODE alloc_list(ASTNODE elem){
     return ret;
 }
 
+/* next pointer in pointer chain: eg next array or actual pointer */
+ASTNODE next_ptr(ASTNODE ptr_chain){
+    if(ptr_chain->type == AST_PTR){
+        return ptr_chain->ptr.ptr_to;
+    }else if(ptr_chain->type == AST_ARRAY){
+        return ptr_chain->array.ptr_to;
+    } 
+    return NULL;
+}
 
 /* last ptr/array in chain */
 ASTNODE last_ptr(ASTNODE ptr_chain){
@@ -177,7 +206,6 @@ ASTNODE list_to_ptr_chain(ASTNODE list)
 ASTNODE list_last(ASTNODE list){
     while(list->list.next != NULL)
         list = list->list.next;
-
     return list;
 }
 

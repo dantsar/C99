@@ -32,7 +32,6 @@ void yyerror(const char*);
     struct astnode *astnode_p; /* definition in ast.h */
 }
 
-
 %token IDENT CHARLIT STRING NUMBER INDSEL PLUSPLUS MINUSMINUS SHL SHR LTEQ GTEQ 
 %token EQEQ NOTEQ LOGAND LOGOR ELLIPSIS TIMESEQ DIVEQ MODEQ PLUSEQ MINUSEQ SHLEQ 
 %token SHREQ ANDEQ OREQ XOREQ AUTO BREAK CASE CHAR CONST CONTINUE DEFAULT DO DOUBLE 
@@ -92,7 +91,6 @@ void yyerror(const char*);
 
 /* External Definitions */
 %type<astnode_p>    translation_unit extern_declaration func_def
-
 
 %%
 /* (6.9) */
@@ -154,7 +152,6 @@ unary_expr:           postfix_expr                              {$$=$1;}
                     | '~' cast_expr                             {$$=alloc_unary('~',$2);}
                     | '!' cast_expr                             {$$=alloc_unary('!',$2);}
                     ;
-
 /* (6.5.15) */
 cond_expr:            arith_expr                                {$$=$1;}
                     | arith_expr '?' expr ':' cond_expr         {$$=alloc_ternary($1, $3, $5);}
@@ -194,7 +191,7 @@ arith_expr:           arith_expr '+' arith_expr                 {$$=alloc_binary
 cast_expr:            unary_expr                                {$$=$1;}
                     ;
 /* (6.7) */
-declaration:          declaration_specs ';'                         {yyerror("Empty Declaration");}
+declaration:          declaration_specs ';'                         {yyerror("Empty Declaration");exit(-1);}
                     | declaration_specs init_decl_list ';'          {$$=alloc_declaration($1, $2);}
                     ;   
 /* (6.7) */
@@ -290,7 +287,7 @@ decl:                 direct_decl                                   {$$=$1;}
                     ;
 /* (6.7.5) */
 direct_decl:          IDENT                                         {$$=alloc_list(alloc_ident($1));} //{$$=alloc_list(alloc_ident($1));}
-                    | '(' decl ')'                                  {$$=$2; /* fprintf(stdout, "PAREN\n"); print_ast($$); */}
+                    | '(' decl ')'                                  {$$=$2;}
                     | direct_decl '[' constant ']'                  {$$=list_append_elem(alloc_array(NULL,$3), $1);}
                     | direct_decl '[' ']'                           {yyerror("not supporting variable length arrays");exit(-1);}
 
@@ -299,8 +296,11 @@ direct_decl:          IDENT                                         {$$=alloc_li
                                                                      $$->list.next = $1->list.next;
                                                                      free($1); /* SOME semblance of memory managment :^) */
                                                                     }
+                    | direct_decl '(' ')'                           {$$=alloc_list(alloc_func($1->list.elem, NULL));
+                                                                     $$->list.next = $1->list.next;
+                                                                     free($1); /* SOME semblance of memory managment :^) */
+                                                                    }
                     | direct_decl '(' ident_list ')'                {yyerror("Not supporting old c style function definitons :'("); exit(-1);}/* func */
-                    | direct_decl '(' ')'                           {yyerror("please define your funciton"); exit(-1);} /* error for now */
                     ;
 /* (6.7.5) */
 /* ignoring type qualifieres, but support in grammar */
@@ -314,8 +314,8 @@ type_qualif_list:     type_qualif
                     | type_qualif_list type_qualif              
                     ;
 /* (6.7.5) */
-param_type_list:      param_list                                {}
-                    | param_list ',' ELLIPSIS                   {}
+param_type_list:      param_list                                {$$=$1;}
+                    | param_list ',' ELLIPSIS                   {$$=$1;} /* I will handle this later...maybe...*/
                     ;
 /* (6.7.5) */
 param_list:           param_declaration                         {$$=alloc_list($1);}
@@ -324,16 +324,23 @@ param_list:           param_declaration                         {$$=alloc_list($
 
 /* (6.7.5) */
 param_declaration:    declaration_specs decl                    {$$=alloc_declaration($1, $2);}
-                    | declaration_specs                         {yyerror("incomplete definition");}
+                    | declaration_specs                         {$$=list_last($1); /* KLUDGE!!! */
+                                                                 if($$->list.elem->type == AST_DECL_SPEC){
+                                                                     if($$->list.elem->decl_spec.decl_spec == TYPE_VOID)
+                                                                        $$=alloc_declaration($1, NULL);
+                                                                 }else{ 
+                                                                     yyerror("incomplete function definition"); 
+                                                                     exit(-1);
+                                                                 }
+                                                                } 
                     ;
 /* (6.7.5) */
 ident_list:           IDENT                         {$$=alloc_list(alloc_ident($1));}
                     | ident_list ',' IDENT          {$$=list_append_elem(alloc_ident($3), $1);} 
                     ;
-
 /* (6.8) */
 /* statements... to be worked on later */
-statement:            expr_stmnt                                 {$$=$1;}
+statement:            expr_stmnt                                {$$=$1;}
                     | label_stmnt                               {$$=$1;}
                     | compound_stmnt                            {$$=$1;}
                     | select_stmnt                              {$$=$1;}
@@ -374,16 +381,12 @@ iterat_stmnt:         WHILE '(' expr ')' statement                             {
 expr_opt:             expr            {$$=$1;}
                     | /* empty */       {$$=NULL;}
                     ;
-
 /* (6.8.5) */
 jump_stmnt:           GOTO IDENT ';'                        {$$=alloc_jump_stmnt(AST_GOTO, $2, NULL);}         
                     | CONTINUE ';'                          {$$=alloc_jump_stmnt(AST_CONTINUE, NULL, NULL);}      
                     | BREAK ';'                             {$$=alloc_jump_stmnt(AST_BREAK, NULL, NULL);}  
                     | RETURN expr_opt ';'                   {$$=alloc_jump_stmnt(AST_RETURN, NULL, $2);}              
                     ;
-
-
-
 /* (6.9.1) */
 /* manually change compound scope from block to func */
 func_def:              declaration_specs decl compound_stmnt                     { /* populate astnode with elements */
@@ -395,7 +398,6 @@ func_def:              declaration_specs decl compound_stmnt                    
                                                                                 }
                     | declaration_specs decl declaration_list compound_stmnt    {yyerror("not handling old c style function definitions :'("); exit(-1);}
                     ;
-
 /* (6.9.1) */
 declaration_list:     declaration
                     | declaration_list declaration

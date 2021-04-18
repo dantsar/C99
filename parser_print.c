@@ -178,7 +178,9 @@ void print_ast(ASTNODE ast){
             indent(space); print_ast(ast->declaration.declaration);
             break;
         case AST_DECL_SPEC:
+            // fprintf(stdout, "AST_DECL_SPEC\n"); /* for debugging */
             switch(ast->decl_spec.decl_spec){
+                case TYPE_VOID:     fprintf(stdout, "void "); break;
                 case TYPE_CHAR:     fprintf(stdout, "char "); break;
                 case TYPE_SHORT:    fprintf(stdout, "short "); break;
                 case TYPE_INT:      fprintf(stdout, "int "); break;
@@ -203,12 +205,15 @@ void print_ast(ASTNODE ast){
             print_sym(ast->st_un.mini_tab);
             break;
         case AST_FUNC:
-            fprintf(stdout, "function: %s\n", ast->func.name->ident.ident);
+            fprintf(stdout, "function: %s\n taking arguments:", ast->func.name->ident.ident);
+            indent(++space); print_ast(ast->func.args); space--;
+            fprintf(stdout, "and returning:\n");
+            indent(++space); print_ast(ast->func.ret); space--;
             break;
         case AST_COMPOUND:
             // fprintf(stdout, "AST_COMPOUND\n");
             if(ast->comp.states == NULL){ 
-                fprintf(stdout, "empty block");
+                fprintf(stdout, "empty block\n");
                 return;
             }
             temp = ast->comp.states;

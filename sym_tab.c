@@ -62,15 +62,36 @@ SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent)
     return NULL;
 }
 
+/* does not go down the stack of symbol tables but only looks at the provided one */
+SYM_ENT sym_lookup_local(SYM_TAB sym, SYM_ENT ent){
+
+    SYM_ENT_LL temp_ent_ll = sym->ent_ll;
+    /* loop through symbol table entries */
+    while(temp_ent_ll != NULL){
+        if(temp_ent_ll->entry != NULL && sym_ent_compare(temp_ent_ll->entry, ent)) 
+            return temp_ent_ll->entry;
+
+        temp_ent_ll = temp_ent_ll->next;
+    }
+
+    return NULL;
+}
 
 /* TRUE: successfully entered entry | FALSE: already there */
 bool sym_enter(SYM_TAB sym, SYM_ENT ent)
 {
-    if(sym->scope_type == SCOPE_GLOBAL && sym_lookup(sym, ent))
+    SYM_ENT temp;
+    if((temp = sym_lookup_local(sym, ent)))
+    {
+        /* handle same variable redeclaration */
+        if(sym->scope_type == SCOPE_GLOBAL && ent->att_type == ENT_VAR)
+            if(ast_compare_type(temp->var.type, ent->var.type))
+                return true;
+
         return false;
+    } 
 
     SYM_ENT_LL temp_ent_ll = calloc(sizeof(struct sym_entries),1);
-
     temp_ent_ll->entry = ent;
     temp_ent_ll->entry->name  = ent->name;
     temp_ent_ll->entry->namespace = ent->namespace;
@@ -82,7 +103,6 @@ bool sym_enter(SYM_TAB sym, SYM_ENT ent)
         sym->last_ent_ll->next = temp_ent_ll;
         sym->last_ent_ll = temp_ent_ll;
     }
-
     return true;
 }
 
@@ -129,7 +149,7 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
                 var->ptr.ptr_to = type;
             }else if(var->type == AST_ARRAY){
                 var->array.ptr_to = type;
-            }
+            } 
         } else {
             ptr_chain = type;
         }

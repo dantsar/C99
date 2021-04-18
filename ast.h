@@ -8,10 +8,28 @@
 
 /* Abstract Symbol Table node types */
 enum AST_TYPE{ 
-    AST_UNARY=0, AST_BINARY, AST_TERNARY, AST_IDENT, AST_NUM, AST_SIZEOF, 
-    AST_FNCALL, AST_CHARLIT, AST_STRING, AST_SELECT,
-    AST_SCALAR, AST_PTR, AST_ARRAY, AST_ST_UN, AST_STRUCT, AST_UNION, 
-    AST_FUNC, AST_LIST, AST_DECLARATION, AST_DECL_SPEC, AST_COMPOUND, AST_SELECT_STMNT,
+    AST_UNARY=0, 
+    AST_BINARY, 
+    AST_TERNARY, 
+    AST_IDENT, 
+    AST_NUM, 
+    AST_SIZEOF, 
+    AST_FNCALL,
+    AST_CHARLIT, 
+    AST_STRING, 
+    AST_SELECT,
+    AST_SCALAR, 
+    AST_PTR, 
+    AST_ARRAY, 
+    AST_ST_UN, 
+    AST_STRUCT, 
+    AST_UNION, 
+    AST_FUNC, 
+    AST_LIST, 
+    AST_DECLARATION, 
+    AST_DECL_SPEC, 
+    AST_COMPOUND, 
+    AST_SELECT_STMNT,
     AST_IF_STMNT, AST_SWITCH_STMNT, AST_ITERAT_STMNT,
     AST_DO_STMNT, AST_WHILE_STMNT, AST_FOR_STMNT,
     AST_LABEL_STMNT, AST_LABEL, AST_LABEL_CASE, AST_LABEL_DEFAULT,
@@ -21,6 +39,7 @@ enum AST_TYPE{
 /* enum for binary types in ast */
 enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
+bool ast_compare_type(ASTNODE t1, ASTNODE t2);
 /* TO DO: FIX alloc_num, alloc_str to not be so verbose and accept struct num && struct str */
 void print_ast(ASTNODE ast);
 /* helper functions for assignment three 3: expressions */
@@ -43,6 +62,7 @@ ASTNODE list_last(ASTNODE list);
 ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
 ASTNODE list_append(ASTNODE list1, ASTNODE list2);
 int list_size(ASTNODE list);
+ASTNODE next_ptr(ASTNODE ptr_chain);
 ASTNODE last_ptr(ASTNODE ptr_chain);
 ASTNODE list_to_ptr_chain(ASTNODE list);
 
