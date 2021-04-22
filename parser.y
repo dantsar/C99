@@ -15,6 +15,9 @@ extern int lineno;
 /* stuff for symbol table */
 SYM_TAB curr_scope;
 
+/* global variable for distinguishing between block and function scopes */
+bool in_func = false;
+
 void yyerror(const char*);
 
 %}
@@ -72,21 +75,14 @@ void yyerror(const char*);
 %type<astnode_p>    assign_expr unary_expr cond_expr arith_expr cast_expr postfix_expr prim_expr //func_call
 
 /* declarations */
-%type<astnode_p>    declaration declaration_list 
-%type<astnode_p>    declaration_specs init_decl_list 
-%type<astnode_p>    decl direct_decl
-%type<astnode_p>    init_decl pointer
-%type<astnode_p>    param_type_list param_list param_declaration 
-%type<astnode_p>    ident_list
-%type<astnode_p>    stg_class_spec type_spec declaration_spec  
-%type<astnode_p>    func_spec type_qualif
-%type<astnode_p>    struct_union_spec struct_union struct_declaration_list struct_declaration specific_qualif_list 
-%type<astnode_p>    struct_decl_list struct_decl
+%type<astnode_p>    declaration declaration_list declaration_specs init_decl_list decl 
+%type<astnode_p>    direct_decl init_decl pointer param_type_list param_list param_declaration 
+%type<astnode_p>    ident_list stg_class_spec type_spec declaration_spec func_spec type_qualif
+%type<astnode_p>    struct_union_spec struct_union struct_declaration_list struct_declaration 
+%type<astnode_p>    specific_qualif_list struct_decl_list struct_decl
 
 /* statements */
-%type<astnode_p>    block_item block_item_list
-%type<astnode_p>    statement expr_stmnt
-%type<astnode_p>    label_stmnt compound_stmnt 
+%type<astnode_p>    block_item block_item_list statement expr_stmnt label_stmnt compound_stmnt 
 %type<astnode_p>    select_stmnt iterat_stmnt jump_stmnt expr_opt 
 
 /* External Definitions */
@@ -191,7 +187,7 @@ arith_expr:           arith_expr '+' arith_expr                 {$$=alloc_binary
 cast_expr:            unary_expr                                {$$=$1;}
                     ;
 /* (6.7) */
-declaration:          declaration_specs ';'                         {yyerror("Empty Declaration");exit(-1);}
+declaration:          declaration_specs ';'                         {}
                     | declaration_specs init_decl_list ';'          {$$=alloc_declaration($1, $2);}
                     ;   
 /* (6.7) */
@@ -214,24 +210,24 @@ init_decl:            decl                                      {$$=$1;}
                     // | decl '=' init /* not handling initializers ... */ {}
                     ;
 /* (6.7.1) */
-stg_class_spec:       AUTO                                      {$$=alloc_decl_spec(STG_AUTO);    }
-                    | STATIC                                    {$$=alloc_decl_spec(STG_STATIC);  }
-                    | EXTERN                                    {$$=alloc_decl_spec(STG_EXTERN);  } 
-                    | TYPEDEF                                   {$$=alloc_decl_spec(STG_TYPEDEF); }
-                    | REGISTER                                  {$$=alloc_decl_spec(STG_REGISTER);}
+stg_class_spec:       AUTO                                      {$$=alloc_decl_spec(STG_AUTO, AST_DECL_STG);    }
+                    | STATIC                                    {$$=alloc_decl_spec(STG_STATIC, AST_DECL_STG);  }
+                    | EXTERN                                    {$$=alloc_decl_spec(STG_EXTERN, AST_DECL_STG);  } 
+                    | TYPEDEF                                   {$$=alloc_decl_spec(STG_TYPEDEF, AST_DECL_STG); }
+                    | REGISTER                                  {$$=alloc_decl_spec(STG_REGISTER, AST_DECL_STG);}
                     ;
 /* (6.7.2) */
-type_spec:            VOID                                          {$$=alloc_decl_spec(TYPE_VOID);    } 
-                    | CHAR                                          {$$=alloc_decl_spec(TYPE_CHAR);    } 
-                    | SHORT                                         {$$=alloc_decl_spec(TYPE_SHORT);   }  
-                    | INT                                           {$$=alloc_decl_spec(TYPE_INT);     } 
-                    | LONG                                          {$$=alloc_decl_spec(TYPE_LONG);    } 
-                    | FLOAT                                         {$$=alloc_decl_spec(TYPE_FLOAT);   }  
-                    | DOUBLE                                        {$$=alloc_decl_spec(TYPE_DOUBLE);  }    
-                    | SIGNED                                        {$$=alloc_decl_spec(TYPE_SIGNED);  }    
-                    | UNSIGNED                                      {$$=alloc_decl_spec(TYPE_UNSIGNED);}      
-                    | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL);   }  
-                    | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX);}      
+type_spec:            VOID                                          {$$=alloc_decl_spec(TYPE_VOID, AST_DECL_TYPE_SPEC);    } 
+                    | CHAR                                          {$$=alloc_decl_spec(TYPE_CHAR, AST_DECL_TYPE_SPEC);    } 
+                    | SHORT                                         {$$=alloc_decl_spec(TYPE_SHORT, AST_DECL_TYPE_SPEC);   }  
+                    | INT                                           {$$=alloc_decl_spec(TYPE_INT, AST_DECL_TYPE_SPEC);     } 
+                    | LONG                                          {$$=alloc_decl_spec(TYPE_LONG, AST_DECL_TYPE_SPEC);    } 
+                    | FLOAT                                         {$$=alloc_decl_spec(TYPE_FLOAT, AST_DECL_TYPE_SPEC);   }  
+                    | DOUBLE                                        {$$=alloc_decl_spec(TYPE_DOUBLE, AST_DECL_TYPE_SPEC);  }    
+                    | SIGNED                                        {$$=alloc_decl_spec(TYPE_SIGNED, AST_DECL_TYPE_SPEC);  }    
+                    | UNSIGNED                                      {$$=alloc_decl_spec(TYPE_UNSIGNED, AST_DECL_TYPE_SPEC);}      
+                    | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL, AST_DECL_TYPE_SPEC);   }  
+                    | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX, AST_DECL_TYPE_SPEC);}      
                     | struct_union_spec                             {$$=$1;}
                     // | enum_spec    /* nope!. */
                     // | typedef_name /* heck nope! */
@@ -274,12 +270,12 @@ struct_decl:          decl                          {$$=$1;}
                     ;
 /* (6.7.3) */
 /* not handling type qualifiers and inline func specifier, but still supporing it in grammar */
-type_qualif:          CONST                                     {$$=alloc_decl_spec(QUALIF_CONST);}
-                    | RESTRICT                                  {$$=alloc_decl_spec(QUALIF_RESTRICT);}
-                    | VOLATILE                                  {$$=alloc_decl_spec(QUALIF_VOLATILE);}
+type_qualif:          CONST                                     {$$=alloc_decl_spec(QUALIF_CONST, AST_DECL_TYPE_QUALIF);}
+                    | RESTRICT                                  {$$=alloc_decl_spec(QUALIF_RESTRICT, AST_DECL_TYPE_QUALIF);}
+                    | VOLATILE                                  {$$=alloc_decl_spec(QUALIF_VOLATILE, AST_DECL_TYPE_QUALIF);}
                     ;
 /* (6.7.4) */
-func_spec:            INLINE                                    {$$=alloc_decl_spec(FUNC_INLINE);}       
+func_spec:            INLINE                                    {$$=alloc_decl_spec(FUNC_INLINE, AST_DECL_FUNC_SPEC);}       
                     ;
 /* (6.7.5) */
 decl:                 direct_decl                                   {$$=$1;}
@@ -324,7 +320,7 @@ param_list:           param_declaration                         {$$=alloc_list($
 
 /* (6.7.5) */
 param_declaration:    declaration_specs decl                    {$$=alloc_declaration($1, $2);}
-                    | declaration_specs                         {$$=list_last($1); /* KLUDGE!!! */
+                    | declaration_specs                         {$$=list_last($1); /* KLUDGE!!! -_- there is a bug! can you see it?? */
                                                                  if($$->list.elem->type == AST_DECL_SPEC){
                                                                      if($$->list.elem->decl_spec.decl_spec == TYPE_VOID)
                                                                         $$=alloc_declaration($1, NULL);
@@ -390,11 +386,12 @@ jump_stmnt:           GOTO IDENT ';'                        {$$=alloc_jump_stmnt
 /* (6.9.1) */
 /* manually change compound scope from block to func */
 func_def:              declaration_specs decl compound_stmnt                     { /* populate astnode with elements */
-                                                                                    $$=$2->list.elem;
+                                                                                    $$=$2->list.elem; /* first element is astnode_func */
                                                                                     $$->func.ret = list_append($1, $2);
                                                                                     $$->func.ret = $$->func.ret->list.next;
                                                                                     $$->func.block = $3;
-                                                                                    $$->func.block->comp.type = SCOPE_FUNC;
+                                                                                    $$->func.block->comp.tab->scope_type = SCOPE_FUNC;
+                                                                                    free($2);
                                                                                 }
                     | declaration_specs decl declaration_list compound_stmnt    {yyerror("not handling old c style function definitions :'("); exit(-1);}
                     ;
@@ -409,7 +406,6 @@ void yyerror(const char *msg){
 }
 
 int main(){
-
     /* creating global symbol table */
     curr_scope = sym_tab_create(SCOPE_GLOBAL);
 

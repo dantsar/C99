@@ -63,8 +63,8 @@ SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent)
 }
 
 /* does not go down the stack of symbol tables but only looks at the provided one */
-SYM_ENT sym_lookup_local(SYM_TAB sym, SYM_ENT ent){
-
+SYM_ENT sym_lookup_local(SYM_TAB sym, SYM_ENT ent)
+{
     SYM_ENT_LL temp_ent_ll = sym->ent_ll;
     /* loop through symbol table entries */
     while(temp_ent_ll != NULL){
@@ -83,7 +83,7 @@ bool sym_enter(SYM_TAB sym, SYM_ENT ent)
     SYM_ENT temp;
     if((temp = sym_lookup_local(sym, ent)))
     {
-        /* handle same variable redeclaration */
+        /* allow same variable redeclaration in Global Scope */
         if(sym->scope_type == SCOPE_GLOBAL && ent->att_type == ENT_VAR)
             if(ast_compare_type(temp->var.type, ent->var.type))
                 return true;
@@ -126,7 +126,7 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns)
  */
 void sym_declaration(ASTNODE declaration, SYM_TAB tab)
 {
-    ASTNODE type = declaration->declaration.qualif;
+    ASTNODE type = declaration->declaration.var_type;
     ASTNODE var_list = declaration->declaration.declaration;
     ASTNODE ptr_chain, var;
     while(var_list != NULL)
@@ -168,13 +168,13 @@ void sym_struct_define(ASTNODE st_un, ASTNODE decl_list)
 {
     st_un->st_un.def_complete = true;
     /* place holder nodes for readability */
-    ASTNODE qualif, declaration;
+    ASTNODE var_type, declaration;
     while(decl_list != NULL){
-        qualif = decl_list->list.elem->declaration.qualif;
+        var_type = decl_list->list.elem->declaration.var_type;
         declaration = decl_list->list.elem->declaration.declaration;
 
         /* TO DO: in sym_declaration make sure to figure out the symbol table and enter the appropriate namespace */
-        sym_declaration(alloc_declaration(qualif, declaration), st_un->st_un.mini_tab);
+        sym_declaration(alloc_declaration(var_type, declaration), st_un->st_un.mini_tab);
         decl_list = decl_list->list.next;
     }
 }
@@ -203,6 +203,7 @@ void sym_func_def(ASTNODE func_def, SYM_TAB tab){
     ent->func.inline_spec = false;
     ent->func.func_def = func_def;
     
+    /* enter function definition into symbol table */
     if(!sym_enter(tab, ent)){
         yyerror("error: redeclaration of variable\n");
         exit(-1);

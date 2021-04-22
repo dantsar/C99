@@ -1,4 +1,4 @@
-CFLAGS= -std=gnu99 -ggdb
+CFLAGS= -std=gnu11 -ggdb -Wpedantic -fsanitize=undefined
 CC=clang
 
 all: parser

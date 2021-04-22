@@ -3,6 +3,8 @@
 
 #include "parser_print.h"
 
+static int space = 0;
+
 void indent(int indent){
     for(int i = 0; i < indent*2; i++){
         putchar(' ');
@@ -21,48 +23,46 @@ void print_sym(SYM_TAB sym)
             fprintf(stdout, "SCOPE_BLOCK\n");
             break;
     };
+    space++;
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
         fprintf(stdout, "%s:%d ", temp->entry->filename, temp->entry->lineno);
-        print_sym_ent(temp->entry);
+        indent(space); print_sym_ent(temp->entry);
         temp = temp->next;
     }
-
+    space--;
 }
 
 void print_sym_ent(SYM_ENT ent)
 {
-    static int space = 1;
-
-    indent(space); fprintf(stdout, "%s:\n", ent->name);
-    /* need to fix this to account for the modified enum tags */
+    fprintf(stdout, "%s:\n", ent->name);
+    indent(space++); 
     switch(ent->att_type){
         case ENT_VAR:
             print_ast(ent->var.type);  /* list should be being passed to print_ast */
             putchar('\n');
             break;
         case ENT_SU_TAG:
+            indent(space);
             print_ast(ent->su_tag.st_un);
             putchar('\n');
             break;
         case ENT_FUNC:
-            print_ast(ent->func.func_def);
-            fprintf(stdout,"\nreturns:\n");
-            print_ast(ent->func.func_def->func.ret);
-            fprintf(stdout,"\ntaking args:\n");
-            print_ast(ent->func.func_def->func.args);
-            fprintf(stdout, "\nwith body:\n");
-            print_ast(ent->func.func_def->func.block);
+            print_ast(ent->func.func_def); space--;
+            // indent(space++); fprintf(stdout,"\nreturns:\n"); 
+            // indent(space); print_ast(ent->func.func_def->func.ret);
+            // indent(space); fprintf(stdout,"\ntaking args:\n");
+            // indent(space); print_ast(ent->func.func_def->func.args);
+            // indent(space); fprintf(stdout, "\nwith body:\n");
+            // indent(space); print_ast(ent->func.func_def->func.block);
             break;
-
     }
-
+    space--;
 }
 
 void print_ast(ASTNODE ast){
     /* int for storing indentation in the output */
     if(ast == NULL) return;
-    static int space = 0;
     ASTNODE temp;
     char* temp_str;
 
@@ -172,10 +172,15 @@ void print_ast(ASTNODE ast){
             break;
         case AST_DECLARATION: /* for debugging */
             // fprintf(stdout, "AST_DECLARATION\n");
-            fprintf(stdout, "qualif\n");
-            indent(space); print_ast(ast->declaration.qualif); 
-            fprintf(stdout, "\ndeclaration\n");
-            indent(space); print_ast(ast->declaration.declaration);
+            // fprintf(stdout, "qualif\n");
+            fprintf(stdout, "declaration: "); 
+            /* indent(space++); */ print_ast(ast->declaration.var_type); 
+            // space--;
+            // putchar('\n');
+            // fprintf(stdout, "\ndeclaration\n");
+            /* indent(space++);*/ print_ast(ast->declaration.declaration);
+            space--;
+            putchar('\n');
             break;
         case AST_DECL_SPEC:
             // fprintf(stdout, "AST_DECL_SPEC\n"); /* for debugging */
@@ -205,10 +210,13 @@ void print_ast(ASTNODE ast){
             print_sym(ast->st_un.mini_tab);
             break;
         case AST_FUNC:
-            fprintf(stdout, "function: %s\n taking arguments:", ast->func.name->ident.ident);
+            fprintf(stdout, "function: %s\n taking arguments:\n", ast->func.name->ident.ident);
             indent(++space); print_ast(ast->func.args); space--;
             fprintf(stdout, "and returning:\n");
             indent(++space); print_ast(ast->func.ret); space--;
+            putchar('\n');
+            fprintf(stdout, "with body:\n");
+            indent(++space); print_ast(ast->func.block); space--;
             break;
         case AST_COMPOUND:
             // fprintf(stdout, "AST_COMPOUND\n");

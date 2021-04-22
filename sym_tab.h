@@ -32,7 +32,7 @@ enum NAMESPACES{
 
 /* the different storages classes */
 enum STG_CLASS{
-    STG_AUTO=0, STG_STATIC, STG_EXTERN, STG_TYPEDEF, STG_REGISTER
+    STG_AUTO=1, STG_STATIC, STG_EXTERN, STG_TYPEDEF, STG_REGISTER
 };
 
 /* types of scalars */
@@ -65,28 +65,6 @@ enum SS_SCALAR{
       SS_DOUBLE=8,
       SS_LDOUBLE=16
 };
-
-/* symbol table interface functions */
-SYM_TAB sym_tab_create(int att_type);
-void sym_tab_destory(SYM_TAB sym);
-SYM_TAB sym_tab_push(int scope_type, SYM_TAB sym_tab);
-SYM_TAB sym_tab_pop(SYM_TAB stack);
-bool sym_enter(SYM_TAB tab, SYM_ENT ent);
-SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent); 
-
-void print_sym(SYM_TAB sym);
-void print_sym_ent(SYM_ENT ent);
-
-// void print_sym_stack(SYM_TAB curr_scope);
-
-/* for populating the symbol table */
-SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);
-// SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident);
-
-void sym_declaration(ASTNODE declaration, SYM_TAB tab);
-void sym_struct_define(ASTNODE st_un, ASTNODE decl_list);
-void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab);
-void sym_func_def(ASTNODE func_def, SYM_TAB tab);
 
 /* variable attributes */
 struct var_att{
@@ -163,5 +141,26 @@ struct sym_tab{
     }*ent_ll;
 };
 
+/* symbol table interface functions */
+SYM_TAB sym_tab_create(int att_type);
+void sym_tab_destory(SYM_TAB sym);
+SYM_TAB sym_tab_push(int scope_type, SYM_TAB sym_tab);
+SYM_TAB sym_tab_pop(SYM_TAB stack);
+bool sym_enter(SYM_TAB tab, SYM_ENT ent);
+SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent); 
+
+void print_sym(SYM_TAB sym);
+void print_sym_ent(SYM_ENT ent);
+
+// void print_sym_stack(SYM_TAB curr_scope);
+
+/* for populating the symbol table */
+SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);
+// SYM_ENT alloc_sym_ent_decl(ASTNODE type, ASTNODE ident);
+
+void sym_declaration(ASTNODE declaration, SYM_TAB tab);
+void sym_struct_define(ASTNODE st_un, ASTNODE decl_list);
+void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab);
+void sym_func_def(ASTNODE func_def, SYM_TAB tab);
 
 #endif

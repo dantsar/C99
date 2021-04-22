@@ -5,6 +5,8 @@
 #include "def.h"
 #include "ast.h"
 
+extern void yyerror(const char* msg);
+
 bool ast_compare_type(ASTNODE t1, ASTNODE t2){
     ASTNODE temp;
     if(t1 == NULL && t2 == NULL) return true; /* should be error? ¯\_(ツ)_/¯ */
@@ -242,31 +244,106 @@ int list_size(ASTNODE list){
     return count;
 }
 
+ASTNODE alloc_type(ASTNODE decl_specs){
+    ASTNODE ret = astnode_alloc(AST_TYPE);
+    int long_count = 0;
+
+    /* a lot of tabs, but don't care! */
+    /* very not elegant, there IS a more elegant way but I don't have the brain power right now */
+    ASTNODE temp = decl_specs;
+    while(temp != NULL)
+    {
+        decl_specs = temp->list.elem;
+        switch(decl_specs->decl_spec.type)
+        {
+            case AST_DECL_STG:
+                if(ret->var_type.stg_class != 0){
+                    yyerror("too many storage types in variable declaration");
+                    exit(-1);
+                }
+                ret->var_type.stg_class = decl_specs->decl_spec.decl_spec;
+                break;
+            case AST_DECL_TYPE_SPEC: /* the meat and potatoes */
+                switch(decl_specs->decl_spec.decl_spec) /* what a tongue twister */
+                { 
+                    case TYPE_UNSIGNED: /* won't handle the case "unsigned unsigned" (I'll just pretend that it's just unsigned) */
+                        fprintf(stdout, "HUZZAH\n");
+                        ret->var_type.is_unsigned = true; /* not really necessary but ¯\_(ツ)_/¯ what the heck */
+                        break;
+                    case TYPE_LONG:
+                        if(long_count == 0){
+                            ret->var_type.type_spec = TYPE_LONG;
+                            long_count++;
+                        }else if(long_count == 1){
+                            ret->var_type.type_spec = TYPE_LLONG;
+                            long_count++;
+                        }else{
+                            yyerror("too many long specifiers in variable declaration");
+                            exit(-1);
+                        }
+
+                        if(ret->var_type.type_spec == TYPE_LDOUBLE){
+                            yyerror("too many long specifiers in variable declaration");
+                            exit(-1);
+                        }else if(ret->var_type.type_spec == TYPE_DOUBLE){
+                            ret->var_type.type_spec = TYPE_LDOUBLE;
+                        }
+                        break;
+                    case TYPE_DOUBLE:
+                        if(long_count == 1)
+                            ret->var_type.type_spec = TYPE_LDOUBLE;
+                        else if(long_count == 2){
+                            yyerror("too many long specifiers in variable declaration for declaring double");
+                            exit(-1);
+                        } else 
+                            ret->var_type.type_spec = TYPE_LDOUBLE;
+                        break; 
+                    case TYPE_INT:
+                        if(long_count != 0)
+                            break;
+                        ret->var_type.type_spec = TYPE_INT;
+                        break; 
+                    case TYPE_CHAR:
+                        if(long_count != 0){
+                            yyerror("conflicting types in variable declaration");
+                            exit(-1);
+                        }
+                        ret->var_type.type_spec = TYPE_CHAR;
+                        break; 
+                    case TYPE_VOID:
+                        break; 
+                    case TYPE_FLOAT:
+                        break;
+                    case TYPE__BOOL:
+                        break;
+                    case TYPE__COMPLEX:
+                        break;
+                }
+                break;
+            case AST_DECL_TYPE_QUALIF:
+                /* Quietly ignore... that's right! go crazy with them, I don't care! */
+                break;
+            case AST_DECL_FUNC_SPEC:
+                /* error? ¯\_(ツ)_/¯ */
+                break;
+        }
+
+        temp = temp->list.next;
+    }
+    return ret;
+}
+
 ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl){
     ASTNODE ret = astnode_alloc(AST_DECLARATION);
     ret->declaration.declaration = decl;
-    ret->declaration.qualif = qualif;
+    ret->declaration.var_type = alloc_type(qualif);
     return ret;
 }
 
-ASTNODE alloc_decl_spec(int decl_spec){
+ASTNODE alloc_decl_spec(int decl_spec, int type){
     ASTNODE ret = astnode_alloc(AST_DECL_SPEC);
     ret->decl_spec.decl_spec = decl_spec;
-    return ret;
-}
-
-/* TO DO: update later to integrate with symbol table */
-ASTNODE alloc_scalar(int type){
-    ASTNODE ret = astnode_alloc(AST_SCALAR);
-    switch(type){
-        case TYPE_SIGNED:
-            ret->scalar.sign = N_SIGNED;
-            break;
-        case TYPE_UNSIGNED: 
-            ret->scalar.sign = N_UNSIGNED;
-            break;
-    };
-    ret->scalar.type = type;
+    ret->decl_spec.type = type;
     return ret;
 }
 
@@ -297,7 +374,7 @@ ASTNODE alloc_st_un(int type, int scope){
 
 ASTNODE alloc_func(ASTNODE name, ASTNODE param_list){
     ASTNODE ret = astnode_alloc(AST_FUNC);
-    ret->func.sym = sym_tab_create(SCOPE_FUNC);
+    // ret->func.sym = sym_tab_create(SCOPE_FUNC);
     ret->func.name = name;
     ret->func.args = param_list;
     return ret;
@@ -306,7 +383,6 @@ ASTNODE alloc_func(ASTNODE name, ASTNODE param_list){
 ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab){
     ASTNODE ret = astnode_alloc(AST_COMPOUND);
     ret->comp.states = exprs;
-    ret->comp.type = SCOPE_BLOCK;
     ret->comp.tab = tab;
     return ret;
 }

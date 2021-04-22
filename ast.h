@@ -6,7 +6,7 @@
 #include "parser.tab.h"
 #include "sym_tab.h"
 
-/* Abstract Symbol Table node types */
+/* Abstract Syntax Tree node types */
 enum AST_TYPE{ 
     AST_UNARY=0, 
     AST_BINARY, 
@@ -18,6 +18,7 @@ enum AST_TYPE{
     AST_CHARLIT, 
     AST_STRING, 
     AST_SELECT,
+    AST_TYPE,
     AST_SCALAR, 
     AST_PTR, 
     AST_ARRAY, 
@@ -28,59 +29,29 @@ enum AST_TYPE{
     AST_LIST, 
     AST_DECLARATION, 
     AST_DECL_SPEC, 
+    AST_DECL_STG, AST_DECL_TYPE_SPEC, AST_DECL_TYPE_QUALIF, AST_DECL_FUNC_SPEC, /* used for simplification not an acutal node type */
     AST_COMPOUND, 
     AST_SELECT_STMNT,
-    AST_IF_STMNT, AST_SWITCH_STMNT, AST_ITERAT_STMNT,
-    AST_DO_STMNT, AST_WHILE_STMNT, AST_FOR_STMNT,
-    AST_LABEL_STMNT, AST_LABEL, AST_LABEL_CASE, AST_LABEL_DEFAULT,
-    AST_JUMP_STMNT, AST_GOTO, AST_CONTINUE, AST_BREAK, AST_RETURN
+    AST_IF_STMNT, 
+    AST_SWITCH_STMNT, 
+    AST_ITERAT_STMNT,
+    AST_DO_STMNT, 
+    AST_WHILE_STMNT, 
+    AST_FOR_STMNT,
+    AST_LABEL_STMNT, 
+    AST_LABEL, 
+    AST_LABEL_CASE, 
+    AST_LABEL_DEFAULT,
+    AST_JUMP_STMNT, 
+    AST_GOTO, 
+    AST_CONTINUE, 
+    AST_BREAK, 
+    AST_RETURN
 };
 
 /* enum for binary types in ast */
 enum AST_BIN_TYPE{BINOP=0, COMP, ASSIGN};
 
-bool ast_compare_type(ASTNODE t1, ASTNODE t2);
-/* TO DO: FIX alloc_num, alloc_str to not be so verbose and accept struct num && struct str */
-void print_ast(ASTNODE ast);
-/* helper functions for assignment three 3: expressions */
-ASTNODE astnode_alloc(int ast_type);
-ASTNODE alloc_unary(int op, ASTNODE expr);
-ASTNODE alloc_binary(int type, ASTNODE val1, int op, ASTNODE val2);
-ASTNODE alloc_ternary(ASTNODE cond, ASTNODE true, ASTNODE false);
-ASTNODE alloc_and_expand_assignment(ASTNODE val1, int op, ASTNODE val2);
-ASTNODE alloc_ident(char* ident);
-ASTNODE alloc_num(unsigned long long int_num, long double real, int type, int sign);
-ASTNODE alloc_charlit(char charlit);
-ASTNODE alloc_string(char* string, int len);
-ASTNODE alloc_fncall(ASTNODE name, ASTNODE params);
-ASTNODE alloc_sizeof(ASTNODE expr);
-ASTNODE alloc_select(ASTNODE expr, char* ident);
-ASTNODE alloc_list(ASTNODE elem);
-
-/* helper functions for dealing with lists */
-ASTNODE list_last(ASTNODE list);
-ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
-ASTNODE list_append(ASTNODE list1, ASTNODE list2);
-int list_size(ASTNODE list);
-ASTNODE next_ptr(ASTNODE ptr_chain);
-ASTNODE last_ptr(ASTNODE ptr_chain);
-ASTNODE list_to_ptr_chain(ASTNODE list);
-
-/* new functions for assignment 3 */
-ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl);
-ASTNODE alloc_decl_spec(int decl_spec);
-ASTNODE alloc_scalar(int type);
-ASTNODE alloc_ptr(ASTNODE ptr_to);
-ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
-ASTNODE alloc_st_un(int type, int scope);
-ASTNODE alloc_func(ASTNODE name, ASTNODE param_list);
-
-/* new functions for assignment 4 */
-ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab);
-ASTNODE alloc_select_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt);
-ASTNODE alloc_iterat_stmnt(int type, ASTNODE cont, ASTNODE stmnt, ASTNODE init, ASTNODE update);
-ASTNODE alloc_label_stmnt(int type, ASTNODE stmnt, char* label, ASTNODE cond);
-ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr);
 
 struct astnode_unary{
     int op;
@@ -116,11 +87,13 @@ struct astnode_string{
 struct astnode_num{
     int type;
     int sign;
-    unsigned long long int_num;
-    long double real;
+    union{
+        unsigned long long int_num;
+        long double real;
+    };
 };
 
-/* fix later */
+/* this is dumb! I fix later */
 struct astnode_fncall{
     ASTNODE name;
     int num_param;
@@ -141,13 +114,29 @@ struct astnode_select{
     ASTNODE tag;
 };
 
-struct astnode_scalar{ 
-    int sign;
-    int type;
+/* meant to hold two lists: list of decl_spec and a list of declarators */
+/* used as a temporary storage before the declaration gets processed */
+struct astnode_declaration{
+    ASTNODE var_type, declaration;
+};
+
+struct astnode_type{ 
+    int stg_class;
+    int type_qualif; /* quietly ignore thoo */
+    int type; /* either st_un or scalar */
     union{
-        unsigned long long int_num;
-        long double real;
+        /* for structs */
+        struct{
+            ASTNODE st_un;
+            SYM_ENT def;
+        };
+        /* for scalars */
+        struct{
+            bool is_unsigned;
+            int type_spec;
+        };
     };
+    ASTNODE list; /* original list, good to have around... "for now" */
 };
 
 struct astnode_pointer{
@@ -173,27 +162,20 @@ struct astnode_func{
     ASTNODE ret;
     ASTNODE args; /* list of arguments */
     ASTNODE block;
-    SYM_TAB sym;  /* associated symbol table */
+    // SYM_TAB sym;  /* associated symbol table */
 };
 
 struct astnode_list{
     ASTNODE elem, next;
 };
 
-/* meant to hold two lists: list of decl_spec and a list of declarators */
-/* used as a temporary storage before the declaration gets processed */
-struct astnode_declaration{
-    ASTNODE qualif, declaration;
-};
-
 struct astnode_decl_spec{
     int decl_spec;
+    int type; /* type spec/qualif, func spec, storage class */
 };
 
 struct astnode_compound{
-    /* basically just a list of expressions */
-    ASTNODE states;
-    int type; /* block scope or function scope */
+    ASTNODE states; /* list of statements */
     SYM_TAB tab;
 };
 
@@ -210,7 +192,7 @@ struct astnode_iterat_stmnt{
 };
 
 struct astnode_label_stmnt{
-    int type;
+    int type; /* goto label, case, switch */
     ASTNODE stmnt; 
     char* label; /* used for goto labels(meant store ident) */
     ASTNODE cond; /* used for case */
@@ -221,7 +203,6 @@ struct astnode_jump_stmnt{
     char* goto_label;
     ASTNODE ret_expr;
 };
-
 
 struct astnode{
     int type;
@@ -239,9 +220,9 @@ struct astnode{
         struct astnode_list         list;
 
         /* assignment 3 */
+        struct astnode_type         var_type;
         struct astnode_declaration  declaration;
         struct astnode_decl_spec    decl_spec;
-        struct astnode_scalar       scalar;
         struct astnode_pointer      ptr;
         struct astnode_array        array;
         struct astnode_func         func;
@@ -255,5 +236,49 @@ struct astnode{
         struct astnode_jump_stmnt   jump_stmnt;
     };
 };
+
+bool ast_compare_type(ASTNODE t1, ASTNODE t2);
+/* TO DO: FIX alloc_num, alloc_str to not be so verbose and accept struct num && struct str */
+void print_ast(ASTNODE ast);
+/* helper functions for assignment three 3: expressions */
+ASTNODE astnode_alloc(int ast_type);
+ASTNODE alloc_unary(int op, ASTNODE expr);
+ASTNODE alloc_binary(int type, ASTNODE val1, int op, ASTNODE val2);
+ASTNODE alloc_ternary(ASTNODE cond, ASTNODE true, ASTNODE false);
+ASTNODE alloc_and_expand_assignment(ASTNODE val1, int op, ASTNODE val2);
+ASTNODE alloc_ident(char* ident);
+ASTNODE alloc_num(unsigned long long int_num, long double real, int type, int sign);
+ASTNODE alloc_charlit(char charlit);
+ASTNODE alloc_string(char* string, int len);
+ASTNODE alloc_fncall(ASTNODE name, ASTNODE params);
+ASTNODE alloc_sizeof(ASTNODE expr);
+ASTNODE alloc_select(ASTNODE expr, char* ident);
+ASTNODE alloc_list(ASTNODE elem);
+
+/* helper functions for dealing with lists */
+ASTNODE list_last(ASTNODE list);
+ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
+ASTNODE list_append(ASTNODE list1, ASTNODE list2);
+int list_size(ASTNODE list);
+ASTNODE next_ptr(ASTNODE ptr_chain);
+ASTNODE last_ptr(ASTNODE ptr_chain);
+ASTNODE list_to_ptr_chain(ASTNODE list);
+
+/* new functions for assignment 3 */
+ASTNODE alloc_type(ASTNODE decl_specs);
+ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl);
+ASTNODE alloc_decl_spec(int decl_spec, int type);
+// ASTNODE alloc_scalar(int type);
+ASTNODE alloc_ptr(ASTNODE ptr_to);
+ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
+ASTNODE alloc_st_un(int type, int scope);
+ASTNODE alloc_func(ASTNODE name, ASTNODE param_list);
+
+/* new functions for assignment 4 */
+ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab);
+ASTNODE alloc_select_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_stmnt);
+ASTNODE alloc_iterat_stmnt(int type, ASTNODE cont, ASTNODE stmnt, ASTNODE init, ASTNODE update);
+ASTNODE alloc_label_stmnt(int type, ASTNODE stmnt, char* label, ASTNODE cond);
+ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr);
 
 #endif
