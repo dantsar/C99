@@ -128,12 +128,13 @@ struct astnode_type{
         /* for structs */
         struct{
             ASTNODE st_un;
-            SYM_ENT def;
+            // SYM_ENT def;
         };
         /* for scalars */
         struct{
             bool is_unsigned;
             int type_spec;
+            bool is_inline;
         };
     };
     ASTNODE list; /* original list, good to have around... "for now" */

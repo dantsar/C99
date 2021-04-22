@@ -6,6 +6,7 @@
 #include "ast.h"
 
 extern void yyerror(const char* msg);
+extern void yyerror_die(const char* msg);
 
 bool ast_compare_type(ASTNODE t1, ASTNODE t2){
     ASTNODE temp;
@@ -247,6 +248,7 @@ int list_size(ASTNODE list){
 ASTNODE alloc_type(ASTNODE decl_specs){
     ASTNODE ret = astnode_alloc(AST_TYPE);
     int long_count = 0;
+    bool def_int = true; /* used to throw error if long is found after "non long declaration" (ex char, or short), a KLUDGE */
 
     /* a lot of tabs, but don't care! */
     /* very not elegant, there IS a more elegant way but I don't have the brain power right now */
@@ -254,6 +256,21 @@ ASTNODE alloc_type(ASTNODE decl_specs){
     while(temp != NULL)
     {
         decl_specs = temp->list.elem;
+
+        if(decl_specs->type == AST_ST_UN)
+        {
+            fprintf(stdout, "STRUCT UNION\n");
+            if(ret->var_type.type != 0){
+                yyerror("invalid struct/union variable declaration");
+                exit(-1);
+            }
+            ret->var_type.type = AST_ST_UN;
+            ret->var_type.st_un = decl_specs;
+
+            continue;
+        }
+
+        /* relatively harmless assumption */
         switch(decl_specs->decl_spec.type)
         {
             case AST_DECL_STG:
@@ -263,7 +280,20 @@ ASTNODE alloc_type(ASTNODE decl_specs){
                 }
                 ret->var_type.stg_class = decl_specs->decl_spec.decl_spec;
                 break;
-            case AST_DECL_TYPE_SPEC: /* the meat and potatoes */
+            case AST_DECL_TYPE_QUALIF:
+                /* Quietly ignore... that's right! go crazy with them, I don't care! I'll just take one */
+                switch(decl_specs->decl_spec.decl_spec)
+                { 
+                    case QUALIF_CONST:       ret->var_type.type_qualif = QUALIF_CONST; break;
+                    case QUALIF_RESTRICT:    ret->var_type.type_qualif = QUALIF_RESTRICT; break;
+                    case QUALIF_VOLATILE:    ret->var_type.type_qualif = QUALIF_VOLATILE; break;
+                }
+                break;
+            case AST_DECL_FUNC_SPEC:
+                ret->var_type.is_inline = true;
+                /* error? ¯\_(ツ)_/¯ */
+                break;
+            case AST_DECL_TYPE_SPEC:
                 switch(decl_specs->decl_spec.decl_spec) /* what a tongue twister */
                 { 
                     case TYPE_UNSIGNED: /* won't handle the case "unsigned unsigned" (I'll just pretend that it's just unsigned) */
@@ -272,64 +302,56 @@ ASTNODE alloc_type(ASTNODE decl_specs){
                         break;
                     case TYPE_LONG:
                         if(long_count == 0){
+                            // def_int = true;
                             ret->var_type.type_spec = TYPE_LONG;
                             long_count++;
                         }else if(long_count == 1){
                             ret->var_type.type_spec = TYPE_LLONG;
                             long_count++;
                         }else{
-                            yyerror("too many long specifiers in variable declaration");
-                            exit(-1);
+                            yyerror_die("too many long specifiers in variable declaration");
                         }
 
                         if(ret->var_type.type_spec == TYPE_LDOUBLE){
-                            yyerror("too many long specifiers in variable declaration");
-                            exit(-1);
+                            yyerror_die("too many long specifiers in variable declaration");
                         }else if(ret->var_type.type_spec == TYPE_DOUBLE){
                             ret->var_type.type_spec = TYPE_LDOUBLE;
+                        } else if(def_int == false){
+                            yyerror_die("invalid type specifiers variable declaration");
                         }
                         break;
                     case TYPE_DOUBLE:
                         if(long_count == 1)
                             ret->var_type.type_spec = TYPE_LDOUBLE;
                         else if(long_count == 2){
-                            yyerror("too many long specifiers in variable declaration for declaring double");
-                            exit(-1);
+                            yyerror_die("too many long specifiers in variable declaration for declaring double");
                         } else 
                             ret->var_type.type_spec = TYPE_LDOUBLE;
                         break; 
                     case TYPE_INT:
                         if(long_count != 0)
                             break;
+                        else if(ret->var_type.type_spec != 0){
+
+                        }
                         ret->var_type.type_spec = TYPE_INT;
                         break; 
-                    case TYPE_CHAR:
+                    default:
                         if(long_count != 0){
-                            yyerror("conflicting types in variable declaration");
-                            exit(-1);
+                            yyerror_die("conflicting types in variable declaration because of long");
+                        } else if(ret->var_type.type_spec != 0){
+                            yyerror_die("conflicting types in variable declaration");
                         }
-                        ret->var_type.type_spec = TYPE_CHAR;
+                        def_int = false;
+                        ret->var_type.type_spec = decl_specs->decl_spec.decl_spec;
                         break; 
-                    case TYPE_VOID:
-                        break; 
-                    case TYPE_FLOAT:
-                        break;
-                    case TYPE__BOOL:
-                        break;
-                    case TYPE__COMPLEX:
-                        break;
                 }
                 break;
-            case AST_DECL_TYPE_QUALIF:
-                /* Quietly ignore... that's right! go crazy with them, I don't care! */
-                break;
-            case AST_DECL_FUNC_SPEC:
-                /* error? ¯\_(ツ)_/¯ */
-                break;
         }
-
         temp = temp->list.next;
     }
+    // print_ast(ret);
+    // exit(69);
     return ret;
 }
 

@@ -19,6 +19,7 @@ SYM_TAB curr_scope;
 bool in_func = false;
 
 void yyerror(const char*);
+void yyerro_die(const char *);
 
 %}
 
@@ -228,7 +229,7 @@ type_spec:            VOID                                          {$$=alloc_de
                     | UNSIGNED                                      {$$=alloc_decl_spec(TYPE_UNSIGNED, AST_DECL_TYPE_SPEC);}      
                     | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL, AST_DECL_TYPE_SPEC);   }  
                     | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX, AST_DECL_TYPE_SPEC);}      
-                    | struct_union_spec                             {$$=$1;}
+                    | struct_union_spec                             {$$=$1; print_ast($1); exit(42);}
                     // | enum_spec    /* nope!. */
                     // | typedef_name /* heck nope! */
                     ; 
@@ -403,6 +404,10 @@ declaration_list:     declaration
 
 void yyerror(const char *msg){
     fprintf(stderr, "Error: %s:%d %s\n", filename, lineno, msg);
+}
+void yyerror_die(const char *msg){
+    yyerror(msg);
+    exit(-1);
 }
 
 int main(){

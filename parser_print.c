@@ -49,12 +49,6 @@ void print_sym_ent(SYM_ENT ent)
             break;
         case ENT_FUNC:
             print_ast(ent->func.func_def); space--;
-            // indent(space++); fprintf(stdout,"\nreturns:\n"); 
-            // indent(space); print_ast(ent->func.func_def->func.ret);
-            // indent(space); fprintf(stdout,"\ntaking args:\n");
-            // indent(space); print_ast(ent->func.func_def->func.args);
-            // indent(space); fprintf(stdout, "\nwith body:\n");
-            // indent(space); print_ast(ent->func.func_def->func.block);
             break;
     }
     space--;
@@ -172,14 +166,50 @@ void print_ast(ASTNODE ast){
             break;
         case AST_DECLARATION: /* for debugging */
             // fprintf(stdout, "AST_DECLARATION\n");
-            // fprintf(stdout, "qualif\n");
             fprintf(stdout, "declaration: "); 
-            /* indent(space++); */ print_ast(ast->declaration.var_type); 
-            // space--;
-            // putchar('\n');
-            // fprintf(stdout, "\ndeclaration\n");
-            /* indent(space++);*/ print_ast(ast->declaration.declaration);
+            print_ast(ast->declaration.var_type); 
+            print_ast(ast->declaration.declaration);
             space--;
+            putchar('\n');
+            break;
+        case AST_TYPE:
+            fprintf(stdout, "AST_TYPE\n");
+            if(ast->var_type.type == AST_ST_UN){
+                print_ast(ast->var_type.st_un);
+            } else{
+                switch(ast->var_type.stg_class)
+                {
+                    case STG_AUTO:      fprintf(stdout, "auto "); break;
+                    case STG_STATIC:    fprintf(stdout, "static "); break;
+                    case STG_EXTERN:    fprintf(stdout, "extern "); break;
+                    case STG_REGISTER:  fprintf(stdout, "auto "); break;
+                    case STG_TYPEDEF:   fprintf(stdout, "auto "); break;
+                }
+                /* not really used but here for the future */
+                switch(ast->var_type.type_qualif)
+                { 
+                    case QUALIF_CONST:      fprintf(stdout, "auto "); break;
+                    case QUALIF_RESTRICT:    fprintf(stdout, "static "); break;
+                    case QUALIF_VOLATILE:    fprintf(stdout, "extern "); break;
+                }
+                if(ast->var_type.is_unsigned){
+                    fprintf(stdout, "unsigned ");
+                }
+                switch(ast->var_type.type_spec)
+                {
+                    case TYPE_VOID:     fprintf(stdout, "void "); break;
+                    case TYPE_CHAR:     fprintf(stdout, "char "); break;
+                    case TYPE_SHORT:    fprintf(stdout, "short "); break;
+                    case TYPE_INT:      fprintf(stdout, "int "); break;
+                    case TYPE_LONG:     fprintf(stdout, "long int"); break;
+                    case TYPE_LLONG:    fprintf(stdout, "long long int"); break;
+                    case TYPE_FLOAT:    fprintf(stdout, "float "); break;
+                    case TYPE_DOUBLE:   fprintf(stdout, "double "); break;
+                    case TYPE_LDOUBLE:  fprintf(stdout, "long double "); break;
+                    case TYPE_SIGNED:   fprintf(stdout, "signed "); break;
+                    case TYPE_UNSIGNED: fprintf(stdout, "unsigned "); break;
+                }
+            }
             putchar('\n');
             break;
         case AST_DECL_SPEC:
