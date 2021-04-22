@@ -188,7 +188,7 @@ arith_expr:           arith_expr '+' arith_expr                 {$$=alloc_binary
 cast_expr:            unary_expr                                {$$=$1;}
                     ;
 /* (6.7) */
-declaration:          declaration_specs ';'                         {}
+declaration:          declaration_specs ';'                         {$$=alloc_declaration($1, NULL);}
                     | declaration_specs init_decl_list ';'          {$$=alloc_declaration($1, $2);}
                     ;   
 /* (6.7) */
@@ -229,7 +229,7 @@ type_spec:            VOID                                          {$$=alloc_de
                     | UNSIGNED                                      {$$=alloc_decl_spec(TYPE_UNSIGNED, AST_DECL_TYPE_SPEC);}      
                     | _BOOL                                         {$$=alloc_decl_spec(TYPE__BOOL, AST_DECL_TYPE_SPEC);   }  
                     | _COMPLEX                                      {$$=alloc_decl_spec(TYPE__COMPLEX, AST_DECL_TYPE_SPEC);}      
-                    | struct_union_spec                             {$$=$1; print_ast($1); exit(42);}
+                    | struct_union_spec                             {$$=$1;}
                     // | enum_spec    /* nope!. */
                     // | typedef_name /* heck nope! */
                     ; 
@@ -239,8 +239,9 @@ struct_union_spec:    struct_union '{' struct_declaration_list '}'              
                                                                                  sym_struct_define($1, $4);
                                                                                  sym_struct_declare($2, $1, curr_scope);
                                                                                 } 
-                    | struct_union IDENT                                        { SYM_ENT temp = alloc_sym_ent($2, ENT_SU_TAG, NS_SU);
-                                                                                  $$ = (temp = sym_lookup(curr_scope, temp)) ? temp->su_tag.st_un : alloc_ident($2);
+                    | struct_union IDENT                                        { /* either a forward declartion or getting the type (I will be ignoring/not handling forward declarations) */
+                                                                                  SYM_ENT temp = alloc_sym_ent($2, ENT_SU_TAG, NS_SU);
+                                                                                  $$ = (temp = sym_lookup(curr_scope, temp)) ? temp->su_tag.st_un : $1;
                                                                                 } 
                     ;
 /* (6.7.2.1) */
@@ -256,9 +257,9 @@ struct_declaration:   specific_qualif_list struct_decl_list ';'         {$$=allo
                     ;
 /* (6.7.2.1) */
 specific_qualif_list:     type_spec                         {$$=alloc_list($1);}
-                        | type_spec specific_qualif_list    {$$=list_append_elem($1, $2);}
+                        | specific_qualif_list  type_spec   {$$=list_append_elem($2, $1);}
                         | type_qualif                       {$$=alloc_list($1);}
-                        | type_qualif specific_qualif_list  {$$=list_append_elem($1, $2);}
+                        | specific_qualif_list  type_qualif {$$=list_append_elem($2, $1);}
                         ;
 /* (6.7.2.1) */
 struct_decl_list:     struct_decl                               {$$=alloc_list($1);}

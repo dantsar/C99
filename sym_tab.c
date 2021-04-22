@@ -173,7 +173,6 @@ void sym_struct_define(ASTNODE st_un, ASTNODE decl_list)
         var_type = decl_list->list.elem->declaration.var_type;
         declaration = decl_list->list.elem->declaration.declaration;
 
-        /* TO DO: in sym_declaration make sure to figure out the symbol table and enter the appropriate namespace */
         sym_declaration(alloc_declaration(var_type, declaration), st_un->st_un.mini_tab);
         decl_list = decl_list->list.next;
     }

@@ -26,8 +26,8 @@ void print_sym(SYM_TAB sym)
     space++;
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
-        fprintf(stdout, "%s:%d ", temp->entry->filename, temp->entry->lineno);
-        indent(space); print_sym_ent(temp->entry);
+        indent(space); fprintf(stdout, "%s:%d ", temp->entry->filename, temp->entry->lineno);
+        indent(++space); print_sym_ent(temp->entry); space--;
         temp = temp->next;
     }
     space--;
@@ -44,7 +44,9 @@ void print_sym_ent(SYM_ENT ent)
             break;
         case ENT_SU_TAG:
             indent(space);
-            print_ast(ent->su_tag.st_un);
+            print_ast(ent->su_tag.st_un); 
+            indent(++space); fprintf(stdout, "with elements:\n");
+            print_sym(ent->su_tag.st_un->st_un.mini_tab);
             putchar('\n');
             break;
         case ENT_FUNC:
@@ -173,7 +175,7 @@ void print_ast(ASTNODE ast){
             putchar('\n');
             break;
         case AST_TYPE:
-            fprintf(stdout, "AST_TYPE\n");
+            // fprintf(stdout, "AST_TYPE\n");
             if(ast->var_type.type == AST_ST_UN){
                 print_ast(ast->var_type.st_un);
             } else{
@@ -237,7 +239,7 @@ void print_ast(ASTNODE ast){
                 fprintf(stdout, "UNION");
             }
             fprintf(stdout, " %s\n", ast->st_un.name);
-            print_sym(ast->st_un.mini_tab);
+            // print_sym(ast->st_un.mini_tab);
             break;
         case AST_FUNC:
             fprintf(stdout, "function: %s\n taking arguments:\n", ast->func.name->ident.ident);

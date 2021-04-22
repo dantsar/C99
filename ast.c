@@ -245,7 +245,8 @@ int list_size(ASTNODE list){
     return count;
 }
 
-ASTNODE alloc_type(ASTNODE decl_specs){
+ASTNODE alloc_type(ASTNODE decl_specs)
+{
     ASTNODE ret = astnode_alloc(AST_TYPE);
     int long_count = 0;
     bool def_int = true; /* used to throw error if long is found after "non long declaration" (ex char, or short), a KLUDGE */
@@ -259,7 +260,6 @@ ASTNODE alloc_type(ASTNODE decl_specs){
 
         if(decl_specs->type == AST_ST_UN)
         {
-            fprintf(stdout, "STRUCT UNION\n");
             if(ret->var_type.type != 0){
                 yyerror("invalid struct/union variable declaration");
                 exit(-1);
@@ -267,8 +267,11 @@ ASTNODE alloc_type(ASTNODE decl_specs){
             ret->var_type.type = AST_ST_UN;
             ret->var_type.st_un = decl_specs;
 
+            temp = temp->list.next;
             continue;
         }
+        if(ret->var_type.type == AST_ST_UN)
+            yyerror_die("incorrect variable declaration, struct/union and type specifiers found");
 
         /* relatively harmless assumption */
         switch(decl_specs->decl_spec.type)
@@ -350,15 +353,17 @@ ASTNODE alloc_type(ASTNODE decl_specs){
         }
         temp = temp->list.next;
     }
-    // print_ast(ret);
-    // exit(69);
     return ret;
 }
 
 ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl){
     ASTNODE ret = astnode_alloc(AST_DECLARATION);
     ret->declaration.declaration = decl;
-    ret->declaration.var_type = alloc_type(qualif);
+    if(qualif->type == AST_LIST){
+        ret->declaration.var_type = alloc_type(qualif);
+    } else {
+        ret->declaration.var_type = qualif;
+    }
     return ret;
 }
 
