@@ -87,10 +87,8 @@ struct astnode_string{
 struct astnode_num{
     int type;
     int sign;
-    union{
-        unsigned long long int_num;
-        long double real;
-    };
+    unsigned long long int_num;
+    long double real;
 };
 
 /* this is dumb! I fix later */
@@ -148,7 +146,8 @@ struct astnode_pointer{
 struct astnode_array{
     // ASTNODE spec;
     ASTNODE ptr_to;
-    int size;
+    ASTNODE size;
+    // int size;
 }; 
 
 struct astnode_st_un{

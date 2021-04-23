@@ -160,7 +160,11 @@ void print_ast(ASTNODE ast){
             }
             break;
         case AST_ARRAY:
-            fprintf(stdout, "array (%d) of \n", ast->array.size);
+            // fprintf(stdout, "array (%d) of \n", ast->array.size);
+            fprintf(stdout, "array of size:\n");
+            indent(++space); print_ast(ast->array.size); space--;
+
+            indent(space++); fprintf(stdout, "pointing to:"); space--;
             /* to avoid exploding from a NULL pointer */
             if(ast->array.ptr_to){
                 indent(++space); print_ast(ast->array.ptr_to); space--;

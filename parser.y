@@ -19,7 +19,7 @@ SYM_TAB curr_scope;
 bool in_func = false;
 
 void yyerror(const char*);
-void yyerro_die(const char *);
+void yyerror_die(const char *);
 
 %}
 
@@ -68,7 +68,7 @@ void yyerro_die(const char *);
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
 %type<str>          STRING
-%type<astnode_p>    constant
+// %type<astnode_p>    constant
 
 /* expressions */
 %type<astnode_p>    expr
@@ -117,8 +117,8 @@ postfix_expr:         prim_expr                                 {$$=$1;}
                     // | '(' type_name ')' '{' init_list '}'       {/* shtuff */}
                     // | '(' type_name ')' '{' init_list ',' '}'   {/* shtuff */}
                     ;
-constant:             NUMBER                        {$$=alloc_num($1.int_num, $1.real, $1.type, $1.sign);}
-                    | CHARLIT                       {$$=alloc_charlit($1);}
+// constant:             NUMBER                        {$$=alloc_num($1.int_num, $1.real, $1.type, $1.sign);}
+//                     | CHARLIT                       {$$=alloc_charlit($1);}
                     ; 
 /* (6.5.16) */
 assign_expr:          unary_expr '=' assign_expr                {$$=alloc_binary(ASSIGN, $1, '=', $3);} 
@@ -257,9 +257,9 @@ struct_declaration:   specific_qualif_list struct_decl_list ';'         {$$=allo
                     ;
 /* (6.7.2.1) */
 specific_qualif_list:     type_spec                         {$$=alloc_list($1);}
-                        | specific_qualif_list  type_spec   {$$=list_append_elem($2, $1);}
+                        | specific_qualif_list type_spec    {$$=list_append_elem($2, $1);}
                         | type_qualif                       {$$=alloc_list($1);}
-                        | specific_qualif_list  type_qualif {$$=list_append_elem($2, $1);}
+                        | specific_qualif_list type_qualif  {$$=list_append_elem($2, $1);}
                         ;
 /* (6.7.2.1) */
 struct_decl_list:     struct_decl                               {$$=alloc_list($1);}
@@ -286,8 +286,8 @@ decl:                 direct_decl                                   {$$=$1;}
 /* (6.7.5) */
 direct_decl:          IDENT                                         {$$=alloc_list(alloc_ident($1));} //{$$=alloc_list(alloc_ident($1));}
                     | '(' decl ')'                                  {$$=$2;}
-                    | direct_decl '[' constant ']'                  {$$=list_append_elem(alloc_array(NULL,$3), $1);}
-                    | direct_decl '[' ']'                           {yyerror("not supporting variable length arrays");exit(-1);}
+                    | direct_decl '[' assign_expr ']'                  {$$=list_append_elem(alloc_array(NULL,$3), $1);}
+                    | direct_decl '[' ']'                           {yyerror_die("not supporting variable length arrays");}
 
                     | direct_decl '(' param_type_list ')'           { /* replace the first element(IDENT) with a ast_func */
                                                                      $$=alloc_list(alloc_func($1->list.elem, $3));
@@ -298,7 +298,7 @@ direct_decl:          IDENT                                         {$$=alloc_li
                                                                      $$->list.next = $1->list.next;
                                                                      free($1); /* SOME semblance of memory managment :^) */
                                                                     }
-                    | direct_decl '(' ident_list ')'                {yyerror("Not supporting old c style function definitons :'("); exit(-1);}/* func */
+                    | direct_decl '(' ident_list ')'                {yyerror_die("Not supporting old c style function definitons :'(");}/* func */
                     ;
 /* (6.7.5) */
 /* ignoring type qualifieres, but support in grammar */
@@ -327,8 +327,7 @@ param_declaration:    declaration_specs decl                    {$$=alloc_declar
                                                                      if($$->list.elem->decl_spec.decl_spec == TYPE_VOID)
                                                                         $$=alloc_declaration($1, NULL);
                                                                  }else{ 
-                                                                     yyerror("incomplete function definition"); 
-                                                                     exit(-1);
+                                                                     yyerror_die("incomplete function definition"); 
                                                                  }
                                                                 } 
                     ;
@@ -395,7 +394,7 @@ func_def:              declaration_specs decl compound_stmnt                    
                                                                                     $$->func.block->comp.tab->scope_type = SCOPE_FUNC;
                                                                                     free($2);
                                                                                 }
-                    | declaration_specs decl declaration_list compound_stmnt    {yyerror("not handling old c style function definitions :'("); exit(-1);}
+                    | declaration_specs decl declaration_list compound_stmnt    {yyerror_die("not handling old c style function definitions :'(");}
                     ;
 /* (6.9.1) */
 declaration_list:     declaration

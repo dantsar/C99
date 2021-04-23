@@ -252,7 +252,7 @@ ASTNODE alloc_type(ASTNODE decl_specs)
     bool def_int = true; /* used to throw error if long is found after "non long declaration" (ex char, or short), a KLUDGE */
 
     /* a lot of tabs, but don't care! */
-    /* very not elegant, there IS a more elegant way but I don't have the brain power right now */
+    /* very not elegant, there IS a more elegant way, but I don't have the brain power right now */
     ASTNODE temp = decl_specs;
     while(temp != NULL)
     {
@@ -261,8 +261,7 @@ ASTNODE alloc_type(ASTNODE decl_specs)
         if(decl_specs->type == AST_ST_UN)
         {
             if(ret->var_type.type != 0){
-                yyerror("invalid struct/union variable declaration");
-                exit(-1);
+                yyerror_die("invalid struct/union variable declaration");
             }
             ret->var_type.type = AST_ST_UN;
             ret->var_type.st_un = decl_specs;
@@ -278,8 +277,7 @@ ASTNODE alloc_type(ASTNODE decl_specs)
         {
             case AST_DECL_STG:
                 if(ret->var_type.stg_class != 0){
-                    yyerror("too many storage types in variable declaration");
-                    exit(-1);
+                    yyerror_die("too many storage types in variable declaration");
                 }
                 ret->var_type.stg_class = decl_specs->decl_spec.decl_spec;
                 break;
@@ -334,9 +332,7 @@ ASTNODE alloc_type(ASTNODE decl_specs)
                     case TYPE_INT:
                         if(long_count != 0)
                             break;
-                        else if(ret->var_type.type_spec != 0){
 
-                        }
                         ret->var_type.type_spec = TYPE_INT;
                         break; 
                     default:
@@ -385,9 +381,10 @@ ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
     ret->array.ptr_to = array_of;
     /* assuming arrays are only defined as constants of unknown */
     if(size)
-        ret->array.size = size->num.int_num;
+        ret->array.size = size;
+        // ret->array.size = size->num.int_num;
     else 
-        ret->array.size = 0; /* indicates a VLA: this shouldn't be reachable, but just in case */
+        ret->array.size = NULL; /* indicates a VLA: this shouldn't be reachable, but just in case */
     return ret;
 }
 
