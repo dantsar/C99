@@ -100,7 +100,13 @@ extern_declaration:   declaration                                       {sym_dec
                                                                                      
                     ;
 /* (6.5.1) */
-prim_expr:            IDENT                         {$$=alloc_ident($1);}
+prim_expr:            IDENT                         {$$=alloc_ident($1);
+                                                     SYM_ENT temp = alloc_sym_ent($1, ENT_VAR, NS_MISC);
+                                                     if(!($$->ident.entry = sym_lookup(curr_scope,temp))){
+                                                         yyerror_die("undefined variable encountered");
+                                                     }
+                                                     free(temp);
+                                                    }
                     | NUMBER                        {$$=alloc_num($1.int_num, $1.real, $1.type, $1.sign);}
                     | CHARLIT                       {$$=alloc_charlit($1);}
                     | STRING                        {$$=alloc_string($1.str, $1.len);}

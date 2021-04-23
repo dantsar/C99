@@ -39,9 +39,7 @@ enum AST_TYPE{
     AST_WHILE_STMNT, 
     AST_FOR_STMNT,
     AST_LABEL_STMNT, 
-    AST_LABEL, 
-    AST_LABEL_CASE, 
-    AST_LABEL_DEFAULT,
+    AST_LABEL, AST_LABEL_CASE, AST_LABEL_DEFAULT,
     AST_JUMP_STMNT, 
     AST_GOTO, 
     AST_CONTINUE, 
@@ -73,6 +71,7 @@ struct astnode_ternary{
 
 struct astnode_ident{
     char* ident;
+    SYM_ENT entry;
 };
 
 struct astnode_charlit{
@@ -268,7 +267,6 @@ ASTNODE list_to_ptr_chain(ASTNODE list);
 ASTNODE alloc_type(ASTNODE decl_specs);
 ASTNODE alloc_declaration(ASTNODE qualif, ASTNODE decl);
 ASTNODE alloc_decl_spec(int decl_spec, int type);
-// ASTNODE alloc_scalar(int type);
 ASTNODE alloc_ptr(ASTNODE ptr_to);
 ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
 ASTNODE alloc_st_un(int type, int scope);
