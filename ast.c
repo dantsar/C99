@@ -15,7 +15,7 @@ bool ast_compare_type(ASTNODE t1, ASTNODE t2){
     /* there is probably a more elegant method, but don't care! */
     do{
         /* compare type: should only be of three types: 
-           AST_PTR, AST_ARRAY, or AST_LIST(of decl_spec) */
+           AST_PTR, AST_ARRAY, or AST_TYPE */
         if(t1->type == t2->type){
             if(t1->type == AST_TYPE){
                 /* compare types of variable */
@@ -24,7 +24,7 @@ bool ast_compare_type(ASTNODE t1, ASTNODE t2){
                 if(t1->var_type.type != t2->var_type.type) return false;
                 if(t1->var_type.type == AST_ST_UN){
                     /* only compare struct names */
-                    if(!strcmp(t1->var_type.st_un->st_un.name, t2->var_type.st_un->st_un.name)) return false;
+                    if(strcmp(t1->var_type.st_un->st_un.name, t2->var_type.st_un->st_un.name)) return false;
                 } else { 
                     if(t1->var_type.is_unsigned != t2->var_type.is_unsigned) return false;
                     if(t1->var_type.type_spec != t2->var_type.type_spec) return false;
