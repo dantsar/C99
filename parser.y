@@ -119,8 +119,8 @@ postfix_expr:         prim_expr                                 {$$=$1;}
                     ;
 // constant:             NUMBER                        {$$=alloc_num($1.int_num, $1.real, $1.type, $1.sign);}
 //                     | CHARLIT                       {$$=alloc_charlit($1);}
-                    ; 
-/* (6.5.16) */
+//                     ; 
+// /* (6.5.16) */
 assign_expr:          unary_expr '=' assign_expr                {$$=alloc_binary(ASSIGN, $1, '=', $3);} 
                     | unary_expr PLUSEQ assign_expr             {$$=alloc_and_expand_assignment($1, '+', $3);} 
                     | unary_expr MINUSEQ assign_expr            {$$=alloc_and_expand_assignment($1, '-', $3);}     
@@ -313,7 +313,7 @@ type_qualif_list:     type_qualif
                     ;
 /* (6.7.5) */
 param_type_list:      param_list                                {$$=$1;}
-                    | param_list ',' ELLIPSIS                   {$$=$1;} /* I will handle this later...maybe...*/
+                    | param_list ',' ELLIPSIS                   {$$=$1;} /* I will handle this later...maybe... */
                     ;
 /* (6.7.5) */
 param_list:           param_declaration                         {$$=alloc_list($1);}

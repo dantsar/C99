@@ -8,6 +8,7 @@
 extern void yyerror(const char* msg);
 extern void yyerror_die(const char* msg);
 
+/* compares the whole variable, including pointer chain */
 bool ast_compare_type(ASTNODE t1, ASTNODE t2){
     ASTNODE temp;
     if(t1 == NULL && t2 == NULL) return true; /* should be error? ¯\_(ツ)_/¯ */
@@ -16,16 +17,24 @@ bool ast_compare_type(ASTNODE t1, ASTNODE t2){
         /* compare type: should only be of three types: 
            AST_PTR, AST_ARRAY, or AST_LIST(of decl_spec) */
         if(t1->type == t2->type){
-            if(t1->type == AST_LIST){
-                if(t1->list.elem->decl_spec.decl_spec == t2->list.elem->decl_spec.decl_spec)
-                    continue;
-                else
-                    return false;
+            if(t1->type == AST_TYPE){
+                /* compare types of variable */
+                if(t1->var_type.stg_class != t2->var_type.stg_class) return false;
+                if(t1->var_type.type_qualif != t2->var_type.type_qualif) return false;
+                if(t1->var_type.type != t2->var_type.type) return false;
+                if(t1->var_type.type == AST_ST_UN){
+                    /* only compare struct names */
+                    if(!strcmp(t1->var_type.st_un->st_un.name, t2->var_type.st_un->st_un.name)) return false;
+                } else { 
+                    if(t1->var_type.is_unsigned != t2->var_type.is_unsigned) return false;
+                    if(t1->var_type.type_spec != t2->var_type.type_spec) return false;
+                    if(t1->var_type.is_inline != t2->var_type.is_inline) return false;
+                }
             }
-        } else{
+        } else {
             return false;
         }
-    }while((t1 = next_ptr(t1)) &&  (t2 = next_ptr(t2)));
+    }while((t1 = next_ptr(t1)) && (t2 = next_ptr(t2)));
 
     return true;
 }

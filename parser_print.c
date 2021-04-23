@@ -26,8 +26,8 @@ void print_sym(SYM_TAB sym)
     space++;
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
-        indent(space); fprintf(stdout, "%s:%d ", temp->entry->filename, temp->entry->lineno);
-        indent(++space); print_sym_ent(temp->entry); space--;
+        indent(space); fprintf(stdout, "%s:%d  ", temp->entry->filename, temp->entry->lineno);
+        print_sym_ent(temp->entry);
         temp = temp->next;
     }
     space--;
@@ -36,21 +36,20 @@ void print_sym(SYM_TAB sym)
 void print_sym_ent(SYM_ENT ent)
 {
     fprintf(stdout, "%s:\n", ent->name);
-    indent(space++); 
+    indent(++space); 
     switch(ent->att_type){
         case ENT_VAR:
             print_ast(ent->var.type);  /* list should be being passed to print_ast */
             putchar('\n');
             break;
         case ENT_SU_TAG:
-            indent(space);
             print_ast(ent->su_tag.st_un); 
             indent(++space); fprintf(stdout, "with elements:\n");
             print_sym(ent->su_tag.st_un->st_un.mini_tab);
-            putchar('\n');
+            // putchar('\n');
             break;
         case ENT_FUNC:
-            print_ast(ent->func.func_def); space--;
+            print_ast(ent->func.func_def);
             break;
     }
     space--;
@@ -171,7 +170,7 @@ void print_ast(ASTNODE ast){
             }
             break;
         case AST_DECLARATION: /* for debugging */
-            // fprintf(stdout, "AST_DECLARATION\n");
+            fprintf(stdout, "AST_DECLARATION\n");
             fprintf(stdout, "declaration: "); 
             print_ast(ast->declaration.var_type); 
             print_ast(ast->declaration.declaration);

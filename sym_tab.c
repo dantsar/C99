@@ -7,6 +7,7 @@
 extern char filename[256];
 extern int lineno;
 extern void yyerror(const char* msg);
+extern void yyerror_die(const char* msg);
 
 SYM_TAB sym_tab_create(int scope_type){
     SYM_TAB ret = calloc(1, sizeof(struct sym_tab));
@@ -157,8 +158,7 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
         SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
         ent->var.type = ptr_chain;
         if(!sym_enter(tab, ent)){
-            yyerror("error: redeclaration of variable\n");
-            exit(-1);
+            yyerror_die("error: redeclaration of variable\n");
         }
         var_list = var_list->list.next;
     }
@@ -185,15 +185,13 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
     ent->name = name;
     ent->su_tag.st_un = st_un;
     if(!sym_enter(tab, ent)){
-        yyerror("error: redeclaration of variable\n");
-        exit(-1);
+        yyerror_die("error: redeclaration of variable\n");
     }
 }
 
 void sym_func_def(ASTNODE func_def, SYM_TAB tab){
     if(tab->scope_type != SCOPE_GLOBAL){
-        yyerror("function definition not in global scope");
-        exit(-1);
+        yyerror_die("function definition not in global scope");
     }
 
     SYM_ENT ent = alloc_sym_ent(func_def->func.name->ident.ident, ENT_FUNC, NS_MISC);
@@ -204,7 +202,6 @@ void sym_func_def(ASTNODE func_def, SYM_TAB tab){
     
     /* enter function definition into symbol table */
     if(!sym_enter(tab, ent)){
-        yyerror("error: redeclaration of variable\n");
-        exit(-1);
+        yyerror_die("error: redeclaration of variable\n");
     }
 }
