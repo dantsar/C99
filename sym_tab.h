@@ -145,14 +145,13 @@ struct sym_tab{
 SYM_TAB sym_tab_create(int att_type);
 void sym_tab_destory(SYM_TAB sym);
 SYM_TAB sym_tab_push(int scope_type, SYM_TAB sym_tab);
+SYM_TAB sym_tab_push_on(SYM_TAB curr_scope, SYM_TAB new);
 SYM_TAB sym_tab_pop(SYM_TAB stack);
 bool sym_enter(SYM_TAB tab, SYM_ENT ent);
 SYM_ENT sym_lookup(SYM_TAB sym, SYM_ENT ent); 
 
 void print_sym(SYM_TAB sym);
 void print_sym_ent(SYM_ENT ent);
-
-// void print_sym_stack(SYM_TAB curr_scope);
 
 /* for populating the symbol table */
 SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);

@@ -391,7 +391,6 @@ ASTNODE alloc_array(ASTNODE array_of, ASTNODE size){
     /* assuming arrays are only defined as constants of unknown */
     if(size)
         ret->array.size = size;
-        // ret->array.size = size->num.int_num;
     else 
         ret->array.size = NULL; /* indicates a VLA: this shouldn't be reachable, but just in case */
     return ret;
@@ -405,11 +404,19 @@ ASTNODE alloc_st_un(int type, int scope){
     return ret; 
 }
 
-ASTNODE alloc_func(ASTNODE name, ASTNODE param_list){
+ASTNODE alloc_func(ASTNODE name, ASTNODE arg_list){
     ASTNODE ret = astnode_alloc(AST_FUNC);
-    // ret->func.sym = sym_tab_create(SCOPE_FUNC);
+    ret->func.sym = sym_tab_create(SCOPE_FUNC);
     ret->func.name = name;
-    ret->func.args = param_list;
+    ret->func.args = arg_list;
+
+    /* enter arguments into the function's symbol table */
+    SYM_ENT ent;
+    while(arg_list != NULL)
+    {
+        sym_declaration(arg_list->list.elem, ret->func.sym);
+        arg_list = arg_list->list.next;
+    }
     return ret;
 }
 

@@ -357,7 +357,7 @@ label_stmnt:          IDENT ':' statement                       {$$=alloc_label_
                     ;
 /* (6.8.2) */
 compound_stmnt:       '{' '}'                   {$$=alloc_compound(NULL, NULL);}
-                    | '{' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list  '}'   {$$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
+                    | '{' {if(in_func){in_func=false;} else curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list  '}' {$$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
                     ;
 /* (6.8.2) */
 block_item_list:      block_item                    {$$=alloc_list($1);}
@@ -392,14 +392,16 @@ jump_stmnt:           GOTO IDENT ';'                        {$$=alloc_jump_stmnt
                     ;
 /* (6.9.1) */
 /* manually change compound scope from block to func */
-func_def:              declaration_specs decl compound_stmnt                     { /* populate astnode with elements */
-                                                                                    $$=$2->list.elem; /* first element is astnode_func */
-                                                                                    $$->func.ret = list_append($1, $2);
-                                                                                    $$->func.ret = $$->func.ret->list.next;
-                                                                                    $$->func.block = $3;
-                                                                                    $$->func.block->comp.tab->scope_type = SCOPE_FUNC;
-                                                                                    free($2);
-                                                                                }
+func_def:              declaration_specs  decl {in_func=true; curr_scope=sym_tab_push_on(curr_scope,$2->list.elem->func.sym);}
+                                compound_stmnt { /* populate astnode with elements */
+                                                    $$=$2->list.elem; /* first element is astnode_func */
+                                                    $$->func.ret = list_append($1, $2);
+                                                    $$->func.ret = $$->func.ret->list.next; /* skip over astnode_func */
+
+                                                    //    $4->comp.tab->scope_type = SCOPE_FUNC;
+                                                    $$->func.block = $4;
+                                                    free($2); in_func = false;
+                                                }
                     | declaration_specs decl declaration_list compound_stmnt    {yyerror_die("not handling old c style function definitions :'(");}
                     ;
 /* (6.9.1) */

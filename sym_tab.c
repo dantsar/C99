@@ -26,6 +26,11 @@ SYM_TAB sym_tab_push(int scope_type, SYM_TAB sym_tab){
     return new_tab;
 }
 
+SYM_TAB sym_tab_push_on(SYM_TAB curr_scope, SYM_TAB new){
+    new->next = curr_scope;
+    return new;
+}
+
 SYM_TAB sym_tab_pop(SYM_TAB stack){
     /* free current scope? ... probably not... */
     return stack->next;
@@ -130,15 +135,25 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
     ASTNODE type = declaration->declaration.var_type;
     ASTNODE var_list = declaration->declaration.declaration;
     ASTNODE ptr_chain, var;
+
+    /* loops over the list of idents in ex. int a,b,c; */
     while(var_list != NULL)
     {
-        var = var_list->list.elem;
         char *name;
+        var = var_list->list.elem;
+        /* name of variable is the fist element, as a result of grammar structure 
+            but in a different place for function declarations and regular function declarations
+            because, c doesn't allow int func(int a,b,c) {...} */
+        if(var->type == AST_IDENT){
+            /* being in this state implies that this is a function declaration */
+            name = var->ident.ident;
+            var = var_list;
+        }else{
+            name = var->list.elem->ident.ident;
+        }
 
-        /* name of variable is the fist element, as a result of grammar structure */
-        name = var->list.elem->ident.ident;
-
-        /* check if there is to the declaration */
+        /* now create pointer chain ex. int *a[2]; ==> [2] -> * -> int */
+        /* check if there are declarators in the declaration and create pointer chain */
         if(var->list.next != NULL){
             /* skipping over ident */
             var = var->list.next;
@@ -160,6 +175,10 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
         if(!sym_enter(tab, ent)){
             yyerror_die("error: redeclaration of variable\n");
         }
+
+        if(var_list->list.elem->type != AST_LIST)
+            return;
+
         var_list = var_list->list.next;
     }
 }
@@ -189,7 +208,8 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
     }
 }
 
-void sym_func_def(ASTNODE func_def, SYM_TAB tab){
+void sym_func_def(ASTNODE func_def, SYM_TAB tab)
+{
     if(tab->scope_type != SCOPE_GLOBAL){
         yyerror_die("function definition not in global scope");
     }

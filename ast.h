@@ -161,7 +161,7 @@ struct astnode_func{
     ASTNODE ret;
     ASTNODE args; /* list of arguments */
     ASTNODE block;
-    // SYM_TAB sym;  /* associated symbol table */
+    SYM_TAB sym;  /* associated symbol table */
 };
 
 struct astnode_list{
@@ -270,7 +270,7 @@ ASTNODE alloc_decl_spec(int decl_spec, int type);
 ASTNODE alloc_ptr(ASTNODE ptr_to);
 ASTNODE alloc_array(ASTNODE array_of, ASTNODE size);
 ASTNODE alloc_st_un(int type, int scope);
-ASTNODE alloc_func(ASTNODE name, ASTNODE param_list);
+ASTNODE alloc_func(ASTNODE name, ASTNODE arg_list);
 
 /* new functions for assignment 4 */
 ASTNODE alloc_compound(ASTNODE exprs, SYM_TAB tab);
