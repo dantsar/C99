@@ -1,0 +1,10 @@
+/* thinks that I have done, didn't do, and mistakes that I've made (there are a lot) */
+
+
+I am not properly printing out/handling function pointers/function declartions
+
+enums
+initializers 
+
+
+I intentionaly avoided making curr_scope global accross files... boy was that a mistake

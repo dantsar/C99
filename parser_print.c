@@ -55,12 +55,13 @@ void print_sym_ent(SYM_ENT ent)
     space--;
 }
 
-void print_ast(ASTNODE ast){
+void print_ast(ASTNODE ast)
+{
     /* int for storing indentation in the output */
-    if(ast == NULL) return;
+    if(ast == NULL) return; /* to prevent explosion */
+
     ASTNODE temp;
     char* temp_str;
-
     switch(ast->type){
         case AST_UNARY:
             switch(ast->unary.op){
@@ -193,7 +194,7 @@ void print_ast(ASTNODE ast){
                 /* not really used but here for the future */
                 switch(ast->var_type.type_qualif)
                 { 
-                    case QUALIF_CONST:      fprintf(stdout, "auto "); break;
+                    case QUALIF_CONST:      fprintf(stdout, "const "); break;
                     case QUALIF_RESTRICT:    fprintf(stdout, "static "); break;
                     case QUALIF_VOLATILE:    fprintf(stdout, "extern "); break;
                 }
@@ -247,10 +248,10 @@ void print_ast(ASTNODE ast){
         case AST_FUNC:
             fprintf(stdout, "function: %s\n taking arguments:\n", ast->func.name->ident.ident);
             indent(++space); print_ast(ast->func.args); space--;
-            fprintf(stdout, "and returning:\n");
+            indent(space); fprintf(stdout, "and returning:\n");
             indent(++space); print_ast(ast->func.ret); space--;
             putchar('\n');
-            fprintf(stdout, "with body:\n");
+            indent(space); fprintf(stdout, "with body:\n");
             indent(++space); print_ast(ast->func.block); space--;
             break;
         case AST_COMPOUND:

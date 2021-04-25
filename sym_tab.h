@@ -94,7 +94,6 @@ struct enum_const{
 };
 
 struct statement_label{
-    // IR_CODE ir_code;
     bool seen; /* placeholder */
 };
 
@@ -118,11 +117,11 @@ struct sym_entry{
         struct var_att              var;
         struct func_att             func;
         struct struct_union_tag     su_tag;
-        // struct struct_union_mem     su_mem;
-        struct enum_tag             en_tag;
-        struct enum_const           en_val;
-        struct statement_label      stmt_l;
-        struct typedef_name         t_def;
+    //     // struct struct_union_mem     su_mem;
+    //     struct enum_tag             en_tag;
+    //     struct enum_const           en_val;
+    //     struct statement_label      stmt_l;
+    //     struct typedef_name         t_def;
     };
 };
 

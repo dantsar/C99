@@ -351,7 +351,11 @@ statement:            expr_stmnt                                {$$=$1;}
                     | jump_stmnt                                {$$=$1;}
                     ;
 /* (6.8.1) */
-label_stmnt:          IDENT ':' statement                       {$$=alloc_label_stmnt(AST_LABEL, $3, $1, NULL);}
+label_stmnt:          IDENT ':' statement                       {$$=alloc_label_stmnt(AST_LABEL, $3, $1, NULL);
+                                                                 if(!sym_enter(curr_scope, alloc_sym_ent($1, ENT_STMNT_LABEL, NS_LABEL))){
+                                                                     yyerror_die("redeclaration of label\n");
+                                                                 }
+                                                                }
                     | CASE const_expr ':' statement             {$$=alloc_label_stmnt(AST_LABEL_CASE, $4, NULL, $2);}
                     | DEFAULT ':' statement                     {$$=alloc_label_stmnt(AST_LABEL_DEFAULT, $3, NULL, NULL);}
                     ;
