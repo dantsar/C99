@@ -90,7 +90,6 @@ struct astnode_num{
     long double real;
 };
 
-/* this is dumb! I fix later */
 struct astnode_fncall{
     ASTNODE name;
     int num_param;
@@ -203,6 +202,11 @@ struct astnode_jump_stmnt{
     ASTNODE ret_expr;
 };
 
+struct astnode_temp{
+    /* BLAH */
+    int a;
+};
+
 struct astnode{
     int type;
     union{
@@ -234,6 +238,9 @@ struct astnode{
         struct astnode_iterat_stmnt iterat_stmnt;
         struct astnode_label_stmnt  label_stmnt;
         struct astnode_jump_stmnt   jump_stmnt;
+
+        /* assignment 5: quads */
+        struct astnode_temp         temp;
     };
 };
 

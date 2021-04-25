@@ -41,9 +41,10 @@ struct quad{
     struct quad *next, *prev;
 
     int opcode;
-    union generic_node *res,*src1, *src2;
+    /* ASTNODE or seperate thing */
+    ASTNODE res,src1,src2; /* lval, rval, rval */
 };
-
+/* linked list of quads */
 struct quad_list{
     struct quad *next, *me;
 };
@@ -59,7 +60,7 @@ struct bblock{
     unsigned int func_count, bblock_count;
 
 };
-
+/* linked list of basic blocks */
 struct bblock_list{
     struct bblock *next, *me;
 };
@@ -68,3 +69,6 @@ QUAD alloc_quad(int opcode);
 void gen_quads(ASTNODE extern_def);
 QUAD quad_declaration(ASTNODE declaration);
 QUAD quad_func(ASTNODE func_def);
+
+void quad_binary(ASTNODE node);
+ASTNODE gen_rvalue(ASTNODE node, ASTNODE target);
