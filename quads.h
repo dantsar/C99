@@ -1,4 +1,6 @@
 #include "ast.h"
+#include "def.h"
+#include "sym_tab.h"
 
 enum OP_CODES{
     OP_LOAD,
@@ -6,11 +8,11 @@ enum OP_CODES{
     OP_CMP,
     OP_CALL,
     OP_BR,
-    /* also need to do unsigned varient */
     OP_BREQ,
     OP_BRNEQ,
     OP_BRLT,
     OP_BRGT,
+    /* need unsigned variant */
     OP_ADD,
     OP_SUB,
     OP_MUL,
@@ -31,6 +33,9 @@ enum GEN_NODE_TYPE{
     GEN_QUAD
 };
 
+enum ADDRESSING_MODES{ MODE_DIRECT, MODE_INDIRECT };
+
+/* doubly linked list in quads or in bblock?? */
 struct quad{
     /* doubly linked list of quads */
     struct quad *next, *prev;
@@ -39,8 +44,13 @@ struct quad{
     union generic_node *res,*src1, *src2;
 };
 
+struct quad_list{
+    struct quad *next, *me;
+};
+
 union generic_node{
-    int type;
+    /* type/width of the node */
+    int type;  
     ASTNODE ast;
     /* BLAH */
 };
@@ -49,3 +59,12 @@ struct bblock{
     unsigned int func_count, bblock_count;
 
 };
+
+struct bblock_list{
+    struct bblock *next, *me;
+};
+
+QUAD alloc_quad(int opcode);
+void gen_quads(ASTNODE extern_def);
+QUAD quad_declaration(ASTNODE declaration);
+QUAD quad_func(ASTNODE func_def);

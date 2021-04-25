@@ -206,6 +206,7 @@ struct astnode_jump_stmnt{
 struct astnode{
     int type;
     union{
+        /* assignment 2: expressions */
         struct astnode_unary        unary;
         struct astnode_binary       binary;
         struct astnode_ternary      ternary;
@@ -218,7 +219,7 @@ struct astnode{
         struct astnode_select       select;
         struct astnode_list         list;
 
-        /* assignment 3 */
+        /* assignment 3: declarations and functions (pain)*/
         struct astnode_type         var_type;
         struct astnode_declaration  declaration;
         struct astnode_decl_spec    decl_spec;
@@ -227,7 +228,7 @@ struct astnode{
         struct astnode_func         func;
         struct astnode_st_un        st_un; /* struct_union */
         
-        /* statements */
+        /* assignment 4: statements */
         struct astnode_compound     comp;
         struct astnode_select_stmnt select_stmnt;
         struct astnode_iterat_stmnt iterat_stmnt;

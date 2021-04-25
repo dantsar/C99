@@ -32,8 +32,12 @@ sym_tab.o: sym_tab.c sym_tab.h
 parser_print.o: parser_print.c parser_print.h
 	$(CC) $(CFLAGS) -c -o parser_print.o parser_print.c
 
-parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o parser_print.o
+quads.o: quads.h quads.c
+	$(CC) $(CFLAGS) -c -o quads.o quads.c
+
+parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o parser_print.o quads.o
 	$(CC) $(CFLAGS) -o parser $^
+
 
 clean: 
 	rm *.o lex.yy.c parser.tab.h parser.tab.c parser parser.output 

@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "def.h"
-#include "sym_tab.h"
 #include "ast.h"
+#include "def.h"
 #include "parser.tab.h"
+#include "quads.h"
+#include "sym_tab.h"
 
 /* stuff from lex */
 extern int yylex();
@@ -91,8 +92,8 @@ void yyerror_die(const char *);
 
 %%
 /* (6.9) */
-translation_unit:     extern_declaration                                {print_sym(curr_scope);} 
-                    | translation_unit extern_declaration               {print_sym(curr_scope);}
+translation_unit:     extern_declaration                                {print_sym(curr_scope); gen_quads($1);} 
+                    | translation_unit extern_declaration               {print_sym(curr_scope); gen_quads($2);}
                     ;
 /* (6.9) */
 extern_declaration:   declaration                                       {sym_declaration($1, curr_scope);}
@@ -187,7 +188,7 @@ arith_expr:           arith_expr '+' arith_expr                 {$$=alloc_binary
                     | arith_expr LOGOR arith_expr               {$$=alloc_binary(BINOP,$1, LOGOR, $3);}
                     | arith_expr PLUSPLUS                       {$$=alloc_unary(PLUSPLUS,$1);} 
                     | arith_expr MINUSMINUS                     {$$=alloc_unary(MINUSMINUS,$1);} 
-                    | '(' arith_expr ')'                        {$$=$2;}
+                    | '(' expr ')'                              {$$=$2;}
                     | cast_expr                                 {$$=$1;}
                     ;
 /*blank for now */
@@ -427,5 +428,7 @@ int main(){
     curr_scope = sym_tab_create(SCOPE_GLOBAL);
 
     yyparse();
+
+    /* after EOF, convert quads to target code */
     return 1;
 }
