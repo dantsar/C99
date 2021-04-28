@@ -141,7 +141,7 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
     {
         char *name;
         var = var_list->list.elem;
-        /* name of variable is the fist element, as a result of grammar structure 
+        /*  name of variable is the fist element, as a result of grammar structure 
             but in a different place for function declarations and regular function declarations
             because, c doesn't allow int func(int a,b,c) {...} */
         if(var->type == AST_IDENT){

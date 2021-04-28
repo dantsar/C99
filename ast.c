@@ -462,3 +462,9 @@ ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr){
     ret->jump_stmnt.ret_expr = ret_expr;
     return ret;
 }
+
+ASTNODE alloc_temp(int temp_count){
+    ASTNODE ret = astnode_alloc(AST_TEMP);
+    ret->temp = temp_count;
+    return ret;
+}

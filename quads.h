@@ -12,7 +12,8 @@ enum OP_CODES{
     OP_BRNEQ,
     OP_BRLT,
     OP_BRGT,
-    /* need unsigned variant */
+    /* need unsigned variant? */
+    /* binary operators */
     OP_ADD,
     OP_SUB,
     OP_MUL,
@@ -20,10 +21,11 @@ enum OP_CODES{
     OP_MOD,
     OP_SHR,
     OP_SHL,
-    OP_NOT,
     OP_XOR,
     OP_OR,
     OP_AND,
+    /* unary operators */
+    OP_NOT,
     /* add more */
 };
 
@@ -37,38 +39,41 @@ enum ADDRESSING_MODES{ MODE_DIRECT, MODE_INDIRECT };
 
 /* doubly linked list in quads or in bblock?? */
 struct quad{
-    /* doubly linked list of quads */
-    struct quad *next, *prev;
-
     int opcode;
-    /* ASTNODE or seperate thing */
+
+    /* number of source parameters */
+    int param_count; 
     ASTNODE res,src1,src2; /* lval, rval, rval */
 };
 /* linked list of quads */
 struct quad_list{
-    struct quad *next, *me;
-};
-
-union generic_node{
-    /* type/width of the node */
-    int type;  
-    ASTNODE ast;
-    /* BLAH */
+    struct quad_list *next, *elem;
 };
 
 struct bblock{
     unsigned int func_count, bblock_count;
+    QUAD_L quad_list;
 
 };
 /* linked list of basic blocks */
 struct bblock_list{
-    struct bblock *next, *me;
+    struct bblock *next, *elem;
 };
 
 QUAD alloc_quad(int opcode);
 void gen_quads(ASTNODE extern_def);
-QUAD quad_declaration(ASTNODE declaration);
-QUAD quad_func(ASTNODE func_def);
+void quad_declaration(ASTNODE declaration);
+void quad_func(ASTNODE func_def);
 
 void quad_binary(ASTNODE node);
 ASTNODE gen_rvalue(ASTNODE node, ASTNODE target);
+ASTNODE gen_lvalue(ASTNODE node, int* mode);
+
+void emit_quad(int opcode, ASTNODE left, ASTNODE right, ASTNODE target);
+
+BBLOCK alloc_bblock();
+void bblock_append_quad(QUAD emit_quad);
+
+void print_opcode(int opcode);
+void print_src_param(ASTNODE src_param);
+void print_quad(QUAD quad);

@@ -44,7 +44,8 @@ enum AST_TYPE{
     AST_GOTO, 
     AST_CONTINUE, 
     AST_BREAK, 
-    AST_RETURN
+    AST_RETURN,
+    AST_TEMP /* assignment 5 temporary register */
 };
 
 /* enum for binary types in ast */
@@ -202,10 +203,9 @@ struct astnode_jump_stmnt{
     ASTNODE ret_expr;
 };
 
-struct astnode_temp{
-    /* BLAH */
-    int a;
-};
+// struct astnode_temp{
+//     int temp_count;
+// };
 
 struct astnode{
     int type;
@@ -240,7 +240,7 @@ struct astnode{
         struct astnode_jump_stmnt   jump_stmnt;
 
         /* assignment 5: quads */
-        struct astnode_temp         temp;
+        int                         temp;
     };
 };
 
@@ -286,5 +286,7 @@ ASTNODE alloc_select_stmnt(int type, ASTNODE cond, ASTNODE then, ASTNODE else_st
 ASTNODE alloc_iterat_stmnt(int type, ASTNODE cont, ASTNODE stmnt, ASTNODE init, ASTNODE update);
 ASTNODE alloc_label_stmnt(int type, ASTNODE stmnt, char* label, ASTNODE cond);
 ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr);
+
+ASTNODE alloc_temp(int temp_count);
 
 #endif

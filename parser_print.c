@@ -12,52 +12,65 @@ void indent(int indent){
 }
 void print_sym(SYM_TAB sym)
 {
+    if(sym == NULL) return; /* to prevent explosion */
+
+    char* scope;
     switch(sym->scope_type){
-        case SCOPE_GLOBAL:
-            fprintf(stdout, "SCOPE_GLOBAL\n");
-            break;
-        case SCOPE_FUNC:
-            fprintf(stdout, "SCOPE_FUNC\n");
-            break;
-        case SCOPE_BLOCK:
-            fprintf(stdout, "SCOPE_BLOCK\n");
-            break;
+        case SCOPE_GLOBAL:      scope = "global";   break;
+        case SCOPE_FUNC:        scope = "function"; break;
+        case SCOPE_BLOCK:       scope = "block";    break;
+        case SCOPE_MINI:        scope = "mini";     break;
     };
-    space++;
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
-        indent(space); fprintf(stdout, "%s:%d  ", temp->entry->filename, temp->entry->lineno);
+        indent(space);
+        fprintf(stdout, "%s is defined at %s:%d (of scope %s) as a\n", temp->entry->name, 
+                                                                  temp->entry->filename, 
+                                                                  temp->entry->lineno, 
+                                                                  scope);
         print_sym_ent(temp->entry);
         temp = temp->next;
     }
-    space--;
 }
 
+/* prints the attributes of the symbol table entries */
 void print_sym_ent(SYM_ENT ent)
 {
-    fprintf(stdout, "%s:\n", ent->name);
-    indent(++space); 
     switch(ent->att_type){
         case ENT_VAR:
-            print_ast(ent->var.type);  /* list should be being passed to print_ast */
+            indent(space); fprintf(stdout, "variable of type\n");
+            indent(++space); print_ast(ent->var.type); --space; /* list should be being passed to print_ast */
             putchar('\n');
             break;
         case ENT_SU_TAG:
-            print_ast(ent->su_tag.st_un); 
-            indent(++space); fprintf(stdout, "with elements:\n");
-            print_sym(ent->su_tag.st_un->st_un.mini_tab);
-            // putchar('\n');
+            indent(space); print_ast(ent->su_tag.st_un); 
+            indent(++space); fprintf(stdout, "with elements:\n"); 
+            print_sym(ent->su_tag.st_un->st_un.mini_tab); 
+            --space;
             break;
         case ENT_FUNC:
-            print_ast(ent->func.func_def);
+            indent(space); fprintf(stdout, "function\n"); 
+            indent(++space);
+
+            fprintf(stdout, "taking args\n");
+            ++space; print_ast(ent->func.func_def->func.args); --space;
+
+            indent(space); fprintf(stdout, "and returning\n");
+            indent(++space); print_ast(ent->func.func_def->func.ret); --space;
+            putchar('\n');
+
+            indent(space); fprintf(stdout, "with body\n");
+            indent(space++); print_ast(ent->func.func_def->func.block); --space;
+
+            indent(space); fprintf(stdout, "and resulting symbol table\n");
+            space++; print_sym(ent->func.func_def->func.block->comp.tab); --space;
+            space--;
             break;
     }
-    space--;
 }
 
 void print_ast(ASTNODE ast)
 {
-    /* int for storing indentation in the output */
     if(ast == NULL) return; /* to prevent explosion */
 
     ASTNODE temp;
@@ -127,7 +140,7 @@ void print_ast(ASTNODE ast)
             }
             break;
         case AST_IDENT: 
-            fprintf(stdout, "IDENT %s\n", ast->ident.ident);
+            fprintf(stdout, "{IDENT %s}\n", ast->ident.ident);
             break;
         case AST_CHARLIT: 
             fprintf(stdout, "CHARLIT %o\n", ast->charlit.charlit);
@@ -172,10 +185,11 @@ void print_ast(ASTNODE ast)
             break;
         case AST_DECLARATION: /* for debugging */
             // fprintf(stdout, "AST_DECLARATION\n");
-            fprintf(stdout, "declaration: "); 
-            print_ast(ast->declaration.var_type); 
+            indent(space);
+            // fprintf(stdout, "declaration: "); 
+            print_ast(ast->declaration.var_type); putchar(' ');
             print_ast(ast->declaration.declaration);
-            space--;
+            // space--;
             putchar('\n');
             break;
         case AST_TYPE:
@@ -185,62 +199,61 @@ void print_ast(ASTNODE ast)
             } else{
                 switch(ast->var_type.stg_class)
                 {
-                    case STG_AUTO:      fprintf(stdout, "auto "); break;
-                    case STG_STATIC:    fprintf(stdout, "static "); break;
-                    case STG_EXTERN:    fprintf(stdout, "extern "); break;
-                    case STG_REGISTER:  fprintf(stdout, "auto "); break;
-                    case STG_TYPEDEF:   fprintf(stdout, "auto "); break;
+                    case STG_AUTO:          fprintf(stdout, "auto "); break;
+                    case STG_STATIC:        fprintf(stdout, "static "); break;
+                    case STG_EXTERN:        fprintf(stdout, "extern "); break;
+                    case STG_REGISTER:      fprintf(stdout, "auto "); break;
+                    case STG_TYPEDEF:       fprintf(stdout, "auto "); break;
                 }
                 /* not really used but here for the future */
                 switch(ast->var_type.type_qualif)
                 { 
                     case QUALIF_CONST:      fprintf(stdout, "const "); break;
-                    case QUALIF_RESTRICT:    fprintf(stdout, "static "); break;
-                    case QUALIF_VOLATILE:    fprintf(stdout, "extern "); break;
+                    case QUALIF_RESTRICT:   fprintf(stdout, "static "); break;
+                    case QUALIF_VOLATILE:   fprintf(stdout, "extern "); break;
                 }
                 if(ast->var_type.is_unsigned){
                     fprintf(stdout, "unsigned ");
                 }
                 switch(ast->var_type.type_spec)
                 {
-                    case TYPE_VOID:     fprintf(stdout, "void "); break;
-                    case TYPE_CHAR:     fprintf(stdout, "char "); break;
-                    case TYPE_SHORT:    fprintf(stdout, "short "); break;
-                    case TYPE_INT:      fprintf(stdout, "int "); break;
-                    case TYPE_LONG:     fprintf(stdout, "long int"); break;
-                    case TYPE_LLONG:    fprintf(stdout, "long long int"); break;
-                    case TYPE_FLOAT:    fprintf(stdout, "float "); break;
-                    case TYPE_DOUBLE:   fprintf(stdout, "double "); break;
-                    case TYPE_LDOUBLE:  fprintf(stdout, "long double "); break;
-                    case TYPE_SIGNED:   fprintf(stdout, "signed "); break;
-                    case TYPE_UNSIGNED: fprintf(stdout, "unsigned "); break;
+                    case TYPE_VOID:         fprintf(stdout, "void "); break;
+                    case TYPE_CHAR:         fprintf(stdout, "char "); break;
+                    case TYPE_SHORT:        fprintf(stdout, "short "); break;
+                    case TYPE_INT:          fprintf(stdout, "int "); break;
+                    case TYPE_LONG:         fprintf(stdout, "long int"); break;
+                    case TYPE_LLONG:        fprintf(stdout, "long long int"); break;
+                    case TYPE_FLOAT:        fprintf(stdout, "float "); break;
+                    case TYPE_DOUBLE:       fprintf(stdout, "double "); break;
+                    case TYPE_LDOUBLE:      fprintf(stdout, "long double "); break;
+                    case TYPE_SIGNED:       fprintf(stdout, "signed "); break;
+                    case TYPE_UNSIGNED:     fprintf(stdout, "unsigned "); break;
                 }
             }
-            putchar('\n');
             break;
         case AST_DECL_SPEC:
             // fprintf(stdout, "AST_DECL_SPEC\n"); /* for debugging */
             switch(ast->decl_spec.decl_spec){
-                case TYPE_VOID:     fprintf(stdout, "void "); break;
-                case TYPE_CHAR:     fprintf(stdout, "char "); break;
-                case TYPE_SHORT:    fprintf(stdout, "short "); break;
-                case TYPE_INT:      fprintf(stdout, "int "); break;
-                case TYPE_LONG:     fprintf(stdout, "long "); break;
-                case TYPE_FLOAT:    fprintf(stdout, "float "); break;
-                case TYPE_DOUBLE:   fprintf(stdout, "double "); break;
-                case TYPE_SIGNED:   fprintf(stdout, "signed "); break;
-                case TYPE_UNSIGNED: fprintf(stdout, "unsigned "); break;
-                case QUALIF_CONST:  fprintf(stdout, "const "); break;
-                case QUALIF_RESTRICT: fprintf(stdout, "restrict "); break;
-                case QUALIF_VOLATILE: fprintf(stdout, "volatile "); break;
-                case FUNC_INLINE:   fprintf(stdout, "inline "); break;
+                case TYPE_VOID:         fprintf(stdout, "void "); break;
+                case TYPE_CHAR:         fprintf(stdout, "char "); break;
+                case TYPE_SHORT:        fprintf(stdout, "short "); break;
+                case TYPE_INT:          fprintf(stdout, "int "); break;
+                case TYPE_LONG:         fprintf(stdout, "long "); break;
+                case TYPE_FLOAT:        fprintf(stdout, "float "); break;
+                case TYPE_DOUBLE:       fprintf(stdout, "double "); break;
+                case TYPE_SIGNED:       fprintf(stdout, "signed "); break;
+                case TYPE_UNSIGNED:     fprintf(stdout, "unsigned "); break;
+                case QUALIF_CONST:      fprintf(stdout, "const "); break;
+                case QUALIF_RESTRICT:   fprintf(stdout, "restrict "); break;
+                case QUALIF_VOLATILE:   fprintf(stdout, "volatile "); break;
+                case FUNC_INLINE:       fprintf(stdout, "inline "); break;
             }
             break;
         case AST_ST_UN:
             if(ast->st_un.type == AST_STRUCT){
-                fprintf(stdout, "STRUCT");
+                fprintf(stdout, "struct");
             }else{
-                fprintf(stdout, "UNION");
+                fprintf(stdout, "union");
             }
             fprintf(stdout, " %s\n", ast->st_un.name);
             // print_sym(ast->st_un.mini_tab);
@@ -262,9 +275,7 @@ void print_ast(ASTNODE ast)
             }
             temp = ast->comp.states;
             while(temp != NULL){
-                indent(space);
-                print_ast(temp->list.elem);
-                putchar('\n');
+                indent(space); print_ast(temp->list.elem); putchar('\n');
                 temp = temp->list.next;
             }
             break;
@@ -339,7 +350,11 @@ void print_ast(ASTNODE ast)
                     break;
                 case AST_RETURN:
                     fprintf(stdout, "RETURN\n");
-                    indent(++space); print_ast(ast->jump_stmnt.ret_expr); space--;
+                    if(ast->jump_stmnt.ret_expr != NULL){
+                        space++;
+                        indent(++space); print_ast(ast->jump_stmnt.ret_expr); space--;
+                        --space;
+                    }
                     break;
             }
             break;

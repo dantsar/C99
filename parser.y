@@ -92,8 +92,8 @@ void yyerror_die(const char *);
 
 %%
 /* (6.9) */
-translation_unit:     extern_declaration                                {print_sym(curr_scope); gen_quads($1);} 
-                    | translation_unit extern_declaration               {print_sym(curr_scope); gen_quads($2);}
+translation_unit:     extern_declaration                                {print_sym(curr_scope); /* gen_quads($1); */} 
+                    | translation_unit extern_declaration               {print_sym(curr_scope); /* gen_quads($2); */}
                     ;
 /* (6.9) */
 extern_declaration:   declaration                                       {sym_declaration($1, curr_scope);}
@@ -248,7 +248,12 @@ struct_union_spec:    struct_union '{' struct_declaration_list '}'              
                                                                                 } 
                     | struct_union IDENT                                        { /* either a forward declartion or getting the type (I will be ignoring/not handling forward declarations) */
                                                                                   SYM_ENT temp = alloc_sym_ent($2, ENT_SU_TAG, NS_SU);
-                                                                                  $$ = (temp = sym_lookup(curr_scope, temp)) ? temp->su_tag.st_un : $1;
+                                                                                  if((temp = sym_lookup(curr_scope, temp))){
+                                                                                    $$ = temp->su_tag.st_un;
+                                                                                  }else{
+                                                                                    $$ = $1;
+                                                                                    $$->st_un.name = $2;
+                                                                                  }
                                                                                 } 
                     ;
 /* (6.7.2.1) */
@@ -362,7 +367,8 @@ label_stmnt:          IDENT ':' statement                       {$$=alloc_label_
                     ;
 /* (6.8.2) */
 compound_stmnt:       '{' '}'                   {$$=alloc_compound(NULL, NULL);}
-                    | '{' {if(in_func){in_func=false;} else curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} block_item_list  '}' {$$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
+                    | '{'   {if(in_func) in_func=false; else curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} 
+                       block_item_list  '}' {$$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
                     ;
 /* (6.8.2) */
 block_item_list:      block_item                    {$$=alloc_list($1);}
