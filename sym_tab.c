@@ -125,7 +125,7 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns)
     return ret;
 }
 
-/** 
+/* 
  * function that declares a list of variables with their corresponding declarators 
  * and enteres the variables into the symbol table. This function takes two lists
  * type: list of decl_specs|| var_list: list of decalrators 
@@ -136,20 +136,25 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
     ASTNODE var_list = declaration->declaration.declaration;
     ASTNODE ptr_chain, var;
 
+    int is_var = false;
+
     /* loops over the list of idents in ex. int a,b,c; */
     while(var_list != NULL)
     {
         char *name;
         var = var_list->list.elem;
-        /*  name of variable is the fist element, as a result of grammar structure 
+        /*  
+            name of variable is the fist element, as a result of grammar structure 
             but in a different place for function declarations and regular function declarations
-            because, c doesn't allow int func(int a,b,c) {...} */
+            because, c doesn't allow int func(int a,b,c) {...} 
+        */
         if(var->type == AST_IDENT){
             /* being in this state implies that this is a function declaration */
             name = var->ident.ident;
             var = var_list;
         }else{
             name = var->list.elem->ident.ident;
+            is_var = true;
         }
 
         /* now create pointer chain ex. int *a[2]; ==> [2] -> * -> int */
@@ -170,6 +175,16 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
             ptr_chain = type;
         }
 
+        /* as per the standard register or auto storage specifier is invalid in the gloabl scope */
+        if(is_var && tab->scope_type == SCOPE_GLOBAL){
+            switch(type->var_type.stg_class){
+                case STG_AUTO:
+                case STG_REGISTER:
+                    yyerror_die("invalid storage specifer in global scope");
+            }
+        }
+
+        /* enter variable into the provided symbol table */
         SYM_ENT ent = alloc_sym_ent(name, ENT_VAR, NS_MISC);
         ent->var.type = ptr_chain;
         if(!sym_enter(tab, ent)){
@@ -209,6 +224,17 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
     if(!sym_enter(tab, ent)){
         yyerror_die("error: redeclaration of variable\n");
     }
+}
+
+/* insert label into the function scope */
+void sym_label(ASTNODE label, SYM_TAB tab)
+{
+    while(tab->scope_type != SCOPE_FUNC) tab = tab->next;
+
+    if(!sym_enter(tab, alloc_sym_ent(label->label_stmnt.label, ENT_STMNT_LABEL, NS_LABEL))){
+        yyerror_die("redeclaration of label\n");
+    }
+
 }
 
 void sym_func_def(ASTNODE func_def, SYM_TAB tab)

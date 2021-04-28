@@ -92,8 +92,8 @@ void yyerror_die(const char *);
 
 %%
 /* (6.9) */
-translation_unit:     extern_declaration                                {/* print_sym(curr_scope); */ gen_quads($1); } 
-                    | translation_unit extern_declaration               {/* print_sym(curr_scope); */ gen_quads($2); }
+translation_unit:     extern_declaration                                {print_sym(curr_scope);  /* gen_quads($1); */} 
+                    | translation_unit extern_declaration               {print_sym(curr_scope);  /* gen_quads($2); */}
                     ;
 /* (6.9) */
 extern_declaration:   declaration                                       {sym_declaration($1, curr_scope);}
@@ -124,10 +124,7 @@ postfix_expr:         prim_expr                                 {$$=$1;}
                     // | '(' type_name ')' '{' init_list '}'       {/* shtuff */}
                     // | '(' type_name ')' '{' init_list ',' '}'   {/* shtuff */}
                     ;
-// constant:             NUMBER                        {$$=alloc_num($1.int_num, $1.real, $1.type, $1.sign);}
-//                     | CHARLIT                       {$$=alloc_charlit($1);}
-//                     ; 
-// /* (6.5.16) */
+/* (6.5.16) */
 assign_expr:          unary_expr '=' assign_expr                {$$=alloc_binary(ASSIGN, $1, '=', $3);} 
                     | unary_expr PLUSEQ assign_expr             {$$=alloc_and_expand_assignment($1, '+', $3);} 
                     | unary_expr MINUSEQ assign_expr            {$$=alloc_and_expand_assignment($1, '-', $3);}     
@@ -199,7 +196,7 @@ declaration:          declaration_specs ';'                         {$$=alloc_de
                     | declaration_specs init_decl_list ';'          {$$=alloc_declaration($1, $2);}
                     ;   
 /* (6.7) */
-/* slight deviation from the c standard, but this is to avoid shit reduce conflicts */
+/* slight deviation from the c standard, but this is to avoid shift reduce conflicts */
 declaration_specs:    declaration_spec                          {$$=alloc_list($1);}
                     | declaration_specs declaration_spec        {$$=list_append_elem($2, $1);}
                     ;
@@ -292,11 +289,24 @@ type_qualif:          CONST                                     {$$=alloc_decl_s
 func_spec:            INLINE                                    {$$=alloc_decl_spec(FUNC_INLINE, AST_DECL_FUNC_SPEC);}       
                     ;
 /* (6.7.5) */
+/* 
+    because the precedence of direct_decl is greater than a pointer, the array 
+    is in the right order, so only the pointer needs to be appended to the list
+    given: int **a[23]; 
+    list:   
+        direct_decl: a --> [23]
+        pointer: * --> * 
+        final: a --> [23] --> * --> *
+*/
 decl:                 direct_decl                                   {$$=$1;}
                     | pointer direct_decl                           {$$=list_append($1, $2);}
                     ;
 /* (6.7.5) */
-direct_decl:          IDENT                                         {$$=alloc_list(alloc_ident($1));} //{$$=alloc_list(alloc_ident($1));}
+/*  
+    creates a list with the first element being IDENT and each element is appended to the end 
+    of the list. This results in the array portion in the declarator being sorted 
+*/
+direct_decl:          IDENT                                         {$$=alloc_list(alloc_ident($1));} 
                     | '(' decl ')'                                  {$$=$2;}
                     | direct_decl '[' assign_expr ']'                  {$$=list_append_elem(alloc_array(NULL,$3), $1);}
                     | direct_decl '[' ']'                           {yyerror_die("not supporting variable length arrays");}
@@ -320,6 +330,7 @@ pointer:              '*'                                           {$$=alloc_li
                     | '*' type_qualif_list pointer                  {$$=list_append_elem(alloc_ptr(NULL), $3);}
                     ;
 /* (6.7.5) */
+/* not REALLLY handling this */
 type_qualif_list:     type_qualif                               
                     | type_qualif_list type_qualif              
                     ;
@@ -348,7 +359,6 @@ ident_list:           IDENT                         {$$=alloc_list(alloc_ident($
                     | ident_list ',' IDENT          {$$=list_append_elem(alloc_ident($3), $1);} 
                     ;
 /* (6.8) */
-/* statements... to be worked on later */
 statement:            expr_stmnt                                {$$=$1;}
                     | label_stmnt                               {$$=$1;}
                     | compound_stmnt                            {$$=$1;}
@@ -358,9 +368,7 @@ statement:            expr_stmnt                                {$$=$1;}
                     ;
 /* (6.8.1) */
 label_stmnt:          IDENT ':' statement                       {$$=alloc_label_stmnt(AST_LABEL, $3, $1, NULL);
-                                                                 if(!sym_enter(curr_scope, alloc_sym_ent($1, ENT_STMNT_LABEL, NS_LABEL))){
-                                                                     yyerror_die("redeclaration of label\n");
-                                                                 }
+                                                                 sym_label($$, curr_scope);
                                                                 }
                     | CASE const_expr ':' statement             {$$=alloc_label_stmnt(AST_LABEL_CASE, $4, NULL, $2);}
                     | DEFAULT ':' statement                     {$$=alloc_label_stmnt(AST_LABEL_DEFAULT, $3, NULL, NULL);}
@@ -389,11 +397,13 @@ select_stmnt:         IF '(' expr ')' statement                 {$$=alloc_select
 /* (6.8.5) */
 iterat_stmnt:         WHILE '(' expr ')' statement                             {$$=alloc_iterat_stmnt(AST_WHILE_STMNT, $3, $5, NULL, NULL);} 
                     | DO statement WHILE '(' expr ')'  ';'                     {$$=alloc_iterat_stmnt(AST_DO_STMNT, $5, $2, NULL, NULL);}         
-                    | FOR '(' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} expr_opt ';' expr_opt ';' expr_opt ')' statement {$$=alloc_iterat_stmnt(AST_FOR_STMNT, $6, $10, $4, $8); curr_scope=sym_tab_pop(curr_scope);}                             
-                    // | FOR '(' declaration expr_opt ';' expr_opt ')' statement  {}                             
+                    | FOR '(' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} 
+                              expr_opt ';' expr_opt ';' expr_opt ')' statement {$$=alloc_iterat_stmnt(AST_FOR_STMNT, $6, $10, $4, $8); 
+                                                                                curr_scope=sym_tab_pop(curr_scope);
+                                                                               }
                     ;
 expr_opt:             expr            {$$=$1;}
-                    | /* empty */       {$$=NULL;}
+                    | /* empty */     {$$=NULL;}
                     ;
 /* (6.8.5) */
 jump_stmnt:           GOTO IDENT ';'                        {$$=alloc_jump_stmnt(AST_GOTO, $2, NULL);}         
@@ -409,9 +419,9 @@ func_def:              declaration_specs  decl {in_func=true; curr_scope=sym_tab
                                                     $$->func.ret = list_append($1, $2);
                                                     $$->func.ret = $$->func.ret->list.next; /* skip over astnode_func */
 
-                                                    //    $4->comp.tab->scope_type = SCOPE_FUNC;
                                                     $$->func.block = $4;
-                                                    free($2); in_func = false;
+                                                    free($2); 
+                                                    in_func = false;
                                                 }
                     | declaration_specs decl declaration_list compound_stmnt    {yyerror_die("not handling old c style function definitions :'(");}
                     ;

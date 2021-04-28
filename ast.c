@@ -304,6 +304,7 @@ ASTNODE alloc_type(ASTNODE decl_specs)
                 /* error? ¯\_(ツ)_/¯ */
                 break;
             case AST_DECL_TYPE_SPEC:
+                ret->var_type.type = AST_SCALAR;
                 switch(decl_specs->decl_spec.decl_spec) /* what a tongue twister */
                 { 
                     case TYPE_UNSIGNED: /* won't handle the case "unsigned unsigned" (I'll just pretend that it's just unsigned) */
@@ -406,7 +407,8 @@ ASTNODE alloc_st_un(int type, int scope){
 
 ASTNODE alloc_func(ASTNODE name, ASTNODE arg_list){
     ASTNODE ret = astnode_alloc(AST_FUNC);
-    ret->func.sym = sym_tab_create(SCOPE_FUNC);
+    /* really should be a prototype scope, but I'm not worrying about that */
+    ret->func.sym = sym_tab_create(SCOPE_FUNC); 
     ret->func.name = name;
     ret->func.args = arg_list;
 

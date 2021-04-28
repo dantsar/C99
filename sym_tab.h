@@ -159,6 +159,7 @@ SYM_ENT alloc_sym_ent(char* name, int ent_type, int ent_ns);
 void sym_declaration(ASTNODE declaration, SYM_TAB tab);
 void sym_struct_define(ASTNODE st_un, ASTNODE decl_list);
 void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab);
+void sym_label(ASTNODE label, SYM_TAB tab);
 void sym_func_def(ASTNODE func_def, SYM_TAB tab);
 
 #endif
