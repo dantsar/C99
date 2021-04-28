@@ -12,7 +12,6 @@ enum OP_CODES{
     OP_BRNEQ,
     OP_BRLT,
     OP_BRGT,
-    /* need unsigned variant? */
     /* binary operators */
     OP_ADD,
     OP_SUB,
@@ -47,17 +46,18 @@ struct quad{
 };
 /* linked list of quads */
 struct quad_list{
-    struct quad_list *next, *elem;
+    struct quad* elem;
+    struct quad_list* next;
 };
 
 struct bblock{
     unsigned int func_count, bblock_count;
-    QUAD_L quad_list;
-
+    struct quad_list* quads;
 };
 /* linked list of basic blocks */
 struct bblock_list{
-    struct bblock *next, *elem;
+    struct bblock *elem;
+    struct bblock_list* next;
 };
 
 QUAD alloc_quad(int opcode);
@@ -71,9 +71,6 @@ ASTNODE gen_lvalue(ASTNODE node, int* mode);
 
 void emit_quad(int opcode, ASTNODE left, ASTNODE right, ASTNODE target);
 
-BBLOCK alloc_bblock();
+BBLOCK alloc_bblock(void);
+QUAD_L alloc_quad_l(void);
 void bblock_append_quad(QUAD emit_quad);
-
-void print_opcode(int opcode);
-void print_src_param(ASTNODE src_param);
-void print_quad(QUAD quad);

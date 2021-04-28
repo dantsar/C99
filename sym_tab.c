@@ -203,6 +203,9 @@ void sym_struct_declare(char* name, ASTNODE st_un, SYM_TAB tab)
     SYM_ENT ent = alloc_sym_ent(name, ENT_SU_TAG, NS_SU);
     ent->name = name;
     ent->su_tag.st_un = st_un;
+
+    /* if a struct/union is defined in ANOTHER struct/union, get out of it */
+    while(tab->scope_type == SCOPE_MINI) tab = tab->next;
     if(!sym_enter(tab, ent)){
         yyerror_die("error: redeclaration of variable\n");
     }

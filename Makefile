@@ -3,6 +3,8 @@ CC=clang
 
 all: parser
 
+# will pretty this up later, maybe will use CMAKE... 
+
 char_util.o: char_util.c char_util.h
 	$(CC) $(CFLAGS) -c -o char_util.o char_util.c
 
@@ -34,8 +36,10 @@ parser_print.o: parser_print.c parser_print.h
 
 quads.o: quads.h quads.c
 	$(CC) $(CFLAGS) -c -o quads.o quads.c
+quads_print.o: quads_print.c quads_print.h
+	$(CC) $(CFLAGS) -c -o quads_print.o quads_print.c
 
-parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o parser_print.o quads.o
+parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o parser_print.o quads.o quads_print.o
 	$(CC) $(CFLAGS) -o parser $^
 
 

@@ -92,8 +92,8 @@ void yyerror_die(const char *);
 
 %%
 /* (6.9) */
-translation_unit:     extern_declaration                                {print_sym(curr_scope); /* gen_quads($1); */} 
-                    | translation_unit extern_declaration               {print_sym(curr_scope); /* gen_quads($2); */}
+translation_unit:     extern_declaration                                {/* print_sym(curr_scope); */ gen_quads($1); } 
+                    | translation_unit extern_declaration               {/* print_sym(curr_scope); */ gen_quads($2); }
                     ;
 /* (6.9) */
 extern_declaration:   declaration                                       {sym_declaration($1, curr_scope);}

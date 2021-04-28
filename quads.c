@@ -3,6 +3,7 @@
 
 #include "ast.h"
 #include "quads.h"
+#include "quads_print.h"
 #include "sym_tab.h"
 
 extern int lineno; 
@@ -106,6 +107,7 @@ void quad_func(ASTNODE func_def)
         temp = temp->list.next;
     }
 
+    print_bblock(curr_bblock);
     // QUAD func = alloc_quad(OP_ADD);
     // return func;
 }
@@ -116,7 +118,6 @@ void quad_binary(ASTNODE node)
     // return quad;
 }
 
-/* OR SHOULD RETURN BE ITS OWN TYPE */
 ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
 {
     ASTNODE left, right, addr;
@@ -146,16 +147,15 @@ ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
             if(!target) target=alloc_temp(temp_count++);
             emit_quad(node->binary.op, left, right, target);
             return target;
+        default:
+            return node;
 
         
     }
-
-    // QUAD quad = alloc_quad(OP_ADD);
-    // return quad;
-    return node;
 }
 
-/* for expressions: when a variable is encountred, generate a mov in the next available temporary register
+/* 
+    for expressions: when a variable is encountred, generate a mov in the next available temporary register
     then assign a new temprorary variable to every subexpresssion 
 */
 ASTNODE gen_lvalue(ASTNODE node, int* mode)
@@ -179,6 +179,8 @@ void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
         case '|':   opcode = OP_OR; break;
         case '^':   opcode = OP_XOR; break;
         case '&':   opcode = OP_AND; break;
+        default:
+            opcode = op;
     }
 
     QUAD emit_quad = alloc_quad(opcode);
@@ -186,77 +188,36 @@ void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
     emit_quad->src2 = right;
     emit_quad->res  = target;
 
-    print_quad(emit_quad);
-
     /* append emit_quad to curr_bblock */
     bblock_append_quad(emit_quad);
 
 }
 
-BBLOCK alloc_bblock(){
+BBLOCK alloc_bblock(void){
     BBLOCK bblock = calloc(1, sizeof(struct bblock));
     return bblock;
 }
 
+QUAD_L alloc_quad_l(void){
+    QUAD_L quad_l = calloc(1, sizeof(struct quad_list));
+    return quad_l;
+}
+
 void bblock_append_quad(QUAD emit_quad)
 {
-    if(curr_bblock == NULL){
+    if(curr_bblock == NULL)
+    {
         curr_bblock = alloc_bblock();
-    }
-
-    QUAD_L temp = curr_bblock->quad_list;
-    while(temp != NULL){
-
-
-
-        temp = temp->next;
-    }
-
-}
-
-void print_opcode(int opcode)
-{
-    switch(opcode){
-        case OP_ADD:    fprintf(stdout, "ADD "); break; 
-        case OP_SUB:    fprintf(stdout, "SUB "); break; 
-        case OP_MUL:    fprintf(stdout, "MUL "); break; 
-        case OP_DIV:    fprintf(stdout, "DIV "); break; 
-        case OP_MOD:    fprintf(stdout, "MOD "); break; 
-        case OP_SHR:    fprintf(stdout, "SHR "); break; 
-        case OP_SHL:    fprintf(stdout, "SHL "); break; 
-        case OP_XOR:    fprintf(stdout, "XOR "); break; 
-        case OP_OR:     fprintf(stdout, "OR ");  break;
-        case OP_AND:    fprintf(stdout, "AND "); break;
-        case OP_LOAD:   fprintf(stdout, "LOAD "); break;
-    }
-}
-
-void print_src_param(ASTNODE src_param){
-    if(src_param == NULL) return;
-
-    switch(src_param->type){
-        case AST_IDENT: fprintf(stdout, "%s", src_param->ident.ident); break;
-        case AST_NUM: fprintf(stdout, "%lld", src_param->num.int_num); break; /* only worrying about integer numbers */ 
-        case AST_CHARLIT: 
-            putchar('\''); print_char(src_param->charlit.charlit); putchar('\''); 
-            break;
-        case AST_TEMP: fprintf(stdout, "%%T%d", src_param->temp); break;
-        default:
-            fprintf(stdout, "UH OH THERE PARTNER!!!\n");
-            print_ast(src_param);
-            exit(42);
-    }
-}
-
-void print_quad(QUAD quad)
-{
-    print_src_param(quad->res);  fprintf(stdout, "=\t");
-    print_opcode(quad->opcode);  putchar(' ');
-    print_src_param(quad->src1); 
-    if(quad->src2 == NULL){
-        putchar('\n'); 
+        curr_bblock->quads = alloc_quad_l();
+        curr_bblock->quads->elem = emit_quad;
         return;
     }
-    putchar(',');
-    print_src_param(quad->src2); putchar('\n');
+
+    /* get last element */
+    QUAD_L temp = curr_bblock->quads;
+    while(temp->next != NULL) temp = temp->next; 
+
+    QUAD_L new_elem = calloc(1, sizeof(struct quad_list));
+    new_elem->elem = emit_quad;
+    temp->next = new_elem;
 }
