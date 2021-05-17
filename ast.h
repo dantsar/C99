@@ -18,6 +18,7 @@ enum AST_TYPE{
     AST_CHARLIT, 
     AST_STRING, 
     AST_SELECT,
+
     AST_TYPE,
     AST_SCALAR, 
     AST_PTR, 
@@ -25,27 +26,43 @@ enum AST_TYPE{
     AST_ST_UN, 
     AST_STRUCT, 
     AST_UNION, 
-    AST_FUNC, 
-    AST_LIST, 
+
+    AST_FUNC, /* function definition/declaration*/
+
+    AST_LIST, /* internal */
+
     AST_DECLARATION, 
     AST_DECL_SPEC, 
-    AST_DECL_STG, AST_DECL_TYPE_SPEC, AST_DECL_TYPE_QUALIF, AST_DECL_FUNC_SPEC, /* used for simplification not an acutal node type */
+    AST_DECL_STG, 
+    /* used for simplification not an acutal node type */
+    AST_DECL_TYPE_SPEC, 
+    AST_DECL_TYPE_QUALIF, 
+    AST_DECL_FUNC_SPEC, 
+
     AST_COMPOUND, 
+
     AST_SELECT_STMNT,
     AST_IF_STMNT, 
     AST_SWITCH_STMNT, 
+
     AST_ITERAT_STMNT,
     AST_DO_STMNT, 
     AST_WHILE_STMNT, 
     AST_FOR_STMNT,
+
     AST_LABEL_STMNT, 
-    AST_LABEL, AST_LABEL_CASE, AST_LABEL_DEFAULT,
+    AST_LABEL, 
+    AST_LABEL_CASE, 
+    AST_LABEL_DEFAULT,
+
     AST_JUMP_STMNT, 
     AST_GOTO, 
     AST_CONTINUE, 
     AST_BREAK, 
     AST_RETURN,
-    AST_TEMP /* assignment 5 temporary register */
+
+    AST_TEMP, /* assignment 5 temporary register */
+    AST_BB_TEMP,
 };
 
 /* enum for binary types in ast */
@@ -81,7 +98,9 @@ struct astnode_charlit{
 
 struct astnode_string{
     char* string;
-    int len;
+    size_t len;
+
+    size_t ro_section; /* place in .rodata section */
 };
 
 struct astnode_num{
@@ -203,9 +222,15 @@ struct astnode_jump_stmnt{
     ASTNODE ret_expr;
 };
 
-// struct astnode_temp{
-//     int temp_count;
-// };
+struct astnode_temp{
+    int temp;
+};
+
+struct astnode_bb_temp{
+    char *func_name;
+    int num;
+    char full_name[16];
+};
 
 struct astnode{
     int type;
@@ -240,13 +265,14 @@ struct astnode{
         struct astnode_jump_stmnt   jump_stmnt;
 
         /* assignment 5: quads */
-        int                         temp;
+        struct astnode_temp         temp;
+        struct astnode_bb_temp      bb_temp;
     };
 };
 
-bool ast_compare_type(ASTNODE t1, ASTNODE t2);
-/* TO DO: FIX alloc_num, alloc_str to not be so verbose and accept struct num && struct str */
-void print_ast(ASTNODE ast);
+bool    ast_compare_type(ASTNODE t1, ASTNODE t2);
+void    print_ast(ASTNODE ast);
+
 /* helper functions for assignment three 3: expressions */
 ASTNODE astnode_alloc(int ast_type);
 ASTNODE alloc_unary(int op, ASTNODE expr);
@@ -266,7 +292,7 @@ ASTNODE alloc_list(ASTNODE elem);
 ASTNODE list_last(ASTNODE list);
 ASTNODE list_append_elem(ASTNODE elem, ASTNODE list);
 ASTNODE list_append(ASTNODE list1, ASTNODE list2);
-int list_size(ASTNODE list);
+int     list_size(ASTNODE list);
 ASTNODE next_ptr(ASTNODE ptr_chain);
 ASTNODE last_ptr(ASTNODE ptr_chain);
 ASTNODE list_to_ptr_chain(ASTNODE list);
@@ -288,5 +314,6 @@ ASTNODE alloc_label_stmnt(int type, ASTNODE stmnt, char* label, ASTNODE cond);
 ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr);
 
 ASTNODE alloc_temp(int temp_count);
+ASTNODE alloc_bb_temp(char* func_name, int num);
 
 #endif

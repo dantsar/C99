@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "parser_print.h"
 
@@ -23,6 +24,9 @@ void print_sym(SYM_TAB sym)
     };
     SYM_ENT_LL temp = sym->ent_ll;
     while(temp != NULL){
+        /* SHHHHH Im hard coding printf */
+        if(!strcmp(temp->entry->name, "printf")){temp = temp->next; continue; }
+
         indent(space);
         fprintf(stdout, "%s is defined at %s:%d (of scope %s) as a\n", temp->entry->name, 
                                                                   temp->entry->filename, 
@@ -47,6 +51,9 @@ void print_sym_ent(SYM_ENT ent)
             indent(++space); fprintf(stdout, "with elements:\n"); 
             print_sym(ent->su_tag.st_un->st_un.mini_tab); 
             --space;
+            break;
+        case ENT_STMNT_LABEL:
+            indent(space); fprintf(stdout, "label\n");
             break;
         case ENT_FUNC:
             indent(space); fprintf(stdout, "function\n"); 
@@ -194,24 +201,24 @@ void print_ast(ASTNODE ast)
             break;
         case AST_TYPE:
             // fprintf(stdout, "AST_TYPE\n");
+            switch(ast->var_type.stg_class)
+            {
+                case STG_AUTO:              fprintf(stdout, "auto "); break;
+                case STG_STATIC:            fprintf(stdout, "static "); break;
+                case STG_EXTERN:            fprintf(stdout, "extern "); break;
+                case STG_REGISTER:          fprintf(stdout, "register "); break;
+                case STG_TYPEDEF:           fprintf(stdout, "typedef "); break;
+            }
+            /* not really used but here for the future */
+            switch(ast->var_type.type_qualif)
+            { 
+                case QUALIF_CONST:          fprintf(stdout, "const "); break;
+                case QUALIF_RESTRICT:       fprintf(stdout, "restrict "); break;
+                case QUALIF_VOLATILE:       fprintf(stdout, "volatile "); break;
+            }
             if(ast->var_type.type == AST_ST_UN){
                 print_ast(ast->var_type.st_un);
             } else{
-                switch(ast->var_type.stg_class)
-                {
-                    case STG_AUTO:          fprintf(stdout, "auto "); break;
-                    case STG_STATIC:        fprintf(stdout, "static "); break;
-                    case STG_EXTERN:        fprintf(stdout, "extern "); break;
-                    case STG_REGISTER:      fprintf(stdout, "auto "); break;
-                    case STG_TYPEDEF:       fprintf(stdout, "auto "); break;
-                }
-                /* not really used but here for the future */
-                switch(ast->var_type.type_qualif)
-                { 
-                    case QUALIF_CONST:      fprintf(stdout, "const "); break;
-                    case QUALIF_RESTRICT:   fprintf(stdout, "static "); break;
-                    case QUALIF_VOLATILE:   fprintf(stdout, "extern "); break;
-                }
                 if(ast->var_type.is_unsigned){
                     fprintf(stdout, "unsigned ");
                 }
@@ -234,19 +241,19 @@ void print_ast(ASTNODE ast)
         case AST_DECL_SPEC:
             // fprintf(stdout, "AST_DECL_SPEC\n"); /* for debugging */
             switch(ast->decl_spec.decl_spec){
-                case TYPE_VOID:         fprintf(stdout, "void "); break;
-                case TYPE_CHAR:         fprintf(stdout, "char "); break;
-                case TYPE_SHORT:        fprintf(stdout, "short "); break;
-                case TYPE_INT:          fprintf(stdout, "int "); break;
-                case TYPE_LONG:         fprintf(stdout, "long "); break;
-                case TYPE_FLOAT:        fprintf(stdout, "float "); break;
-                case TYPE_DOUBLE:       fprintf(stdout, "double "); break;
-                case TYPE_SIGNED:       fprintf(stdout, "signed "); break;
-                case TYPE_UNSIGNED:     fprintf(stdout, "unsigned "); break;
-                case QUALIF_CONST:      fprintf(stdout, "const "); break;
-                case QUALIF_RESTRICT:   fprintf(stdout, "restrict "); break;
-                case QUALIF_VOLATILE:   fprintf(stdout, "volatile "); break;
-                case FUNC_INLINE:       fprintf(stdout, "inline "); break;
+                case TYPE_VOID:             fprintf(stdout, "void "); break;
+                case TYPE_CHAR:             fprintf(stdout, "char "); break;
+                case TYPE_SHORT:            fprintf(stdout, "short "); break;
+                case TYPE_INT:              fprintf(stdout, "int "); break;
+                case TYPE_LONG:             fprintf(stdout, "long "); break;
+                case TYPE_FLOAT:            fprintf(stdout, "float "); break;
+                case TYPE_DOUBLE:           fprintf(stdout, "double "); break;
+                case TYPE_SIGNED:           fprintf(stdout, "signed "); break;
+                case TYPE_UNSIGNED:         fprintf(stdout, "unsigned "); break;
+                case QUALIF_CONST:          fprintf(stdout, "const "); break;
+                case QUALIF_RESTRICT:       fprintf(stdout, "restrict "); break;
+                case QUALIF_VOLATILE:       fprintf(stdout, "volatile "); break;
+                case FUNC_INLINE:           fprintf(stdout, "inline "); break;
             }
             break;
         case AST_ST_UN:
@@ -281,11 +288,11 @@ void print_ast(ASTNODE ast)
             break;
         case AST_SELECT_STMNT:
             temp_str = (ast->select_stmnt.type == AST_IF_STMNT) ? "IF" : "SWITCH";
-            fprintf(stdout, "%s:\n",temp_str);
+            indent(space); fprintf(stdout, "%s:\n",temp_str);
             indent(++space); print_ast(ast->select_stmnt.cond); space--;
 
             temp_str = (ast->select_stmnt.type == AST_IF_STMNT) ? "THEN" : "BODY";
-            fprintf(stdout, "%s:\n",temp_str);
+            indent(space); fprintf(stdout, "%s:\n",temp_str);
             indent(++space); print_ast(ast->select_stmnt.then); space--;
 
             if(ast->select_stmnt.else_stmnt){

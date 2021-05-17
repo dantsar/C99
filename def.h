@@ -14,6 +14,7 @@ typedef struct quad*            QUAD;
 typedef struct quad_list*       QUAD_L;
 typedef struct bblock*          BBLOCK;
 typedef struct bblock_list*     BBLOCK_L;
+typedef struct loop*            LOOP;
 
 /* enums for NUMS */
 enum N_SIGN {N_SIGNED=0, N_UNSIGNED};

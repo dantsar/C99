@@ -92,12 +92,16 @@ void yyerror_die(const char *);
 
 %%
 /* (6.9) */
-translation_unit:     extern_declaration                                {print_sym(curr_scope);  /* gen_quads($1); */} 
-                    | translation_unit extern_declaration               {print_sym(curr_scope);  /* gen_quads($2); */}
+translation_unit:     extern_declaration                                //{ print_sym(curr_scope); /* Nothing to do here ¯\_(ツ)_/¯ */ } 
+                    | translation_unit extern_declaration               //{ print_sym(curr_scope); /* Nothing to do here ¯\_(ツ)_/ */ }
                     ;
 /* (6.9) */
 extern_declaration:   declaration                                       {sym_declaration($1, curr_scope);}
-                    | func_def                                          {sym_func_def($1, curr_scope);}
+                    | func_def                                          {sym_func_def($1, curr_scope); 
+                                                                         /* generate quads for function definition */
+                                                                        //  print_sym(curr_scope);
+                                                                         gen_quads($1);
+                                                                        }
                                                                                      
                     ;
 /* (6.5.1) */
@@ -111,6 +115,7 @@ prim_expr:            IDENT                         {$$=alloc_ident($1);
                     | NUMBER                        {$$=alloc_num($1.int_num, $1.real, $1.type, $1.sign);}
                     | CHARLIT                       {$$=alloc_charlit($1);}
                     | STRING                        {$$=alloc_string($1.str, $1.len);}
+                    | '(' expr ')'                  {$$=$2;}
                     ;
 /* (6.5.2) */
 postfix_expr:         prim_expr                                 {$$=$1;}
@@ -145,7 +150,6 @@ unary_expr:           postfix_expr                              {$$=$1;}
                     | MINUSMINUS unary_expr                     {ASTNODE temp = alloc_num(1, 0.0, N_INT, N_SIGNED);
                                                                     $$=alloc_and_expand_assignment($2, '-', temp);}
                     | SIZEOF unary_expr                         {$$=alloc_sizeof($2);}
-                    | SIZEOF '(' unary_expr ')'                 {$$=alloc_sizeof($3);}
                     | '&' cast_expr                             {$$=alloc_unary('&',$2);}
                     | '*' cast_expr                             {$$=alloc_unary('*',$2);}
                     | '+' cast_expr                             {$$=alloc_unary('+',$2);}
@@ -185,7 +189,7 @@ arith_expr:           arith_expr '+' arith_expr                 {$$=alloc_binary
                     | arith_expr LOGOR arith_expr               {$$=alloc_binary(BINOP,$1, LOGOR, $3);}
                     | arith_expr PLUSPLUS                       {$$=alloc_unary(PLUSPLUS,$1);} 
                     | arith_expr MINUSMINUS                     {$$=alloc_unary(MINUSMINUS,$1);} 
-                    | '(' expr ')'                              {$$=$2;}
+                    // | '(' expr ')'                              {$$=$2;}
                     | cast_expr                                 {$$=$1;}
                     ;
 /*blank for now */
@@ -442,7 +446,10 @@ void yyerror_die(const char *msg){
 int main(){
     /* creating global symbol table */
     curr_scope = sym_tab_create(SCOPE_GLOBAL);
-
+    
+    /* hard coding in printf... very kludge */
+    sym_enter(curr_scope, alloc_sym_ent("printf", ENT_FUNC, NS_MISC));
+    
     yyparse();
 
     /* after EOF, convert quads to target code */

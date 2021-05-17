@@ -467,6 +467,18 @@ ASTNODE alloc_jump_stmnt(int type, char* label, ASTNODE ret_expr){
 
 ASTNODE alloc_temp(int temp_count){
     ASTNODE ret = astnode_alloc(AST_TEMP);
-    ret->temp = temp_count;
+    ret->temp.temp = temp_count;
+    return ret;
+}
+
+ASTNODE alloc_bb_temp(char* func_name, int num){
+    ASTNODE ret = astnode_alloc(AST_BB_TEMP);
+    ret->bb_temp.func_name = func_name;
+    ret->bb_temp.num = num;
+    snprintf(ret->bb_temp.full_name, 
+             sizeof(ret->bb_temp.full_name), 
+             ".BB.%s.%d",
+             func_name,
+             num);
     return ret;
 }

@@ -71,6 +71,7 @@ struct var_att{
     ASTNODE type;
     int stg_class;
     int offset;     /* offset in stackframe: only for type auto */
+    // SYM_ENT ent;
 };
 
 /* function attributes */

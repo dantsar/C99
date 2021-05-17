@@ -1,214 +1,69 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ast.h"
 #include "quads.h"
 #include "quads_print.h"
 #include "sym_tab.h"
 
-extern int lineno; 
-extern char filename[256];
-extern SYM_TAB curr_scope;
+static  char *func_name;     /* inidicate the name of the current function */
+static  size_t bblock_count; /* the bblock in the function: e.g. .BB.main.1 */
+static  size_t string_ro;    /* how many strings have be seen */
+static  int temp_count;      /* how many temporary registers have been used*/
+static  size_t stack_offset; /* offset in stack of local variable */
+static  bool useful = false; /* flag to show ifexpression is usefull or not */
 
-static int bblock_count, temp_count;
-static bool useful = false; /* used to indicate whether expression is usefull or not */
+ASTNODE string_l;            /* list of strings for .rodata section */
+BBLOCK  bblock_tree;         /* global linked list of bblocks */
+BBLOCK  curr_bblock;         /* most recent bblock (tail of bblock_tree) */
+BBLOCK_L bblock_l;           /* list of all bblocks created: easier printing */
 
-BBLOCK curr_bblock = NULL;
+LOOP    curr_loop;           /* stack of loops */
 
-QUAD alloc_quad(int opcode)
-{
-    QUAD quad = calloc(1, sizeof(struct quad));
-    quad->opcode = opcode;
-    return quad;
-}
-
-
-void gen_quads(ASTNODE extern_def)
-{
-    /* either function or declaration */
-
-    /* for declaration: get quad of declaration and add to list of starting quads, only important if handeling initalizers */
-    if(extern_def->type == AST_FUNC){
-        quad_func(extern_def);
-    } else {
-        quad_declaration(extern_def);
-    }
-
-    /* print quads that were generated */
-
-}
-
-/* kind of useless for NOW since I am not implementing initalizers...FOR NOW!! */
-void quad_declaration(ASTNODE declaration)
-{
-    // QUAD quad_dec = alloc_quad(OP_ADD);
-    // return quad_dec;
-}
-
-void quad_func(ASTNODE func_def)
-{
-    /* set flag for being in loop to off */
-
-    /* loop through list of statements */
-    ASTNODE temp = func_def->func.block->comp.states;
-    /* will probably make this its own function. something called quad_compound or something */
-    while(temp != NULL){
-        /* perform conditional checks on the type of the statement */
-        /* will probably make this its own function. something called quad_statement or something... */
-        ASTNODE node = temp->list.elem;
-        switch(node->type){
-            case AST_DECLARATION:
-                /* currently blank because I am not handling initializers. That may change in the future! */
-                break;
-            case AST_UNARY:
-                /* warning: useless statement? */
-                break;
-            case AST_BINARY:
-                /* quad_binary(node); usefulness is set by the function, if an assignment is seen else useless */
-                quad_binary(node);
-
-                if(useful == true){
-                    /* throw warning: useless statement */
-                }
-                useful = false;
-                break;
-            case AST_TERNARY:
-                /* BLAH */
-                break;
-            case AST_LABEL_STMNT:
-                /* BLAH */
-                break;
-            case AST_SELECT_STMNT:
-                /* quad_select_stmnt(node); */
-                break;
-            case AST_ITERAT_STMNT:
-                /* oh lord, please help me on this one... */
-                /* quad_loop(node); */
-                break;
-            case AST_FNCALL:
-                /* quad_fncall(node); */
-                break;
-            case AST_COMPOUND:
-                /* quad_compound(node); */
-                break;
-            default:
-                /* check if AST_BREAK || AST_CONTINUE and not in loop */
-                /* throw error is break or continue is encountered and not in a loop */
-                /* possibly check a set global flag */
-
-                /* else check */
-                /* for IDENT, NUM, CHARLIT, SIZEOF ... a whole bunch of expressions that by themselves don't have a meaningfull effect  */
-                /* warning: useless statement */
-                break;
-
-        };
-
-
-        temp = temp->list.next;
-    }
-
-    print_bblock(curr_bblock);
-    // QUAD func = alloc_quad(OP_ADD);
-    // return func;
-}
-void quad_binary(ASTNODE node)
-{
-    gen_rvalue(node, NULL);
-    // QUAD quad = gen_rvalue(node, NULL);
-    // return quad;
-}
-
-ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
-{
-    ASTNODE left, right, addr;
-    int *mode;
-    switch(node->type){
-        case AST_SCALAR:    return node;
-        case AST_NUM:       return node;
-        case AST_CHARLIT:   return node;
-        case AST_IDENT:     return node; /* need to emit mov instruction into temp... later! */
-        case AST_UNARY:
-            /* dereference */
-            if(node->unary.op == '*'){
-                addr = gen_rvalue(node->unary.expr, NULL);
-            }
-            if(!target) target=alloc_temp(temp_count++);
-            emit_quad(OP_LOAD, addr, NULL, target);
-            return target;
-                /* standard unary shtuff */
-                /* emit opcode and stuff */
-            break;
-        case AST_BINARY:    
-            if(node->binary.op == '=')
-                left = gen_lvalue(node->binary.left, mode);
-            else
-                left = gen_rvalue(node->binary.left, NULL);
-            right = gen_rvalue(node->binary.right, NULL);
-            if(!target) target=alloc_temp(temp_count++);
-            emit_quad(node->binary.op, left, right, target);
-            return target;
-        default:
-            return node;
-
-        
-    }
-}
-
-/* 
-    for expressions: when a variable is encountred, generate a mov in the next available temporary register
-    then assign a new temprorary variable to every subexpresssion 
-*/
-ASTNODE gen_lvalue(ASTNODE node, int* mode)
-{
-    ASTNODE ret = astnode_alloc(AST_TEMP);
-    return ret;
-}
-
-void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
-{
-
-    int opcode = 0;
-    switch(op){
-        case '+':   opcode = OP_ADD; break;
-        case '-':   opcode = OP_SUB; break;
-        case '*':   opcode = OP_MUL; break;
-        case '/':   opcode = OP_DIV; break;
-        case '%':   opcode = OP_MOD; break;
-        case SHR:   opcode = OP_SHR; break;
-        case SHL:   opcode = OP_SHL; break;
-        case '|':   opcode = OP_OR; break;
-        case '^':   opcode = OP_XOR; break;
-        case '&':   opcode = OP_AND; break;
-        default:
-            opcode = op;
-    }
-
-    QUAD emit_quad = alloc_quad(opcode);
-    emit_quad->src1 = left;
-    emit_quad->src2 = right;
-    emit_quad->res  = target;
-
-    /* append emit_quad to curr_bblock */
-    bblock_append_quad(emit_quad);
-
-}
-
-BBLOCK alloc_bblock(void){
-    BBLOCK bblock = calloc(1, sizeof(struct bblock));
-    return bblock;
-}
+ASTNODE gen_condexpr(ASTNODE if_node, BBLOCK bblock_trye, BBLOCK bblock_false);
+void link_bb(int cc, BBLOCK bblock_default, BBLOCK bblock_cond);
 
 QUAD_L alloc_quad_l(void){
     QUAD_L quad_l = calloc(1, sizeof(struct quad_list));
     return quad_l;
 }
 
+BBLOCK_L alloc_bblock_list(BBLOCK bblock)
+{
+    BBLOCK_L ret = calloc(1, sizeof(struct bblock_list));
+    ret->elem = bblock;
+    return ret;
+}
+
+BBLOCK alloc_bblock(void){
+    BBLOCK bblock = calloc(1, sizeof(struct bblock));
+    // fprintf(stderr, "FUNC_NAME: %s.%d\n", func_name, bblock_count);
+    bblock->name = strdup(func_name);
+    bblock->bblock_count = bblock_count++;
+    bblock->quads = alloc_quad_l();
+
+    /* add new bblock to bblock list */
+    /* TERRRIBLY inefficient, BUT "robust" */
+    BBLOCK_L new = alloc_bblock_list(bblock);
+
+    /* add to the end */
+    BBLOCK_L temp = bblock_l;
+    while(temp->next != NULL) 
+     temp = temp->next;
+
+
+    temp->next = new;
+    
+    return bblock;
+}
+
+/* appends provided quad to curr_bblock */
 void bblock_append_quad(QUAD emit_quad)
 {
     if(curr_bblock == NULL)
     {
         curr_bblock = alloc_bblock();
-        curr_bblock->quads = alloc_quad_l();
         curr_bblock->quads->elem = emit_quad;
         return;
     }
@@ -220,4 +75,548 @@ void bblock_append_quad(QUAD emit_quad)
     QUAD_L new_elem = calloc(1, sizeof(struct quad_list));
     new_elem->elem = emit_quad;
     temp->next = new_elem;
+}
+
+//  maybe will put these functions in a util.c LATER on 
+/* helper function for checking whether the variable is a scalar */
+bool is_scalar(ASTNODE node)
+{
+    /**
+     * checks the node is an ident, if so, check if the symbol table entry is
+     * a variable and check if the variable's type is of ident 
+    */
+    if(node->type == AST_IDENT)
+        if(node->ident.entry->att_type == ENT_VAR)
+            if(node->ident.entry->var.type->var_type.type == AST_SCALAR)
+                return true;
+    return false;
+}
+
+bool is_numerical(ASTNODE node)
+{
+    switch(node->type){
+        case AST_NUM:
+        case AST_CHARLIT:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool is_pointer(ASTNODE test)
+{
+    if(test->type != AST_IDENT || test->ident.entry->att_type != ENT_VAR)
+        return false;
+        
+    test = test->ident.entry->var.type; 
+    if(test->type == AST_ARRAY || test->type == AST_PTR)
+        return true;
+    return false;
+}
+
+QUAD alloc_quad(int opcode)
+{
+    QUAD quad = calloc(1, sizeof(struct quad));
+    quad->opcode = opcode;
+    return quad;
+}
+
+LOOP alloc_loop(void)
+{
+    LOOP loop = calloc(1, sizeof(struct loop));
+    loop->prev = curr_loop;
+    return loop;
+}
+
+/* create a QUAD and append it to the QUAD_L in the current bblock */
+void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
+{
+    int opcode = 0;
+    switch(op){
+        case '+':   opcode = OP_ADD; break;
+        case '-':   opcode = OP_SUB; break;
+        case '*':   opcode = OP_MUL; break;
+        case '/':   opcode = OP_DIV; break;
+        case '%':   opcode = OP_MOD; break;
+        case SHR:   opcode = OP_SHR; break;
+        case SHL:   opcode = OP_SHL; break;
+        case '|':   opcode = OP_OR;  break;
+        case '^':   opcode = OP_XOR; break;
+        case '&':   opcode = OP_AND; break;
+        default:    opcode = op;
+    }
+
+    QUAD emit_quad = alloc_quad(opcode);
+    emit_quad->src1 = left;
+    emit_quad->src2 = right;
+    emit_quad->res  = target;
+
+    /* append emit_quad to curr_bblock */
+    bblock_append_quad(emit_quad);
+}
+
+/* -------------------------------------------------------------------------- */
+/* expression generation portion */
+
+ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
+{
+    ASTNODE left, right, addr, dst, tmp;
+    int mode, opcode, cond_code; 
+    struct fncall_params* temp_param;
+
+    /* for conditional expressions */
+    BBLOCK bblock_true, bblock_false, bblock_eval;
+
+    if(!node) return NULL; /* prevent explosion */
+
+    switch(node->type)
+    {
+
+        /* add string to strings */
+        case AST_STRING:
+            /* add string to string_l */
+            node->string.ro_section = string_ro++;
+            list_append_elem(node, string_l);
+            return gen_lvalue(node, &mode);
+        case AST_NUM:       
+        case AST_CHARLIT:   
+            if(target){
+                emit_quad(OP_MOV, node, NULL, target);
+            }
+
+            return node;
+
+        /* NOT handeling structs and unions, things WILLLLL!!! break if you use 
+           them...but I don't care :^) */
+        case AST_SCALAR:    
+            return node;
+        case AST_IDENT:
+            // /* subject to change */
+            // if(!target) target=alloc_temp(temp_count++);
+            // emit_quad(OP_MOV, node, NULL, target);
+            // return target; 
+            return node;
+        case AST_UNARY:
+            /* dereference */
+            switch(node->unary.op){
+                case '*':
+                case '&':
+                    opcode = (node->unary.op == '&') ? OP_LEA : OP_LOAD;
+                    addr = gen_rvalue(node->unary.expr, NULL);
+                    if(!target) target=alloc_temp(temp_count++);
+                    emit_quad(opcode, addr, NULL, target);
+                    return target;
+                /* NOPE!! */
+                case PLUSPLUS: 
+                case MINUSMINUS: 
+                case '!': 
+                case '~':
+                    return NULL;
+            }
+            return NULL;
+
+        case AST_BINARY:    
+            if(node->binary.op == '=') return gen_assign(node, target); 
+
+            left = gen_rvalue(node->binary.left, NULL);
+            right = gen_rvalue(node->binary.right, NULL);
+
+            if(node->binary.op == '+'){
+                /* switch left && right so pointer in front */
+                if(is_pointer(right)){
+                    tmp = left;
+                    left = right;
+                    right = tmp;
+                }
+
+                /* UH OH */
+                if(is_pointer(left) && is_pointer(right)){ 
+                    quad_error("invalid pointer + pointer"); 
+                    return NULL; 
+                }
+
+                /* pointer + int: remember, only handeling ints and pointers :^) */
+                if(is_pointer(left)){
+                    tmp = alloc_temp(temp_count++);
+                    emit_quad(OP_MUL, alloc_num(4, 0, N_INT, N_SIGNED), right, tmp);
+                    right = tmp;
+                }
+
+            }
+            // /* relational operators */
+            switch(node->binary.op){
+                case EQEQ:  
+                case NOTEQ: 
+                case '<':   
+                case LTEQ:  
+                case '>':   
+                case GTEQ:  
+                    bblock_true = alloc_bblock();
+                    bblock_false = alloc_bblock();
+                    bblock_eval = alloc_bblock();
+                    gen_condexpr(node, bblock_true, bblock_false);
+
+                    if(!target) target=alloc_temp(temp_count++);
+
+                    curr_bblock = bblock_true;
+                    tmp = alloc_num(1, 0.0, N_INT, N_SIGNED);
+                    emit_quad(OP_MOV, tmp, NULL, target);
+                    link_bb(CC_ALWAYS, bblock_eval, NULL);
+
+                    curr_bblock = bblock_false;
+                    tmp = alloc_num(0, 0.0, N_INT, N_SIGNED);
+                    emit_quad(OP_MOV, tmp, NULL, target);
+                    link_bb(CC_ALWAYS, bblock_eval, NULL);
+
+                    curr_bblock = bblock_eval;
+                    return target;
+            }
+
+            if(!target) target=alloc_temp(temp_count++);
+            emit_quad(node->binary.op, left, right, target);
+            return target;
+
+        case AST_FNCALL:
+            /* I will only handle direct function calls f(2); */
+            temp_param = node->fncall.params;
+            while (temp_param != NULL) { 
+                left = gen_rvalue(temp_param->param, NULL);
+                emit_quad(OP_PUSH, left, NULL, NULL);
+                temp_param = temp_param->next;
+            }
+
+            left = node->fncall.name;
+            emit_quad(OP_CALL, left, NULL, NULL);
+
+
+
+            return target;
+        default:
+            return node;
+    }
+}
+
+ASTNODE gen_lvalue(ASTNODE node, int* mode)
+{
+    ASTNODE tmp, target;
+    if(node->type == AST_UNARY){
+        if(node->unary.op != '*')
+            quad_error("invalid lvalue, from unary op");
+
+        *mode = MODE_INDIRECT;
+        tmp = gen_rvalue(node->unary.expr, NULL);
+
+        if(!target) target=alloc_temp(temp_count++);
+        emit_quad(OP_LEA, tmp, NULL, target);
+
+        return target;
+    }
+
+    // if(node->type == AST_ARRAY || node->type == AST_STRING){
+    if(node->type == AST_STRING){
+        *mode = MODE_INDIRECT;
+        tmp = gen_rvalue(node->unary.expr, NULL);
+
+        if(!target) target=alloc_temp(temp_count++);
+        emit_quad(OP_LEA, tmp, NULL, target);
+        return target;
+    }
+
+    if(node->type != AST_IDENT){
+        quad_error("bad lvalue");
+    }
+
+    if(is_numerical(node)){
+        return NULL;
+    }else if(is_scalar(node)){
+        // fprintf(stderr, "IS SCALAR\n");
+        *mode = MODE_DIRECT; 
+        return node;
+    }
+    return node;
+}
+
+ASTNODE gen_assign(ASTNODE node, ASTNODE target)
+{
+    ASTNODE dst, src;
+    int dstmode;
+
+    /* no explosion for you */ 
+    if(!node){ fprintf(stdout, "GEN ASSIGN: NULL\n"); return NULL; }
+
+    /* 
+       ANOTHER memory leak && ANOTHER GOD DAMN KLUDGE. 
+       I should be shot for this...
+       I don't want to talk about this... while on the surface this doesn't
+       do anything, it solves an alignment issue. I don't know why there is 
+       an alignment issue, and I don't have the time or evergy to fix it
+    */
+    malloc(1);
+
+    /* generate lvalue and die if invalid lvalue encountered */
+    dst = gen_lvalue(node->binary.left, &dstmode);
+    if(dst == NULL) quad_error("invalid lvalue");
+   
+    if(dstmode==MODE_DIRECT){
+        src = gen_rvalue(node->binary.right, NULL);
+        if(src->type == AST_STRING){
+            if(!target) target=alloc_temp(temp_count++);
+            emit_quad(OP_LEA, node, NULL, target);
+        } else {
+            emit_quad(OP_MOV, src, NULL, dst);
+        }
+    } else {
+        src = gen_rvalue(node->binary.right, NULL);
+        emit_quad(OP_STORE, src, NULL, dst);
+    }
+
+    return src;
+}
+
+/* -------------------------------------------------------------------------- */
+/* branching */
+
+// int cond_code_inv(int cond_code){
+//     switch(cond_code){
+//         case CC_E:  return CC_NE;
+//         case CC_NE: return CC_E;
+//         case CC_L:  return CC_GE;
+//         case CC_LE: return CC_G;
+//         case CC_G:  return CC_LE;
+//         case CC_GE: return CC_L;
+//         default:    return cond_code;
+//     }
+// }
+
+void link_bb(int cc, BBLOCK bblock_default, BBLOCK bblock_cond)
+{
+    if(curr_bblock->is_done)
+        /* block is finalized so don't care */
+        return;
+
+    curr_bblock->cond_flag = cc;
+    
+    /* 
+       emit branching quads after linking, can do this because being here 
+       implies that the bblock is finalized 
+    */
+    ASTNODE temp1, temp2;
+    temp1 = alloc_bb_temp(func_name, bblock_default->bblock_count);
+    if (bblock_cond != NULL && cc != CC_ALWAYS) {
+        temp2 = alloc_bb_temp(func_name, bblock_cond->bblock_count);
+        emit_quad(OP_BR+cc, temp1, temp2, NULL);
+    } else {
+        emit_quad(OP_BR, temp1, NULL, NULL);
+    }
+
+    curr_bblock->def = bblock_default;
+    curr_bblock->cond = bblock_cond;
+
+    curr_bblock->is_done = 1;
+}
+
+void quad_if_else(ASTNODE if_node)
+{
+    BBLOCK bblock_true, bblock_false, bblock_eval;
+    bblock_true = alloc_bblock();
+    bblock_false = alloc_bblock();
+
+    if(if_node->select_stmnt.else_stmnt != NULL){
+        bblock_eval = alloc_bblock();
+    } else{
+        bblock_eval = bblock_false;
+    }
+
+    gen_condexpr(if_node->select_stmnt.cond, bblock_true, bblock_false);
+    curr_bblock = bblock_true;
+    quad_statement(if_node->select_stmnt.then);
+
+    link_bb(CC_ALWAYS, bblock_eval, bblock_true);
+
+    if(if_node->select_stmnt.else_stmnt != NULL){
+        curr_bblock = bblock_false;
+        quad_statement(if_node->select_stmnt.else_stmnt);
+        link_bb(CC_ALWAYS, bblock_eval, bblock_true);
+    }
+
+    curr_bblock = bblock_eval;
+}
+
+ASTNODE gen_condexpr(ASTNODE expr, BBLOCK bblock_true, BBLOCK bblock_false)
+{
+    ASTNODE left, right;
+    int cond_code;
+
+    switch(expr->type){
+        case AST_UNARY: break; /* :shrug:, just don't be fancy! */
+        case AST_BINARY:
+            left = gen_rvalue(expr->binary.left, NULL);
+            right = gen_rvalue(expr->binary.right, NULL);
+            emit_quad(OP_CMP, left, right, NULL);
+            switch(expr->binary.op){
+                case EQEQ:  cond_code = CC_E;   break;
+                case NOTEQ: cond_code = CC_NE;  break;
+                case '<':   cond_code = CC_L;   break;
+                case LTEQ:  cond_code = CC_LE;  break;
+                case '>':   cond_code = CC_G;   break;
+                case GTEQ:  cond_code = CC_GE;  break;
+                default:
+                    /* convert to not equal zero */
+                    return NULL;
+            }
+            link_bb(cond_code, bblock_true, bblock_false);
+
+
+            break;
+        case AST_NUM:
+        case AST_CHARLIT:
+        case AST_IDENT:
+            break;
+    }
+
+    return NULL;
+}
+
+/* -------------------------------------------------------------------------- */
+/* looping */
+
+void quad_while(ASTNODE while_loop)
+{
+    BBLOCK bblock_cond = alloc_bblock();
+    BBLOCK bblock_body = alloc_bblock();
+    BBLOCK bblock_next = alloc_bblock();
+
+    curr_loop = alloc_loop();
+    curr_loop->bb_cont = bblock_cond;
+    curr_loop->bb_break = bblock_next;
+
+    link_bb(CC_ALWAYS, bblock_cond, NULL);
+    curr_bblock = bblock_cond;
+    gen_condexpr(while_loop->iterat_stmnt.cond, bblock_body, bblock_next);
+
+    curr_bblock = bblock_body;
+    quad_statement(while_loop->iterat_stmnt.stmnt);
+    /* back to the condition */
+    link_bb(CC_ALWAYS, bblock_cond, NULL); 
+    
+    curr_loop = curr_loop->prev;
+    curr_bblock = bblock_next;
+}
+
+/* -------------------------------------------------------------------------- */
+/* jumping */
+
+void quad_jump_loop(ASTNODE jump)
+{
+    if(curr_loop == NULL){
+        quad_error("continue/break not it loop...now going to DIE");
+    }
+
+    if(jump->jump_stmnt.type == AST_CONTINUE) {
+        link_bb(CC_ALWAYS, curr_loop->bb_cont, NULL);
+    } else if(jump->jump_stmnt.type == AST_BREAK) {
+        link_bb(CC_ALWAYS, curr_loop->bb_break, NULL);
+    }
+
+}
+
+void quad_return(ASTNODE ret)
+{
+    ASTNODE temp = gen_rvalue(ret->jump_stmnt.ret_expr, NULL);
+    emit_quad(OP_RET, temp, NULL, NULL);
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* generating quads from function */
+void quad_statement(ASTNODE stmnt)
+{
+    /* not a temporary register but a temp variable */
+    ASTNODE temp;
+
+    switch(stmnt->type){
+        case AST_DECLARATION: 
+            /* actually important: set the stack offset here */
+            // stmnt->declaration.f
+            break;
+
+        case AST_FUNC: gen_rvalue(stmnt, NULL); break;
+
+        case AST_COMPOUND:
+            temp = stmnt->comp.states;
+            while(temp != NULL){
+                quad_statement(temp->list.elem);
+                temp = temp->list.next;
+            }
+            break;
+
+        /* expressions */
+        case AST_UNARY:
+        case AST_BINARY:
+        case AST_TERNARY:
+            /* not worrying about useless expressions!! */
+            gen_rvalue(stmnt, NULL);
+            break;
+
+        /* conditional branching */
+        case AST_SELECT_STMNT:
+            if(stmnt->select_stmnt.type == AST_SWITCH_STMNT){
+                    fprintf(stderr, "only handeling if statements!");
+                    exit(-1);
+            }
+            quad_if_else(stmnt);
+            break;
+
+        /* jump statements: GOTOs RETURN, CONTINUE, BREAK */
+        case AST_JUMP_STMNT:
+            switch(stmnt->jump_stmnt.type){
+                case AST_RETURN:
+                    quad_return(stmnt);
+                    break;
+                case AST_BREAK:
+                case AST_CONTINUE:
+                    quad_jump_loop(stmnt);
+                    break;
+            }
+            break;
+
+        /* loops */
+        case AST_ITERAT_STMNT:
+            switch(stmnt->iterat_stmnt.type){
+                case AST_WHILE_STMNT:
+                    quad_while(stmnt);
+                    break;
+                case AST_DO_STMNT: 
+                case AST_FOR_STMNT:
+                    fprintf(stderr, "only handeling while loops!");
+                    exit(-1);
+            }
+            break;
+        case AST_FNCALL:
+            gen_rvalue(stmnt, NULL);
+            break;
+
+        default: fprintf(stderr, ":Shrug:, error I guess???\n"); break;
+
+    }
+
+}
+
+BBLOCK gen_quads(ASTNODE func_def)
+{
+    func_name = strdup(func_def->func.name->ident.ident);
+    bblock_count = 1;
+    stack_offset = 0;
+
+    /* LMAOOO NO MEMORY MANAGMENT */
+    bblock_l = calloc(1, sizeof(struct bblock_list));
+    bblock_tree = (curr_bblock = alloc_bblock());
+
+    /* pass func def's compound block which is just a list of statements */
+    quad_statement(func_def->func.block);
+
+    /* print quads that were generated */
+    print_bblock_l(bblock_l);
+
+    return bblock_tree;
 }
