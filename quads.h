@@ -1,3 +1,6 @@
+#ifndef QUADS_H
+#define QUADS_H
+
 #include "ast.h"
 #include "def.h"
 #include "sym_tab.h"
@@ -79,8 +82,8 @@ struct loop{
 };
 
 // QUAD    alloc_quad(int opcode);
-BBLOCK  gen_quads(ASTNODE extern_def);
-void    quad_statement(ASTNODE stmnt);
+BBLOCK_L gen_quads(ASTNODE extern_def);
+void     quad_statement(ASTNODE stmnt);
 
 /* expression generation */
 ASTNODE gen_rvalue(ASTNODE node, ASTNODE target);
@@ -88,6 +91,9 @@ ASTNODE gen_lvalue(ASTNODE node, int* mode);
 ASTNODE gen_assign(ASTNODE node, ASTNODE target);
 
 /* helpers */
+size_t size_of(ASTNODE node);
 bool    is_scalar(ASTNODE node);
 bool    is_numerical(ASTNODE node);
 bool    is_pointer(ASTNODE node);
+
+#endif

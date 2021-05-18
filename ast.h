@@ -1,6 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include <stddef.h>
+
 #include "def.h"
 #include "char_util.h"
 #include "parser.tab.h"

@@ -47,10 +47,17 @@ void print_src_param(ASTNODE src_param)
     if(src_param == NULL) return;
 
     switch(src_param->type){
-        case AST_IDENT:     fprintf(stderr, "%s", src_param->ident.ident); break;
+        case AST_IDENT:     
+                if(src_param->ident.entry->att_type == ENT_VAR){
+                    fprintf(stderr, "%s{%d}", src_param->ident.ident, 
+                                            src_param->ident.entry->var.offset); 
+                } else {
+                    fprintf(stderr, "%s", src_param->ident.ident);
+                }
+            break;
         case AST_STRING:    fprintf(stderr, ".STR%zu", src_param->string.ro_section); break;
         case AST_NUM:       fprintf(stderr, "%lld", src_param->num.int_num); break; /* only worrying about integer numbers */ 
-        case AST_TEMP:      fprintf(stderr, "%%T%d", src_param->temp.temp); break;
+        case AST_TEMP:      fprintf(stderr, "%%T%03d.%03d", src_param->temp.temp,4*src_param->temp.temp); break;
         case AST_CHARLIT: 
             fprintf(stderr,"%c",'\''); 
             print_char(src_param->charlit.charlit); 

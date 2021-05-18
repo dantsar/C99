@@ -2,19 +2,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "asm.h"
 #include "ast.h"
 #include "quads.h"
 #include "quads_print.h"
 #include "sym_tab.h"
 
-static  char *func_name;     /* inidicate the name of the current function */
+extern SYM_TAB curr_scope;
+
+char    *func_name;          /* inidicate the name of the current function */
 static  size_t bblock_count; /* the bblock in the function: e.g. .BB.main.1 */
 static  size_t string_ro;    /* how many strings have be seen */
-static  int temp_count;      /* how many temporary registers have been used*/
 static  size_t stack_offset; /* offset in stack of local variable */
 static  bool useful = false; /* flag to show ifexpression is usefull or not */
+int     temp_count = 1;      /* how many temporary registers have been used*/
 
-ASTNODE string_l;            /* list of strings for .rodata section */
+ASTNODE string_l = NULL;            /* list of strings for .rodata section */
 BBLOCK  bblock_tree;         /* global linked list of bblocks */
 BBLOCK  curr_bblock;         /* most recent bblock (tail of bblock_tree) */
 BBLOCK_L bblock_l;           /* list of all bblocks created: easier printing */
@@ -40,6 +43,7 @@ BBLOCK alloc_bblock(void){
     BBLOCK bblock = calloc(1, sizeof(struct bblock));
     // fprintf(stderr, "FUNC_NAME: %s.%d\n", func_name, bblock_count);
     bblock->name = strdup(func_name);
+    bblock->func_name = strdup(func_name);
     bblock->bblock_count = bblock_count++;
     bblock->quads = alloc_quad_l();
 
@@ -160,7 +164,7 @@ void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
 
 ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
 {
-    ASTNODE left, right, addr, dst, tmp;
+    ASTNODE left, right, addr, dst, tmp, tmp2;
     int mode, opcode, cond_code; 
     struct fncall_params* temp_param;
 
@@ -176,8 +180,12 @@ ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
         case AST_STRING:
             /* add string to string_l */
             node->string.ro_section = string_ro++;
-            list_append_elem(node, string_l);
-            return gen_lvalue(node, &mode);
+            if(!string_l) 
+                string_l = alloc_list(node);
+            else
+                list_append_elem(node, string_l);
+            // return gen_lvalue(node, &mode);
+            return node;
         case AST_NUM:       
         case AST_CHARLIT:   
             if(target){
@@ -186,7 +194,7 @@ ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
 
             return node;
 
-        /* NOT handeling structs and unions, things WILLLLL!!! break if you use 
+        /* NOT handeling structs and unions, things WILLLLL break if you use 
            them...but I don't care :^) */
         case AST_SCALAR:    
             return node;
@@ -238,7 +246,8 @@ ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
                 /* pointer + int: remember, only handeling ints and pointers :^) */
                 if(is_pointer(left)){
                     tmp = alloc_temp(temp_count++);
-                    emit_quad(OP_MUL, alloc_num(4, 0, N_INT, N_SIGNED), right, tmp);
+                    tmp2 = alloc_num((int)size_of(right), 0, N_INT, N_SIGNED);
+                    emit_quad(OP_MUL, tmp2, right, tmp);
                     right = tmp;
                 }
 
@@ -278,13 +287,34 @@ ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
 
         case AST_FNCALL:
             /* I will only handle direct function calls f(2); */
-            temp_param = node->fncall.params;
-            while (temp_param != NULL) { 
-                left = gen_rvalue(temp_param->param, NULL);
-                emit_quad(OP_PUSH, left, NULL, NULL);
-                temp_param = temp_param->next;
-            }
 
+            /* this is disgusting */
+            if(node->fncall.num_param > 0){
+
+                /* reverse params */
+                temp_param = node->fncall.params;
+                tmp = alloc_list(NULL);
+                while (temp_param != NULL) { 
+                    /* convoluted and not worth documenting: works!*/
+                    tmp = list_append(tmp, alloc_list(temp_param->param));
+                    temp_param = temp_param->next;
+                }
+
+                while (tmp != NULL) { 
+                    if(tmp->list.elem == NULL)
+                        break;
+                    left = gen_rvalue(tmp->list.elem, NULL);
+                    emit_quad(OP_PUSH, left, NULL, NULL);
+
+                    tmp = tmp->list.next;
+                }
+                // while (temp_param != NULL) { 
+                //     left = gen_rvalue(temp_param->param, NULL);
+                //     emit_quad(OP_PUSH, left, NULL, NULL);
+                //     temp_param = temp_param->next;
+                // }
+
+            }
             left = node->fncall.name;
             emit_quad(OP_CALL, left, NULL, NULL);
 
@@ -299,41 +329,25 @@ ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
 ASTNODE gen_lvalue(ASTNODE node, int* mode)
 {
     ASTNODE tmp, target;
-    if(node->type == AST_UNARY){
-        if(node->unary.op != '*')
-            quad_error("invalid lvalue, from unary op");
+    switch(node->type){
+        case AST_NUM:
+        case AST_CHARLIT:
+        case AST_STRING:
+            quad_error("invalid lvalue");
+            return NULL;
+        
+        case AST_UNARY:
+            if(node->unary.op != '*')
+                quad_error("invalid lvalue, from unary op");
 
-        *mode = MODE_INDIRECT;
-        tmp = gen_rvalue(node->unary.expr, NULL);
+            *mode = MODE_INDIRECT;
+            return gen_rvalue(node->unary.expr, NULL);
 
-        if(!target) target=alloc_temp(temp_count++);
-        emit_quad(OP_LEA, tmp, NULL, target);
-
-        return target;
+        case AST_IDENT:
+            *mode = MODE_DIRECT; 
+            return node;
     }
-
-    // if(node->type == AST_ARRAY || node->type == AST_STRING){
-    if(node->type == AST_STRING){
-        *mode = MODE_INDIRECT;
-        tmp = gen_rvalue(node->unary.expr, NULL);
-
-        if(!target) target=alloc_temp(temp_count++);
-        emit_quad(OP_LEA, tmp, NULL, target);
-        return target;
-    }
-
-    if(node->type != AST_IDENT){
-        quad_error("bad lvalue");
-    }
-
-    if(is_numerical(node)){
-        return NULL;
-    }else if(is_scalar(node)){
-        // fprintf(stderr, "IS SCALAR\n");
-        *mode = MODE_DIRECT; 
-        return node;
-    }
-    return node;
+    return NULL;
 }
 
 ASTNODE gen_assign(ASTNODE node, ASTNODE target)
@@ -347,11 +361,11 @@ ASTNODE gen_assign(ASTNODE node, ASTNODE target)
     /* 
        ANOTHER memory leak && ANOTHER GOD DAMN KLUDGE. 
        I should be shot for this...
-       I don't want to talk about this... while on the surface this doesn't
-       do anything, it solves an alignment issue. I don't know why there is 
-       an alignment issue, and I don't have the time or evergy to fix it
+       while on the surface this doesn't do anything, 
+       it solves an alignment issue. I don't know why there is an alignment 
+       issue, and I don't have the time or evergy to fix it
     */
-    malloc(1);
+    // malloc(1);
 
     /* generate lvalue and die if invalid lvalue encountered */
     dst = gen_lvalue(node->binary.left, &dstmode);
@@ -360,8 +374,8 @@ ASTNODE gen_assign(ASTNODE node, ASTNODE target)
     if(dstmode==MODE_DIRECT){
         src = gen_rvalue(node->binary.right, NULL);
         if(src->type == AST_STRING){
-            if(!target) target=alloc_temp(temp_count++);
-            emit_quad(OP_LEA, node, NULL, target);
+            // if(!target) target=alloc_temp(temp_count++);
+            emit_quad(OP_LEA, src, NULL, dst);
         } else {
             emit_quad(OP_MOV, src, NULL, dst);
         }
@@ -533,11 +547,13 @@ void quad_statement(ASTNODE stmnt)
 {
     /* not a temporary register but a temp variable */
     ASTNODE temp;
+    SYM_ENT temp_ent;
 
     switch(stmnt->type){
         case AST_DECLARATION: 
             /* actually important: set the stack offset here */
-            // stmnt->declaration.f
+            // temp_ent = alloc_sym_ent(stmnt->declaration.declaration);
+            // temp_ent = sym_lookup(curr_scope, temp_ent);
             break;
 
         case AST_FUNC: gen_rvalue(stmnt, NULL); break;
@@ -602,7 +618,32 @@ void quad_statement(ASTNODE stmnt)
 
 }
 
-BBLOCK gen_quads(ASTNODE func_def)
+size_t size_of(ASTNODE node)
+{
+    int temp;
+    switch(node->type){
+        case AST_PTR: return 4;
+        case AST_ARRAY:
+            temp = size_of(node->array.ptr_to) * node->array.size->num.int_num; 
+            return temp;
+        case AST_IDENT:
+            if(node->ident.entry->att_type == ENT_VAR){
+                switch(node->ident.entry->var.type->var_type.type_spec){
+                    case TYPE_INT:
+                        return 4;
+                    case TYPE_CHAR:
+                        return 1;
+                    default: 
+                        return 4;
+                }
+            }
+        default: 
+            /* invalid but just return 4 */
+            return 4;
+    }
+}
+
+BBLOCK_L gen_quads(ASTNODE func_def)
 {
     func_name = strdup(func_def->func.name->ident.ident);
     bblock_count = 1;
@@ -610,13 +651,17 @@ BBLOCK gen_quads(ASTNODE func_def)
 
     /* LMAOOO NO MEMORY MANAGMENT */
     bblock_l = calloc(1, sizeof(struct bblock_list));
-    bblock_tree = (curr_bblock = alloc_bblock());
 
+    bblock_tree = (curr_bblock = alloc_bblock());
+    bblock_l->elem = curr_bblock;
+    bblock_l->next = NULL;
+
+    BBLOCK_L ret = bblock_l;
     /* pass func def's compound block which is just a list of statements */
     quad_statement(func_def->func.block);
 
     /* print quads that were generated */
     print_bblock_l(bblock_l);
 
-    return bblock_tree;
+    return ret;
 }

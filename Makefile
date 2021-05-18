@@ -1,7 +1,7 @@
 CFLAGS= -std=gnu11 -ggdb -Wpedantic #-fsanitize=undefined
 CC=clang
 
-all: parser
+all: compiler 
 
 # will pretty this up later, maybe will use CMAKE... 
 
@@ -39,9 +39,12 @@ quads.o: quads.h quads.c
 quads_print.o: quads_print.c quads_print.h
 	$(CC) $(CFLAGS) -c -o quads_print.o quads_print.c
 
-parser: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o parser_print.o quads.o quads_print.o
-	$(CC) $(CFLAGS) -o parser $^
+asm.o: asm.h asm.c
+	$(CC) $(CFLAGS) -c -o asm.o asm.c
+
+compiler: parser.tab.o lex.yy.o ast.o sym_tab.o char_util.o parser_print.o quads.o quads_print.o asm.o
+	$(CC) $(CFLAGS) -o compiler $^
 
 
 clean: 
-	rm *.o lex.yy.c parser.tab.h parser.tab.c parser parser.output 
+	rm *.o lex.yy.c parser.tab.h parser.tab.c parser parser.output output.S

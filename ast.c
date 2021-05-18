@@ -8,6 +8,10 @@
 extern void yyerror(const char* msg);
 extern void yyerror_die(const char* msg);
 
+/* kludge for setting stack offsets */
+bool in_func_declaration;
+int stack_offset;
+
 /* compares the whole variable, including pointer chain */
 bool ast_compare_type(ASTNODE t1, ASTNODE t2){
     ASTNODE temp;
@@ -153,7 +157,7 @@ ASTNODE alloc_select(ASTNODE expr, char* ident){
 }
 
 ASTNODE alloc_list(ASTNODE elem){
-    if(elem == NULL) return NULL;
+    // if(elem == NULL) return NULL;
     ASTNODE ret = astnode_alloc(AST_LIST);
     ret->list.elem = elem;
     ret->list.next = NULL;
@@ -345,6 +349,12 @@ ASTNODE alloc_type(ASTNODE decl_specs)
 
                         ret->var_type.type_spec = TYPE_INT;
                         break; 
+                    case TYPE_CHAR:
+                        if(long_count != 0)
+                            yyerror_die("conflicting types in variable declaration because of long");
+
+                        ret->var_type.type_spec = TYPE_CHAR;
+                        break; 
                     default:
                         if(long_count != 0){
                             yyerror_die("conflicting types in variable declaration because of long");
@@ -414,11 +424,19 @@ ASTNODE alloc_func(ASTNODE name, ASTNODE arg_list){
 
     /* enter arguments into the function's symbol table */
     SYM_ENT ent;
+
+    /* horror: hard coding size for stack offset */
+    in_func_declaration = true;
+    stack_offset = 8;
     while(arg_list != NULL)
     {
+        /* kludge for setting stack offsets*/
         sym_declaration(arg_list->list.elem, ret->func.sym);
+        stack_offset += 4;
         arg_list = arg_list->list.next;
     }
+    in_func_declaration = false;
+    stack_offset = -8;
     return ret;
 }
 

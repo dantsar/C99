@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "asm.h"
 #include "ast.h"
 #include "def.h"
 #include "parser.tab.h"
@@ -19,8 +20,13 @@ SYM_TAB curr_scope;
 /* global variable for distinguishing between block and function scopes */
 bool in_func = false;
 
+FILE* fp;
+char* file_out = "output.S";
+
 void yyerror(const char*);
 void yyerror_die(const char *);
+
+extern ASTNODE string_l;
 
 %}
 
@@ -100,7 +106,8 @@ extern_declaration:   declaration                                       {sym_dec
                     | func_def                                          {sym_func_def($1, curr_scope); 
                                                                          /* generate quads for function definition */
                                                                         //  print_sym(curr_scope);
-                                                                         gen_quads($1);
+                                                                         BBLOCK_L quads = gen_quads($1);
+                                                                         gen_asm(quads, $1);
                                                                         }
                                                                                      
                     ;
@@ -446,12 +453,31 @@ void yyerror_die(const char *msg){
 int main(){
     /* creating global symbol table */
     curr_scope = sym_tab_create(SCOPE_GLOBAL);
+
+    if (!(fp = fopen(file_out, "w"))) {
+        fprintf(stderr, "couldn't open output file");
+        exit(-1);
+    }
     
+    // fp = stdout;
+
     /* hard coding in printf... very kludge */
     sym_enter(curr_scope, alloc_sym_ent("printf", ENT_FUNC, NS_MISC));
     
     yyparse();
 
+    /* add strings to the end */
+    if(string_l != NULL){
+        fprintf(fp, "\n\t.section .rodata\n");
+        
+        while(string_l != NULL){
+            fprintf(fp, ".STR%zu:\n",string_l->list.elem->string.ro_section);
+            fprintf(fp, "\t.string \"%s\"\n",string_l->list.elem->string.string);
+            string_l = string_l->list.next;
+        }
+    }
+
+    fclose(fp);
     /* after EOF, convert quads to target code */
     return 1;
 }

@@ -9,6 +9,12 @@ extern int lineno;
 extern void yyerror(const char* msg);
 extern void yyerror_die(const char* msg);
 
+extern int stack_offset;
+extern bool in_func_declaration;
+extern bool in_func;
+
+extern SYM_TAB curr_scope;
+
 SYM_TAB sym_tab_create(int scope_type){
     SYM_TAB ret = calloc(1, sizeof(struct sym_tab));
     ret->scope_type = scope_type;
@@ -189,6 +195,16 @@ void sym_declaration(ASTNODE declaration, SYM_TAB tab)
         ent->var.type = ptr_chain;
         if(!sym_enter(tab, ent)){
             yyerror_die("error: redeclaration of variable\n");
+        }
+
+        /* setting stack offset */
+        if (in_func_declaration) {
+            ent->var.offset = stack_offset;
+            ent->var.is_local = true;
+        } else if(curr_scope->scope_type != SCOPE_GLOBAL) {
+            ent->var.offset = stack_offset;
+            stack_offset -= 4;
+            ent->var.is_local = true;
         }
 
         if(var_list->list.elem->type != AST_LIST)
