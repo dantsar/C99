@@ -15,6 +15,7 @@ extern int temp_count;
 static bool once = true;
 extern char* func_name;
 int stack_size = 0;
+bool is_ret = false;
 
 void asm_print_src(ASTNODE src)
 {
@@ -26,7 +27,7 @@ void asm_print_src(ASTNODE src)
         case AST_STRING:    fprintf(fp, "$.STR%zu", src->string.ro_section); break;
         case AST_BB_TEMP:   fprintf(fp, "%s", src->bb_temp.full_name); break;
         case AST_TEMP: 
-            fprintf(fp, "%d(%%ebp)", ((stack_size-(4*temp_count))+(4*src->temp.temp) ));
+            fprintf(fp, "-%d(%%ebp)", ((stack_size-(4*temp_count))+(4*src->temp.temp) ));
             break;
         case AST_IDENT:
             if(src->ident.entry->att_type == ENT_VAR){
@@ -48,8 +49,6 @@ void asm_print_src(ASTNODE src)
             break;
 
     }
-
-
 }
 
 void asm_quad(QUAD quad)
@@ -58,53 +57,68 @@ void asm_quad(QUAD quad)
 
     char* op;
     char* reg;
-    bool is_mul_div = false;
+
+    fprintf(fp, "  #");
+    print_quad(fp, quad);
+
     fprintf(fp, "\t");
     switch(quad->opcode) {
-        case OP_ADD: op = "addl"; is_mul_div = false; goto binop_asm; 
-        case OP_SUB: op = "subl"; is_mul_div = false; goto binop_asm; 
-        case OP_MUL: op = "mull"; is_mul_div = true; goto binop_asm; 
-        case OP_DIV: op = "divl"; is_mul_div = true; goto binop_asm; 
-        case OP_MOD: op = "modl"; is_mul_div = false; goto binop_asm; 
-        binop_asm:
-            /* have to use eax edx: so clear contents of edx */
-            if(is_mul_div) {
-                /* movl src1, eax */
+        case OP_MUL: 
+                /* movl src1, edx */
                 fprintf(fp, "movl ");
                 asm_print_src(quad->src1);
-                fprintf(fp, ", %%eax\n");
+                fprintf(fp, ", %%edx\n");
 
-                /* clear edx */
-                fprintf(fp, "\txor %%edx, %%edx\n");
-                
-                /* movl src2, ebx */
+                /* movl src2, eax */
                 fprintf(fp, "\tmovl ");
                 asm_print_src(quad->src2);
-                fprintf(fp, ", %%ebx\n");
+                fprintf(fp, ", %%eax\n");
 
-                /* op %ebx */
-                fprintf(fp, "\t%s %%ebx\n",op);
+                fprintf(fp, "\timull %%edx, %%eax\n");
 
                 /* movl %eax, res */
                 fprintf(fp, "\tmovl %%eax, ");
                 asm_print_src(quad->res);
                 fprintf(fp, "\n");
-            } else {
+                break;
+        case OP_DIV: 
                 /* movl src1, eax */
                 fprintf(fp, "movl ");
                 asm_print_src(quad->src1);
                 fprintf(fp, ", %%eax\n");
 
-                /* op src2, eax */
-                fprintf(fp, "\t%s ", op);
+                /* movl src2, ebx */
+                fprintf(fp, "\tmovl ");
                 asm_print_src(quad->src2);
-                fprintf(fp, ", %%eax\n");
+                fprintf(fp, ", %%ecx\n");
 
-                /* movl eax, result */
+                /* do the division */
+                fprintf(fp, "\tcltd\n");
+                fprintf(fp, "\tidivl %%ecx\n");
+
+                /* movl %eax, res */
                 fprintf(fp, "\tmovl %%eax, ");
                 asm_print_src(quad->res);
                 fprintf(fp, "\n");
-            }
+            break;
+        case OP_ADD: op = "addl"; goto binop_asm; 
+        case OP_SUB: op = "subl"; goto binop_asm; 
+        case OP_MOD: op = "modl"; goto binop_asm; 
+        binop_asm:
+            /* movl src1, eax */
+            fprintf(fp, "movl ");
+            asm_print_src(quad->src1);
+            fprintf(fp, ", %%eax\n");
+
+            /* op src2, eax */
+            fprintf(fp, "\t%s ", op);
+            asm_print_src(quad->src2);
+            fprintf(fp, ", %%eax\n");
+
+            /* movl eax, result */
+            fprintf(fp, "\tmovl %%eax, ");
+            asm_print_src(quad->res);
+            fprintf(fp, "\n");
             break;
 
         case OP_MOV:
@@ -124,13 +138,11 @@ void asm_quad(QUAD quad)
             asm_print_src(quad->src1);
             fprintf(fp, ", %%eax\n");
 
-            /* movl res, ebx*/
-            fprintf(fp, "\tmovl "); 
+            fprintf(fp, "\tlea ");
             asm_print_src(quad->res);
-            fprintf(fp, ", %%ebx\n");
+            fprintf(fp, ", %%ecx\n");
 
-            /* movl eax, (ebx) */
-            fprintf(fp, "\tmovl %%eax, (%%ebx)\n");
+            fprintf(fp, "\tmovl %%eax, (%%ecx)\n");
             break; 
         case OP_LEA:
             /* lea src1, eax */
@@ -150,10 +162,10 @@ void asm_quad(QUAD quad)
             fprintf(fp, ", %%eax\n");
 
             /* movl (eax), ebx */
-            fprintf(fp, "\tmovl (%%eax), %%ebx\n");
+            fprintf(fp, "\tmovl (%%eax), %%ecx\n");
 
             /* movl ebx, res */
-            fprintf(fp, "\tmovl %%ebx, ");
+            fprintf(fp, "\tmovl %%ecx, ");
             asm_print_src(quad->res);
             fprintf(fp, "\n");
             break;
@@ -164,10 +176,10 @@ void asm_quad(QUAD quad)
 
             fprintf(fp, "\tmovl ");
             asm_print_src(quad->src2);
-            fprintf(fp, ", %%ebx\n");
+            fprintf(fp, ", %%ecx\n");
 
-            // fprintf(fp, "\tcmp %%eax, %%ebx\n");
-            fprintf(fp, "\tcmp %%ebx, %%eax\n");
+            // fprintf(fp, "\tcmp %%eax, %%ecx\n");
+            fprintf(fp, "\tcmp %%ecx, %%eax\n");
             break;
         
         case OP_BR:     op = "jmp"; goto br_set;             
@@ -177,12 +189,12 @@ void asm_quad(QUAD quad)
         case OP_BRLE:   op = "jle"; goto br_cond_set;             
         case OP_BRG:    op = "jg";  goto br_cond_set;
         case OP_BRGE:   op = "jge"; goto br_cond_set;             
+        br_set:
+            fprintf(fp, "jmp %s\n", quad->src1->bb_temp.full_name);
+            break;
         br_cond_set:
             fprintf(fp, "%s %s\n", op, quad->src1->bb_temp.full_name);
             fprintf(fp, "\tjmp %s\n", quad->src2->bb_temp.full_name);
-            break;
-        br_set:
-            fprintf(fp, "jmp %s\n", quad->src1->bb_temp.full_name);
             break;
 
         /* func call */
@@ -204,6 +216,7 @@ void asm_quad(QUAD quad)
             }
             fprintf(fp, "leave\n");
             fprintf(fp, "\tret\n");
+            is_ret = true;
             break;
     }
 }
@@ -222,8 +235,6 @@ void asm_bblock(BBLOCK bblock)
 
 void gen_asm(BBLOCK_L bblock_l, ASTNODE func_def) 
 {
-
-    // fprintf(stdout, "---------------------------\n");
     SYM_ENT_LL ent_l;
     SYM_ENT temp_ent;
     /* allocate global variables */
@@ -255,7 +266,6 @@ void gen_asm(BBLOCK_L bblock_l, ASTNODE func_def)
         ent_l = ent_l->next;
     }
 
-
     /* allign to 4 byte boundary */
     while((stack_size % 4) != 0) stack_size++;
 
@@ -264,7 +274,6 @@ void gen_asm(BBLOCK_L bblock_l, ASTNODE func_def)
 
     fprintf(fp, "\t.text\n");
 
-    /* generate the quads now */
     fprintf(fp, ".globl\t%s\n", func_name);
     fprintf(fp, ".type\t%s, @function\n", func_name);
     fprintf(fp, "%s:\n", func_name);
@@ -276,18 +285,12 @@ void gen_asm(BBLOCK_L bblock_l, ASTNODE func_def)
     while(temp != NULL){
         asm_bblock(temp->elem);
         temp = temp->next;
-
     }
 
-    // /* add strings to the end */
-    // if(string_l != NULL){
-    //     fprintf(fp, "\n\t.section .rodata\n");
-        
-    //     while(string_l != NULL){
-    //         fprintf(fp, ".STR%zu:\n",string_l->list.elem->string.ro_section);
-    //         fprintf(fp, "\t.string \"%s\"\n",string_l->list.elem->string.string);
-    //         string_l = string_l->list.next;
-    //     }
-    // }
-
+    if(!is_ret)
+    {
+        fprintf(fp, "\tleave\n");
+        fprintf(fp, "\tret\n");
+        is_ret = false;
+    }
 }

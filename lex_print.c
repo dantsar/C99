@@ -98,13 +98,13 @@ int main(){
         {
             case CHARLIT:
                 fprintf(stdout, "%s\t %d\t CHARLIT\t ",filename, lineno);
-                print_char(yylval.charlit);
+                print_char(stdout, yylval.charlit);
                 fprintf(stdout, "\n");
                 break;
             case STRING:
                 fprintf(stdout, "%s\t %d\t STRING ", filename, lineno);
                 for(int i = 0; i < yylval.str.len; i++){
-                    print_char(yylval.str.str[i]);
+                    print_char(stdout, yylval.str.str[i]);
                 }   
                 fprintf(stdout, "\n");
                 break;

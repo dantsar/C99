@@ -92,8 +92,6 @@ ASTNODE gen_assign(ASTNODE node, ASTNODE target);
 
 /* helpers */
 size_t size_of(ASTNODE node);
-bool    is_scalar(ASTNODE node);
-bool    is_numerical(ASTNODE node);
 bool    is_pointer(ASTNODE node);
 
 #endif

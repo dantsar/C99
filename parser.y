@@ -1,9 +1,11 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "asm.h"
 #include "ast.h"
+#include "char_util.h"
 #include "def.h"
 #include "parser.tab.h"
 #include "quads.h"
@@ -470,14 +472,22 @@ int main(){
     if(string_l != NULL){
         fprintf(fp, "\n\t.section .rodata\n");
         
-        while(string_l != NULL){
+        while(string_l != NULL)
+        {
             fprintf(fp, ".STR%zu:\n",string_l->list.elem->string.ro_section);
-            fprintf(fp, "\t.string \"%s\"\n",string_l->list.elem->string.string);
+            fprintf(fp, "\t.string ");
+
+            fprintf(fp, "\"");
+            int len = strlen(string_l->list.elem->string.string);
+            for(int i = 0; i < len; i++){
+                print_char(fp, string_l->list.elem->string.string[i]);
+            }
+            fprintf(fp, "\"\n");
+
             string_l = string_l->list.next;
         }
     }
 
     fclose(fp);
-    /* after EOF, convert quads to target code */
     return 1;
 }

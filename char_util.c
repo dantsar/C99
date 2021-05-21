@@ -3,7 +3,6 @@
 #include "char_util.h"
 #include "parser.tab.h"
 
-
 void print_op(int op){
     if(op < 255){
         putchar(op);
@@ -26,25 +25,24 @@ void print_op(int op){
     }
 }
 
-void print_char(char c){
+void print_char(FILE* fp, char c){
     switch(c){
-        case '\'':  fprintf(stdout, "\\'");  break;  
-        case '\"':  fprintf(stdout, "\\\""); break;
-        case '\?':  fprintf(stdout, "\\?");  break;
-        case '\\':  fprintf(stdout, "\\\\"); break;
-        case '\a':  fprintf(stdout, "\\a");  break;
-        case '\b':  fprintf(stdout, "\\b");  break; 
-        case '\f':  fprintf(stdout, "\\f");  break;
-        case '\n':  fprintf(stdout, "\\n");  break; 
-        case '\r':  fprintf(stdout, "\\r");  break;
-        case '\t':  fprintf(stdout, "\\t");  break;
-        case '\v':  fprintf(stdout, "\\v");  break; 
+        case '\'':  fprintf(fp, "\\'");  break;  
+        case '\"':  fprintf(fp, "\\\""); break;
+        case '\?':  fprintf(fp, "\\?");  break;
+        case '\\':  fprintf(fp, "\\\\"); break;
+        case '\a':  fprintf(fp, "\\a");  break;
+        case '\b':  fprintf(fp, "\\b");  break; 
+        case '\f':  fprintf(fp, "\\f");  break;
+        case '\n':  fprintf(fp, "\\n");  break; 
+        case '\r':  fprintf(fp, "\\r");  break;
+        case '\t':  fprintf(fp, "\\t");  break;
+        case '\v':  fprintf(fp, "\\v");  break; 
         default:
             if(c >127 || c < 32){
-                fprintf(stdout, "%03o", c);
+                fprintf(fp, "%03o", c);
             }else{
-                fprintf(stdout, "%c", c);
+                fprintf(fp, "%c", c);
             }
     }
 }
-
