@@ -1,5 +1,5 @@
-#ifndef __LEX_H
-#define __LEX_H
+#ifndef LEX_H
+#define LEX_H
 
 // #include "tokens-manual.h"
 // #include "parser.tab.h"

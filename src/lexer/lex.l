@@ -6,11 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "def.h"
-#include "parser.tab.h"
+#include <common/def.h>
+#include <parser.tab.h>
 
 extern YYSTYPE yylval;
-
 
 void set_yylval_int(unsigned long long num, int type, int sign);
 void set_yylval_real(char* str, int type, int sign);
@@ -39,7 +38,7 @@ CHAR_SEQ    ([^"'\\]|\\.)*
                     filename[strlen(tmp_ptr)-3] = '\0';
                 }
 
-[ \t\r]         {}
+[ \t\r]         {/* ignore non-newline whitespace */}
 \n              {lineno++;}
 
     /* keywords */
@@ -81,10 +80,7 @@ CHAR_SEQ    ([^"'\\]|\\.)*
 "_Complex"      {return _COMPLEX;   }
 "_Imaginary"    {return _IMAGINARY; }
 
-{IDENT}     {
-                yylval.ident = strdup(yytext);
-                return IDENT;
-            }
+{IDENT}     { yylval.ident = strdup(yytext); return IDENT; }
 
 "(" |
 ")" |
@@ -123,104 +119,34 @@ CHAR_SEQ    ([^"'\\]|\\.)*
     /* single char ops */
 [-~!%^&*+=\|<.>/?]  {return yytext[0];}
 
-
     /* numerical constants */
-{OCTAL}             {
-                        set_yylval_int(strtoull(yytext, NULL, 8), N_INT,N_SIGNED);
-                        return NUMBER;
-                    }
-{OCTAL}[lL]         {
-                        set_yylval_int(strtoull(yytext, NULL, 8), N_LONG,N_SIGNED);
-                        return NUMBER;
-                    }
-{OCTAL}(ll|LL)      {
-                        set_yylval_int(strtoull(yytext, NULL, 8), N_LLONG,N_SIGNED);
-                        return NUMBER;
-                    }
-{OCTAL}[uU]         {
-                        set_yylval_int(strtoull(yytext, NULL, 8), N_INT, N_UNSIGNED);
-                        return NUMBER;
-                    }
-{OCTAL}[lL][uU]     {
-                        set_yylval_int(strtoull(yytext, NULL, 8), N_LONG,N_UNSIGNED);
-                        return NUMBER;
-                    }
-{OCTAL}(ll|LL)[uU]  {
-                        set_yylval_int(strtoull(yytext, NULL, 8), N_LLONG,N_UNSIGNED);
-                        return NUMBER;
-                    }
-{DIGITS}            {
-                        set_yylval_int(atoll(yytext), N_INT,N_SIGNED);
-                        return NUMBER;
-                    }
-{DIGITS}[lL]        {
-                        set_yylval_int(atoll(yytext), N_LONG,N_SIGNED);
-                        return NUMBER;
-                    }
-{DIGITS}(ll|LL)     {
-                        set_yylval_int(atoll(yytext), N_LLONG,N_SIGNED);
-                        return NUMBER;
-                    }
-{DIGITS}[uU]        {
-                        set_yylval_int(atoll(yytext), N_INT,N_UNSIGNED);
-                        return NUMBER;
-                    }
-{DIGITS}[lL][uU]    {
-                        set_yylval_int(atoll(yytext), N_LONG,N_UNSIGNED);
-                        return NUMBER;
-                    }
-{DIGITS}(ll|LL)[uU] {
-                        set_yylval_int(atoll(yytext), N_LLONG,N_UNSIGNED);
-                        return NUMBER;
-                    }
-{HEX}               {
-                        set_yylval_int(strtoull(yytext, NULL, 16), N_INT, N_SIGNED);
-                        return NUMBER;
-                    }
-{HEX}[lL]           {
-                        set_yylval_int(strtoull(yytext, NULL, 16), N_LONG, N_SIGNED);
-                        return NUMBER;
-                    }
-{HEX}"ll"|"LL"      {
-                        set_yylval_int(strtoull(yytext, NULL, 16), N_LLONG, N_SIGNED);
-                        return NUMBER;
-                    }
-{HEX}[uU]           {
-                        set_yylval_int(strtoull(yytext, NULL, 16), N_INT, N_UNSIGNED);
-                        return NUMBER;
-                    }
-{HEX}[lL][uU]       {
-                        set_yylval_int(strtoull(yytext, NULL, 16), N_LONG,N_UNSIGNED);
-                        return NUMBER;
-                    }
-{HEX}(ll|LL)[uU]    {
-                        set_yylval_int(strtoull(yytext, NULL, 16), N_LLONG,N_UNSIGNED);
-                        return NUMBER;
-                    }
-{REAL}              {
-                        set_yylval_real(yytext, N_DOUBLE, N_SIGNED);
-                        return NUMBER;
-                    }
-{REAL}[f]           {
-                        set_yylval_real(yytext, N_FLOAT, N_SIGNED);
-                        return NUMBER;
-                    }
-{REAL}[lL]          {
-                        set_yylval_real(yytext, N_LDOUBLE, N_SIGNED);
-                        return NUMBER;
-                    }
-{R_EXP}             {
-                        set_yylval_real(yytext, N_DOUBLE, N_SIGNED);
-                        return NUMBER;
-                    }
-{R_EXP}[f]          {
-                        set_yylval_real(yytext, N_FLOAT, N_SIGNED);
-                        return NUMBER;
-                    }
-{HEX}[pP][+-]?{DIGITS}+ {
-                        set_yylval_real(yytext, N_DOUBLE, N_SIGNED);
-                        return NUMBER;
-                    }
+{OCTAL}             { set_yylval_int(strtoull(yytext, NULL, 8), N_INT,N_SIGNED); return NUMBER; }
+{OCTAL}[lL]         { set_yylval_int(strtoull(yytext, NULL, 8), N_LONG,N_SIGNED); return NUMBER; }
+{OCTAL}(ll|LL)      { set_yylval_int(strtoull(yytext, NULL, 8), N_LLONG,N_SIGNED); return NUMBER; }
+{OCTAL}[uU]         { set_yylval_int(strtoull(yytext, NULL, 8), N_INT, N_UNSIGNED); return NUMBER; }
+{OCTAL}[lL][uU]     { set_yylval_int(strtoull(yytext, NULL, 8), N_LONG,N_UNSIGNED); return NUMBER; }
+{OCTAL}(ll|LL)[uU]  { set_yylval_int(strtoull(yytext, NULL, 8), N_LLONG,N_UNSIGNED); return NUMBER; }
+
+{DIGITS}            { set_yylval_int(atoll(yytext), N_INT,N_SIGNED); return NUMBER; }
+{DIGITS}[lL]        { set_yylval_int(atoll(yytext), N_LONG,N_SIGNED); return NUMBER; }
+{DIGITS}(ll|LL)     { set_yylval_int(atoll(yytext), N_LLONG,N_SIGNED); return NUMBER; }
+{DIGITS}[uU]        { set_yylval_int(atoll(yytext), N_INT,N_UNSIGNED); return NUMBER; }
+{DIGITS}[lL][uU]    { set_yylval_int(atoll(yytext), N_LONG,N_UNSIGNED); return NUMBER; }
+{DIGITS}(ll|LL)[uU] { set_yylval_int(atoll(yytext), N_LLONG,N_UNSIGNED); return NUMBER; }
+
+{HEX}               { set_yylval_int(strtoull(yytext, NULL, 16), N_INT, N_SIGNED); return NUMBER; }
+{HEX}[lL]           { set_yylval_int(strtoull(yytext, NULL, 16), N_LONG, N_SIGNED); return NUMBER; }
+{HEX}"ll"|"LL"      { set_yylval_int(strtoull(yytext, NULL, 16), N_LLONG, N_SIGNED); return NUMBER; }
+{HEX}[uU]           { set_yylval_int(strtoull(yytext, NULL, 16), N_INT, N_UNSIGNED); return NUMBER; }
+{HEX}[lL][uU]       { set_yylval_int(strtoull(yytext, NULL, 16), N_LONG,N_UNSIGNED); return NUMBER; }
+{HEX}(ll|LL)[uU]    { set_yylval_int(strtoull(yytext, NULL, 16), N_LLONG,N_UNSIGNED); return NUMBER; }
+
+{REAL}              { set_yylval_real(yytext, N_DOUBLE, N_SIGNED); return NUMBER; }
+{REAL}[f]           { set_yylval_real(yytext, N_FLOAT, N_SIGNED); return NUMBER; }
+{REAL}[lL]          { set_yylval_real(yytext, N_LDOUBLE, N_SIGNED); return NUMBER; }
+{R_EXP}             { set_yylval_real(yytext, N_DOUBLE, N_SIGNED); return NUMBER; }
+{R_EXP}[f]          { set_yylval_real(yytext, N_FLOAT, N_SIGNED); return NUMBER; }
+{HEX}[pP][+-]?{DIGITS}+ { set_yylval_real(yytext, N_DOUBLE, N_SIGNED); return NUMBER; }
 
 \'{CHAR_SEQ}\'      {
                         int chars = parse_seq(yytext+1, &(yylval.charlit));
@@ -240,6 +166,7 @@ CHAR_SEQ    ([^"'\\]|\\.)*
                         return STRING;
                     }
 
+    /* if this is reached, an error was encountered */
 .                   {
                         fprintf(stderr, "%s:%d\t Error: unrecognized char \'%c\'\n", filename, lineno, yytext[0]); 
                         exit(-1);

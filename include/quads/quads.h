@@ -1,9 +1,9 @@
 #ifndef QUADS_H
 #define QUADS_H
 
-#include "ast.h"
-#include "def.h"
-#include "sym_tab.h"
+#include <parser/ast.h>
+#include <common/def.h>
+#include <parser/sym_tab.h>
 
 enum OP_CODES{
     OP_LOAD,

@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "char_util.h"
-#include "parser.tab.h"
+#include <common/char_util.h>
+#include <parser.tab.h>
 
 void print_op(int op){
     if(op < 255){

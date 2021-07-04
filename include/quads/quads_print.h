@@ -1,7 +1,7 @@
 #ifndef QUADS_PRINT_H
 #define QUADS_PRINT_H
 
-#include "def.h"
+#include <common/def.h>
 
 void quad_error(const char* msg);
 void print_opcode(FILE* fp, int opcode);

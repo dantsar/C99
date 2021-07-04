@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "asm.h"
-#include "ast.h"
-#include "quads.h"
-#include "quads_print.h"
-#include "sym_tab.h"
+#include <asm/asm.h>
+#include <parser/ast.h>
+#include <quads/quads.h>
+#include <quads/quads_print.h>
+#include <parser/sym_tab.h>
 
 extern SYM_TAB curr_scope;
 

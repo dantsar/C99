@@ -20,16 +20,16 @@ typedef struct loop*            LOOP;
 enum N_SIGN {N_SIGNED=0, N_UNSIGNED};
 enum N_TYPE {N_INT=0, N_LONG, N_LLONG, N_FLOAT, N_DOUBLE, N_LDOUBLE};
 
-struct Str{
-    char *str;
-    int len;
-};
+// struct Str{
+//     char *str;
+//     int len;
+// };
 
-struct Num{
-    unsigned long long int_num;
-    long double real;
-    int type;
-    int sign;
-};
+// struct Num{
+//     unsigned long long int_num;
+//     long double real;
+//     int type;
+//     int sign;
+// };
 
 #endif
