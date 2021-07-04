@@ -2,10 +2,10 @@
 #include <string.h>
 
 // #include "lex.h"
-#include "def.h"
-#include "lex.yy.c"
-#include "parser.tab.h"
-#include "char_util.h"
+#include <parser.tab.h>
+#include <lex.yy.h>
+#include <common/def.h>
+#include <common/char_util.h>
 
 extern int lineno;
 extern char filename[];
@@ -50,6 +50,7 @@ char* get_keyword(int kw){
         case _COMPLEX:   return "_COMPLEX";      
         case _IMAGINARY: return "_IMAGINARY";
     };
+    return NULL;
 }
 
 char* get_op(int op){
@@ -77,6 +78,7 @@ char* get_op(int op){
         case OREQ:       return "OREQ";     
         case XOREQ:      return "XOREQ";      
     }
+    return NULL;
 }
 
 int main(){
@@ -85,7 +87,7 @@ int main(){
     lineno = 1;
     strcpy(filename, "<stdin>");
     /* yylex returns every char that it reads from stdio */
-    while(t = yylex())
+    while((t = yylex()))
     {
         /* just print out the ascii chars */
         if(t < 255){
@@ -143,4 +145,5 @@ int main(){
         }
     }
     printf("EOF ENCOUNTERED\n");
+    return 1;
 }
