@@ -20,11 +20,11 @@ int     temp_count = 1;      /* how many temporary registers have been used*/
 
 
 struct astnode *string_l = NULL;            /* list of strings for .rodata section */
-struct bblock * bblock_tree;         /* global linked list of bblocks */
-struct bblock * curr_bblock;         /* most recent bblock (tail of bblock_tree) */
-struct bblock_list * bblock_l;           /* list of all bblocks created: easier printing */
+struct bblock *bblock_tree;         /* global linked list of bblocks */
+struct bblock *curr_bblock;         /* most recent bblock (tail of bblock_tree) */
+struct bblock_list *bblock_l;           /* list of all bblocks created: easier printing */
 
-struct loop *   curr_loop;           /* stack of loops */
+struct loop * curr_loop;           /* stack of loops */
 
 struct astnode *gen_condexpr(struct astnode *if_node, struct bblock *bblock_trye, struct bblock *bblock_false);
 void link_bb(int cc, struct bblock *bblock_default, struct bblock *bblock_cond);

@@ -7,7 +7,7 @@
 #include <quads/quads_print.h>
 #include <parser/sym_tab.h>
 
-extern FILE* fp;
+extern FILE *fp;
 extern struct astnode *string_l;
 extern struct sym_tab *curr_scope;
 extern int temp_count;
