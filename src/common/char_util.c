@@ -3,7 +3,8 @@
 #include <common/char_util.h>
 #include <parser.tab.h>
 
-void print_op(int op){
+void print_op(int op)
+{
     if(op < 255){
         putchar(op);
     }else{
@@ -25,7 +26,8 @@ void print_op(int op){
     }
 }
 
-void print_char(FILE* fp, char c){
+void print_char(FILE* fp, char c)
+{
     switch(c){
         case '\'':  fprintf(fp, "\\'");  break;  
         case '\"':  fprintf(fp, "\\\""); break;

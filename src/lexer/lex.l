@@ -224,13 +224,15 @@ int parse_seq(char* src, char* buf){
 }
 
 /* converts yytext to integer (assumed yytext is already converted to number) */
-void set_yylval_int(unsigned long long num, int type, int sign){
+void set_yylval_int(unsigned long long num, int type, int sign)
+{
     yylval.num.int_num = num; 
     yylval.num.sign = sign;
     yylval.num.type = type;
 }
 
-void set_yylval_real(char* str, int type, int sign){
+void set_yylval_real(char* str, int type, int sign)
+{
     sscanf(str, "%Lf", &yylval.num.real);
     yylval.num.type = type;
     yylval.num.sign = sign;
