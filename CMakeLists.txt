@@ -10,6 +10,7 @@ find_package(FLEX)
 BISON_TARGET(parser 
 	     ${CMAKE_SOURCE_DIR}/src/parser/parser.y
 	     ${CMAKE_CURRENT_BINARY_DIR}/parser.tab.c
+	     VERBOSE
 	     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.tab.h)
 FLEX_TARGET(lex 
 	    ${CMAKE_SOURCE_DIR}/src/lexer/lex.l 

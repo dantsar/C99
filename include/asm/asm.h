@@ -6,6 +6,6 @@
 #include <quads/quads.h>
 #include <parser/sym_tab.h>
 
-void gen_asm(BBLOCK_L quads, ASTNODE func_def);
+void gen_asm(struct bblock_list * quads, struct astnode *func_def);
 
 #endif

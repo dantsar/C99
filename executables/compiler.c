@@ -1,3 +1,4 @@
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,11 +6,17 @@
 #include <parser/ast.h>
 #include <parser/sym_tab.h>
 
-extern SYM_TAB curr_scope;
+extern struct sym_tab *curr_scope;
 extern char *file_out;
 extern FILE *fp;
+extern struct astnode *string_l;
 
-extern ASTNODE string_l;
+
+// static int parse_args(int argc, char **argv)
+// {
+
+
+// }
 
 int main(int argc, char **argv)
 {

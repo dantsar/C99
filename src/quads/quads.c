@@ -8,7 +8,7 @@
 #include <quads/quads_print.h>
 #include <parser/sym_tab.h>
 
-extern SYM_TAB curr_scope;
+extern struct symbol_table *curr_scope;
 
 char    *func_name;          /* inidicate the name of the current function */
 static  size_t bblock_count; /* the bblock in the function: e.g. .BB.main.1 */
@@ -19,30 +19,30 @@ static  bool is_returned;    /* flag to indicate whether return was provided */
 int     temp_count = 1;      /* how many temporary registers have been used*/
 
 
-ASTNODE string_l = NULL;            /* list of strings for .rodata section */
-BBLOCK  bblock_tree;         /* global linked list of bblocks */
-BBLOCK  curr_bblock;         /* most recent bblock (tail of bblock_tree) */
-BBLOCK_L bblock_l;           /* list of all bblocks created: easier printing */
+struct astnode *string_l = NULL;            /* list of strings for .rodata section */
+struct bblock * bblock_tree;         /* global linked list of bblocks */
+struct bblock * curr_bblock;         /* most recent bblock (tail of bblock_tree) */
+struct bblock_list * bblock_l;           /* list of all bblocks created: easier printing */
 
-LOOP    curr_loop;           /* stack of loops */
+struct loop *   curr_loop;           /* stack of loops */
 
-ASTNODE gen_condexpr(ASTNODE if_node, BBLOCK bblock_trye, BBLOCK bblock_false);
-void link_bb(int cc, BBLOCK bblock_default, BBLOCK bblock_cond);
+struct astnode *gen_condexpr(struct astnode *if_node, struct bblock *bblock_trye, struct bblock *bblock_false);
+void link_bb(int cc, struct bblock *bblock_default, struct bblock *bblock_cond);
 
-QUAD_L alloc_quad_l(void){
-    QUAD_L quad_l = calloc(1, sizeof(struct quad_list));
+struct quad_list * alloc_quad_l(void){
+    struct quad_list * quad_l = calloc(1, sizeof(struct quad_list));
     return quad_l;
 }
 
-BBLOCK_L alloc_bblock_list(BBLOCK bblock)
+struct bblock_list * alloc_bblock_list(struct bblock *bblock)
 {
-    BBLOCK_L ret = calloc(1, sizeof(struct bblock_list));
+    struct bblock_list * ret = calloc(1, sizeof(struct bblock_list));
     ret->elem = bblock;
     return ret;
 }
 
-BBLOCK alloc_bblock(void){
-    BBLOCK bblock = calloc(1, sizeof(struct bblock));
+struct bblock *alloc_bblock(void){
+    struct bblock *bblock = calloc(1, sizeof(struct bblock));
     // fprintf(stderr, "FUNC_NAME: %s.%d\n", func_name, bblock_count);
     bblock->name = strdup(func_name);
     bblock->func_name = strdup(func_name);
@@ -51,10 +51,10 @@ BBLOCK alloc_bblock(void){
 
     /* add new bblock to bblock list */
     /* TERRRIBLY inefficient, BUT "robust" */
-    BBLOCK_L new = alloc_bblock_list(bblock);
+    struct bblock_list * new = alloc_bblock_list(bblock);
 
     /* add to the end */
-    BBLOCK_L temp = bblock_l;
+    struct bblock_list * temp = bblock_l;
     while(temp->next != NULL) 
      temp = temp->next;
 
@@ -64,7 +64,7 @@ BBLOCK alloc_bblock(void){
 }
 
 /* appends provided quad to curr_bblock */
-void bblock_append_quad(QUAD emit_quad)
+void bblock_append_quad(struct quad * emit_quad)
 {
     if(curr_bblock == NULL)
     {
@@ -74,15 +74,15 @@ void bblock_append_quad(QUAD emit_quad)
     }
 
     /* get last element */
-    QUAD_L temp = curr_bblock->quads;
+    struct quad_list * temp = curr_bblock->quads;
     while(temp->next != NULL) temp = temp->next; 
 
-    QUAD_L new_elem = calloc(1, sizeof(struct quad_list));
+    struct quad_list * new_elem = calloc(1, sizeof(struct quad_list));
     new_elem->elem = emit_quad;
     temp->next = new_elem;
 }
 
-bool is_pointer(ASTNODE test)
+bool is_pointer(struct astnode *test)
 {
     if(test->type != AST_IDENT || test->ident.entry->att_type != ENT_VAR)
         return false;
@@ -93,22 +93,22 @@ bool is_pointer(ASTNODE test)
     return false;
 }
 
-QUAD alloc_quad(int opcode)
+struct quad * alloc_quad(int opcode)
 {
-    QUAD quad = calloc(1, sizeof(struct quad));
+    struct quad * quad = calloc(1, sizeof(struct quad));
     quad->opcode = opcode;
     return quad;
 }
 
-LOOP alloc_loop(void)
+struct loop *alloc_loop(void)
 {
-    LOOP loop = calloc(1, sizeof(struct loop));
+    struct loop *loop = calloc(1, sizeof(struct loop));
     loop->prev = curr_loop;
     return loop;
 }
 
-/* create a QUAD and append it to the QUAD_L in the current bblock */
-void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
+/* create a struct quad * and append it to the struct quad_list * in the current bblock */
+void emit_quad(int op, struct astnode *left, struct astnode *right, struct astnode *target)
 {
     int opcode = 0;
     switch(op){
@@ -125,7 +125,7 @@ void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
         default:    opcode = op;
     }
 
-    QUAD emit_quad = alloc_quad(opcode);
+    struct quad * emit_quad = alloc_quad(opcode);
     emit_quad->src1 = left;
     emit_quad->src2 = right;
     emit_quad->res  = target;
@@ -137,14 +137,15 @@ void emit_quad(int op, ASTNODE left, ASTNODE right, ASTNODE target)
 /* -------------------------------------------------------------------------- */
 /* expression generation portion */
 
-ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
+struct astnode *gen_rvalue(struct astnode *node, struct astnode *target)
 {
-    ASTNODE left, right, addr, dst, tmp, tmp2;
+    struct astnode *left, *right, *addr;
+    struct astnode *dst, *tmp, *tmp2;
     int mode, opcode, cond_code; 
     struct fncall_params* temp_param;
 
     /* for conditional expressions */
-    BBLOCK bblock_true, bblock_false, bblock_eval;
+    struct bblock *bblock_true, *bblock_false, *bblock_eval;
 
     if(!node) return NULL; /* prevent explosion */
 
@@ -295,9 +296,9 @@ ASTNODE gen_rvalue(ASTNODE node, ASTNODE target)
     }
 }
 
-ASTNODE gen_lvalue(ASTNODE node, int* mode)
+struct astnode *gen_lvalue(struct astnode *node, int* mode)
 {
-    ASTNODE tmp, target;
+    struct astnode *tmp, target;
     switch(node->type){
         case AST_NUM:
         case AST_CHARLIT:
@@ -319,9 +320,9 @@ ASTNODE gen_lvalue(ASTNODE node, int* mode)
     return NULL;
 }
 
-ASTNODE gen_assign(ASTNODE node, ASTNODE target)
+struct astnode *gen_assign(struct astnode *node, struct astnode *target)
 {
-    ASTNODE dst, src;
+    struct astnode *dst, *src;
     int dstmode;
 
     /* no explosion for you */ 
@@ -371,7 +372,7 @@ ASTNODE gen_assign(ASTNODE node, ASTNODE target)
 //     }
 // }
 
-void link_bb(int cc, BBLOCK bblock_default, BBLOCK bblock_cond)
+void link_bb(int cc, struct bblock *bblock_default, struct bblock *bblock_cond)
 {
     if(curr_bblock->is_done)
         /* block is finalized so don't care */
@@ -383,7 +384,7 @@ void link_bb(int cc, BBLOCK bblock_default, BBLOCK bblock_cond)
        emit branching quads after linking, can do this because being here 
        implies that the bblock is finalized 
     */
-    ASTNODE temp1, temp2;
+    struct astnode *temp1, *temp2;
     temp1 = alloc_bb_temp(func_name, bblock_default->bblock_count);
     if (bblock_cond != NULL && cc != CC_ALWAYS) {
         temp2 = alloc_bb_temp(func_name, bblock_cond->bblock_count);
@@ -398,9 +399,9 @@ void link_bb(int cc, BBLOCK bblock_default, BBLOCK bblock_cond)
     curr_bblock->is_done = 1;
 }
 
-void quad_if_else(ASTNODE if_node)
+void quad_if_else(struct astnode *if_node)
 {
-    BBLOCK bblock_true, bblock_false, bblock_eval;
+    struct bblock *bblock_true, *bblock_false, *bblock_eval;
     bblock_true = alloc_bblock();
     bblock_false = alloc_bblock();
 
@@ -425,9 +426,9 @@ void quad_if_else(ASTNODE if_node)
     curr_bblock = bblock_eval;
 }
 
-ASTNODE gen_condexpr(ASTNODE expr, BBLOCK bblock_true, BBLOCK bblock_false)
+struct astnode *gen_condexpr(struct astnode *expr, struct bblock *bblock_true, struct bblock *bblock_false)
 {
-    ASTNODE left, right;
+    struct astnode *left, *right;
     int cond_code;
 
     switch(expr->type){
@@ -463,11 +464,11 @@ ASTNODE gen_condexpr(ASTNODE expr, BBLOCK bblock_true, BBLOCK bblock_false)
 /* -------------------------------------------------------------------------- */
 /* looping */
 
-void quad_while(ASTNODE while_loop)
+void quad_while(struct astnode *while_loop)
 {
-    BBLOCK bblock_cond = alloc_bblock();
-    BBLOCK bblock_body = alloc_bblock();
-    BBLOCK bblock_next = alloc_bblock();
+    struct bblock *bblock_cond = alloc_bblock();
+    struct bblock *bblock_body = alloc_bblock();
+    struct bblock *bblock_next = alloc_bblock();
 
     /* add loop on to loop stack */
     curr_loop = alloc_loop();
@@ -494,11 +495,11 @@ void quad_while(ASTNODE while_loop)
     curr_bblock = bblock_next;
 }
 
-void quad_do_while(ASTNODE do_while)
+void quad_do_while(struct astnode *do_while)
 {
-    BBLOCK bblock_body = alloc_bblock();
-    BBLOCK bblock_cond = alloc_bblock();
-    BBLOCK bblock_next = alloc_bblock();
+    struct bblock *bblock_body = alloc_bblock();
+    struct bblock *bblock_cond = alloc_bblock();
+    struct bblock *bblock_next = alloc_bblock();
 
     /* add new loop to loop stack */
     curr_loop = alloc_loop();
@@ -524,11 +525,11 @@ void quad_do_while(ASTNODE do_while)
     curr_bblock = bblock_next;
 }
 
-void quad_for(ASTNODE for_loop)
+void quad_for(struct astnode *for_loop)
 {
-    BBLOCK bblock_body = alloc_bblock();
-    BBLOCK bblock_cond = alloc_bblock();
-    BBLOCK bblock_next = alloc_bblock();
+    struct bblock *bblock_body = alloc_bblock();
+    struct bblock *bblock_cond = alloc_bblock();
+    struct bblock *bblock_next = alloc_bblock();
 
     /* add new loop to loop stack */
     curr_loop = alloc_loop();
@@ -557,7 +558,7 @@ void quad_for(ASTNODE for_loop)
 /* -------------------------------------------------------------------------- */
 /* jumping */
 
-void quad_jump_loop(ASTNODE jump)
+void quad_jump_loop(struct astnode *jump)
 {
     if(curr_loop == NULL){
         quad_error("continue/break not it loop...now going to DIE");
@@ -571,12 +572,12 @@ void quad_jump_loop(ASTNODE jump)
 
 }
 
-void quad_return(ASTNODE ret)
+void quad_return(struct astnode *ret)
 {
     if (ret == NULL) {
         emit_quad(OP_RET, NULL, NULL, NULL);
     } else {
-        ASTNODE temp = gen_rvalue(ret->jump_stmnt.ret_expr, NULL);
+        struct astnode *temp = gen_rvalue(ret->jump_stmnt.ret_expr, NULL);
         emit_quad(OP_RET, temp, NULL, NULL);
     }
     is_returned = true;
@@ -584,11 +585,11 @@ void quad_return(ASTNODE ret)
 
 /* -------------------------------------------------------------------------- */
 /* generating quads from function */
-void quad_statement(ASTNODE stmnt)
+void quad_statement(struct astnode *stmnt)
 {
     /* not a temporary register but a temp variable */
-    ASTNODE temp;
-    SYM_ENT temp_ent;
+    struct astnode *temp;
+    struct sym_entry *  temp_ent;
 
     switch(stmnt->type){
         case AST_DECLARATION: 
@@ -661,7 +662,7 @@ void quad_statement(ASTNODE stmnt)
 
 }
 
-size_t size_of(ASTNODE node)
+size_t size_of(struct astnode *node)
 {
     int temp;
     switch(node->type){
@@ -686,7 +687,7 @@ size_t size_of(ASTNODE node)
     }
 }
 
-BBLOCK_L gen_quads(ASTNODE func_def)
+struct bblock_list * gen_quads(struct astnode *func_def)
 {
     func_name = strdup(func_def->func.name->ident.ident);
     bblock_count = 1;
@@ -699,7 +700,7 @@ BBLOCK_L gen_quads(ASTNODE func_def)
     bblock_l->elem = curr_bblock;
     bblock_l->next = NULL;
 
-    BBLOCK_L ret = bblock_l;
+    struct bblock_list * ret = bblock_l;
     /* pass func def's compound block which is just a list of statements */
     quad_statement(func_def->func.block);
 

@@ -44,7 +44,7 @@ void print_opcode(FILE* fp, int opcode)
     }
 }
 
-void print_src_param(FILE* fp, ASTNODE src_param)
+void print_src_param(FILE* fp, struct astnode *src_param)
 {
     if(src_param == NULL) return;
 
@@ -74,7 +74,7 @@ void print_src_param(FILE* fp, ASTNODE src_param)
     }
 }
 
-void print_quad(FILE* fp, QUAD quad)
+void print_quad(FILE* fp, struct quad * quad)
 {
     if(quad == NULL) return;
 
@@ -99,22 +99,22 @@ void print_quad(FILE* fp, QUAD quad)
     print_src_param(fp, quad->src2); fprintf(fp,"%c",'\n');
 }
 
-void print_bblock(FILE* fp, BBLOCK bblock)
+void print_bblock(FILE* fp, struct bblock *bblock)
 {
     // if(block == NULL) quad_error("empty basic block");
     if(bblock == NULL) return;
     fprintf(fp, ".BB.%s.%d:\n", bblock->name, bblock->bblock_count);
     
-    QUAD_L temp = bblock->quads;
+    struct quad_list * temp = bblock->quads;
     while(temp != NULL){
         print_quad(fp, temp->elem);
         temp = temp->next;
     }
 }
 
-void print_bblock_l(FILE* fp, BBLOCK_L bblock_l)
+void print_bblock_l(FILE* fp, struct bblock_list * bblock_l)
 {
-    BBLOCK_L temp = bblock_l;
+    struct bblock_list * temp = bblock_l;
     while(temp != NULL){
         print_bblock(fp, temp->elem);
         temp = temp->next;

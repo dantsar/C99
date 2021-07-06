@@ -5,9 +5,9 @@
 
 void quad_error(const char* msg);
 void print_opcode(FILE* fp, int opcode);
-void print_src_param(FILE* fp, ASTNODE src_param);
-void print_quad(FILE* fp, QUAD quad);
-void print_bblock(FILE* fp, BBLOCK block);
-void print_bblock_l(FILE* fp, BBLOCK_L bblock_l);
+void print_src_param(FILE* fp, struct astnode *src_param);
+void print_quad(FILE* fp, struct quad * quad);
+void print_bblock(FILE* fp, struct bblock *block);
+void print_bblock_l(FILE* fp, struct bblock_list * bblock_l);
 
 #endif

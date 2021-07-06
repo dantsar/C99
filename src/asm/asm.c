@@ -8,8 +8,8 @@
 #include <parser/sym_tab.h>
 
 extern FILE* fp;
-extern ASTNODE string_l;
-extern SYM_TAB curr_scope;
+extern struct astnode *string_l;
+extern struct sym_tab *curr_scope;
 extern int temp_count;
 
 static bool once = true;
@@ -17,7 +17,7 @@ extern char* func_name;
 int stack_size = 0;
 bool is_ret = false;
 
-void asm_print_src(ASTNODE src)
+void asm_print_src(struct astnode *src)
 {
     if(!src) return; /* NO BOOM */
     
@@ -51,7 +51,7 @@ void asm_print_src(ASTNODE src)
     }
 }
 
-void asm_quad(QUAD quad)
+void asm_quad(struct quad * quad)
 {
     if(quad == NULL) return;
 
@@ -221,22 +221,22 @@ void asm_quad(QUAD quad)
     }
 }
 
-void asm_bblock(BBLOCK bblock)
+void asm_bblock(struct bblock *bblock)
 {
     /* print out label of basic block */
     fprintf(fp, "\n.BB.%s.%d:\n", bblock->name, bblock->bblock_count);
 
-    QUAD_L temp = bblock->quads;
+    struct quad_list * temp = bblock->quads;
     while (temp != NULL) {
         asm_quad(temp->elem);
         temp = temp->next;
     }
 }
 
-void gen_asm(BBLOCK_L bblock_l, ASTNODE func_def) 
+void gen_asm(struct bblock_list * bblock_l, struct astnode *func_def) 
 {
-    SYM_ENT_LL ent_l;
-    SYM_ENT temp_ent;
+    struct sym_entries *  ent_l;
+    struct sym_entry *  temp_ent;
     /* allocate global variables */
     if(once){
         once = false;
@@ -281,7 +281,7 @@ void gen_asm(BBLOCK_L bblock_l, ASTNODE func_def)
     fprintf(fp, "\tpushl %%ebp\n");
     fprintf(fp, "\tmovl %%esp, %%ebp\n");
     fprintf(fp, "\tsubl $%d, %%esp\n", stack_size);
-    BBLOCK_L temp = bblock_l;
+    struct bblock_list * temp = bblock_l;
     while(temp != NULL){
         asm_bblock(temp->elem);
         temp = temp->next;

@@ -6,14 +6,14 @@ extern int lineno;
 
 typedef enum {false, true} bool;
 
-typedef struct astnode*         ASTNODE;
-typedef struct sym_tab*         SYM_TAB;
-typedef struct sym_entry*       SYM_ENT;
-typedef struct sym_entries*     SYM_ENT_LL;
-typedef struct quad*            QUAD;
-typedef struct quad_list*       QUAD_L;
-typedef struct bblock*          BBLOCK;
-typedef struct bblock_list*     BBLOCK_L;
+// typedef struct astnode*         ASTNODE;
+// typedef struct sym_tab*         SYM_TAB;
+// typedef struct sym_entry*       SYM_ENT;
+// typedef struct sym_entries*     SYM_ENT_LL;
+// typedef struct quad*            QUAD;
+// typedef struct quad_list*       QUAD_L;
+// typedef struct bblock*          BBLOCK;
+// typedef struct bblock_list*     BBLOCK_L;
 typedef struct loop*            LOOP;
 
 /* enums for NUMS */

@@ -51,12 +51,12 @@ struct quad{
     int opcode;
     int cond_flag; /* enum COND_CODE: for comparisons */
 
-    ASTNODE res,src1,src2; /* lval, rval, rval */
+    struct astnode *res, *src1, *src2; /* lval, rval, rval */
 };
 /* linked list of quads */
 struct quad_list{
-    struct quad* elem;
-    struct quad_list* next;
+    struct quad *elem;
+    struct quad_list *next;
 };
 
 struct bblock{
@@ -65,10 +65,10 @@ struct bblock{
     char* name;
 
     bool is_done;
-    BBLOCK cond, def;   /* conditional and default branches */
+    struct bblock *cond, *def;   /* conditional and default branches */
     int cond_flag;      /* flag for conditional branch */
 
-    struct quad_list* quads;
+    struct quad_list *quads;
 };
 /* linked list of basic blocks */
 struct bblock_list{
@@ -77,21 +77,21 @@ struct bblock_list{
 };
 
 struct loop{
-    BBLOCK bb_cont, bb_break;
-    LOOP prev; /* for loops in loops */
+    struct bblock *bb_cont, *bb_break;
+    struct loop *prev; /* for loops in loops */
 };
 
-// QUAD    alloc_quad(int opcode);
-BBLOCK_L gen_quads(ASTNODE extern_def);
-void     quad_statement(ASTNODE stmnt);
+// struct quad *    alloc_quad(int opcode);
+struct bblock_list *gen_quads(struct astnode *extern_def);
+void     quad_statement(struct astnode *stmnt);
 
 /* expression generation */
-ASTNODE gen_rvalue(ASTNODE node, ASTNODE target);
-ASTNODE gen_lvalue(ASTNODE node, int* mode);
-ASTNODE gen_assign(ASTNODE node, ASTNODE target);
+struct astnode *gen_rvalue(struct astnode *node, struct astnode *target);
+struct astnode *gen_lvalue(struct astnode *node, int* mode);
+struct astnode *gen_assign(struct astnode *node, struct astnode *target);
 
 /* helpers */
-size_t size_of(ASTNODE node);
-bool    is_pointer(ASTNODE node);
+size_t size_of(struct astnode *node);
+bool    is_pointer(struct astnode *node);
 
 #endif
