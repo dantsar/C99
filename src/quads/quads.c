@@ -6,9 +6,9 @@
 #include <parser/ast.h>
 #include <quads/quads.h>
 #include <quads/quads_print.h>
-#include <parser/sym_tab.h>
+#include <parser/symtab.h>
 
-extern struct sym_tab *curr_scope;
+extern struct symtab *curr_scope;
 
 char    *func_name;          /* inidicate the name of the current function */
 static  size_t bblock_count; /* the bblock in the function: e.g. .BB.main.1 */

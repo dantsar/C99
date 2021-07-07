@@ -11,7 +11,7 @@ void indent(int indent){
         putchar(' ');
     }
 }
-void print_sym(struct sym_tab *sym)
+void print_sym(struct symtab *sym)
 {
     if(sym == NULL) return; /* to prevent explosion */
 

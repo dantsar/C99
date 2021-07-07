@@ -4,12 +4,13 @@
 #include <string.h>
 
 #include <parser/ast.h>
-#include <parser/sym_tab.h>
+#include <parser/symtab.h>
 
 FILE *fp = NULL;
 char asm_out[64] = "output.S";
 // char exec_out[64];
-struct sym_tab *curr_scope;
+
+struct symtab *curr_scope;
 extern struct astnode *string_l;
 
 static int parse_args(int argc, char **argv)
@@ -22,9 +23,6 @@ static int parse_args(int argc, char **argv)
     while ((c = getopt_long(argc, argv, "o:", longopts, &opt_ind)) != -1) {
         switch (c) {
         case 'o':
-            /* name of the output file */
-            fprintf(stdout, "output file: %s\n", optarg);
-
             strcpy(asm_out, optarg);
 
             if (!(fp = fopen(asm_out, "w"))) {
@@ -33,14 +31,13 @@ static int parse_args(int argc, char **argv)
             }
             break;
         case 0:
-            fprintf(stdout, "loooong\n");
             switch (opt_ind) {
             case 0:
                 fprintf(stdout, "help msg coming soon!\n");
                 break;
             default:
                 fprintf(stdout, "opt_ind: %d\n", opt_ind);
-                /* error */
+                /* error? */
                 break;
             }
             break;
@@ -48,7 +45,6 @@ static int parse_args(int argc, char **argv)
             /* error */
             exit(-1);
         }
-
         opt_ind = 0;
     }
 
@@ -67,18 +63,22 @@ int main(int argc, char **argv)
     int arg_ind = parse_args(argc, argv);
 
     /* creating global symbol table */
-    curr_scope = sym_tab_create(SCOPE_GLOBAL);
+    curr_scope = symtab_create(SCOPE_GLOBAL);
 
     /* hard coding in printf... very kludge */
     sym_enter(curr_scope, alloc_sym_ent("printf", ENT_FUNC, NS_MISC));
 
+    if (arg_ind == argc) {
+        fprintf(stderr, "fatal error: no input files\ncompilation terminated\n");
+        exit(-1);
+    }
 
     /* input files */
     for (int i = arg_ind; i < argc; i++) {
         fprintf(stdout, "argv[%d]: %s\n", i, argv[i]);
         FILE *ifp;
         if (!(ifp = fopen(argv[i], "r"))) {
-            fprintf(stderr, "couldn't open input file \'%s\'\n", argv[i]);
+            fprintf(stderr, "fatal error: couldn't open input file \'%s\'\n", argv[i]);
             exit(-1);
         }
         // yyparse(ifp);

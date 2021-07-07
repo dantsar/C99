@@ -3,7 +3,7 @@
 
 #include <parser/ast.h>
 #include <common/def.h>
-#include <parser/sym_tab.h>
+#include <parser/symtab.h>
 
 enum OP_CODES{
     OP_LOAD,

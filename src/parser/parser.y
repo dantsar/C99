@@ -8,7 +8,7 @@
 #include <common/char_util.h>
 
 #include <parser/ast.h>
-#include <parser/sym_tab.h>
+#include <parser/symtab.h>
 
 #include <quads/quads.h>
 
@@ -18,7 +18,7 @@ extern char filename[256];
 extern int lineno;
 
 /* stuff for symbol table */
-struct sym_tab *curr_scope;
+struct symtab *curr_scope;
 
 /* global variable for distinguishing between block and function scopes */
 bool in_func = false;
@@ -37,7 +37,6 @@ extern struct astnode *string_l;
     /* for single character tokens */
     int c; 
 
-    /* definition in def.h */
     struct Str {
         char *str;
         int len;
@@ -87,7 +86,6 @@ extern struct astnode *string_l;
 %type<num>          NUMBER 
 %type<charlit>      CHARLIT
 %type<str>          STRING
-// %type<astnode_p>    constant
 
 /* expressions */
 %type<astnode_p>    expr
@@ -472,8 +470,8 @@ label_stmnt:
 /* (6.8.2) */
 compound_stmnt:     
       '{' '}'                   {$$=alloc_compound(NULL, NULL);}
-    | '{'   {if(in_func) in_func=false; else curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} 
-        block_item_list  '}' {$$=alloc_compound($3, curr_scope); curr_scope=sym_tab_pop(curr_scope);}
+    | '{'   {if(in_func) in_func=false; else curr_scope=symtab_push(SCOPE_BLOCK, curr_scope);} 
+        block_item_list  '}' {$$=alloc_compound($3, curr_scope); curr_scope=symtab_pop(curr_scope);}
     ;
 
 /* (6.8.2) */
@@ -504,9 +502,9 @@ select_stmnt:
 iterat_stmnt:       
       WHILE '(' expr ')' statement                             {$$=alloc_iterat_stmnt(AST_WHILE_STMNT, $3, $5, NULL, NULL);} 
     | DO statement WHILE '(' expr ')'  ';'                     {$$=alloc_iterat_stmnt(AST_DO_STMNT, $5, $2, NULL, NULL);}         
-    | FOR '(' {curr_scope=sym_tab_push(SCOPE_BLOCK, curr_scope);} 
+    | FOR '(' {curr_scope=symtab_push(SCOPE_BLOCK, curr_scope);} 
                expr_opt ';' expr_opt ';' expr_opt ')' statement {$$=alloc_iterat_stmnt(AST_FOR_STMNT, $6, $10, $4, $8); 
-                                                                curr_scope=sym_tab_pop(curr_scope);
+                                                                curr_scope=symtab_pop(curr_scope);
                                                                 }
     ;
 
@@ -525,7 +523,7 @@ jump_stmnt:
 
 /* (6.9.1): manually change compound scope from block to func */
 func_def:              
-      declaration_specs  decl {in_func=true; curr_scope=sym_tab_push_on(curr_scope,$2->list.elem->func.sym);}
+      declaration_specs  decl {in_func=true; curr_scope=symtab_push_on(curr_scope,$2->list.elem->func.sym);}
                 compound_stmnt { /* populate astnode with elements */
                                     $$=$2->list.elem; /* first element is astnode_func */
                                     $$->func.ret = list_append($1, $2);

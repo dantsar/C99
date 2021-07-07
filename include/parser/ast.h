@@ -6,7 +6,7 @@
 #include <common/def.h>
 #include <common/char_util.h>
 #include <parser.tab.h>
-#include <parser/sym_tab.h>
+#include <parser/symtab.h>
 
 /* Abstract Syntax Tree node types */
 enum AST_TYPE{ 
@@ -174,7 +174,7 @@ struct astnode_st_un{
     int type; 
     bool def_complete;
     char* name; /* if NULL then anonymous struct/union */
-    struct sym_tab *mini_tab;
+    struct symtab *mini_tab;
 };
 
 struct astnode_func{
@@ -182,7 +182,7 @@ struct astnode_func{
     struct astnode *ret;
     struct astnode *args; /* list of arguments */
     struct astnode *block;
-    struct sym_tab *sym;  /* associated symbol table */
+    struct symtab *sym;  /* associated symbol table */
 };
 
 struct astnode_list{
@@ -196,7 +196,7 @@ struct astnode_decl_spec{
 
 struct astnode_compound{
     struct astnode *states; /* list of statements */
-    struct sym_tab *tab;
+    struct symtab *tab;
 };
 
 struct astnode_select_stmnt{
@@ -309,7 +309,7 @@ struct astnode *alloc_st_un(int type, int scope);
 struct astnode *alloc_func(struct astnode *name, struct astnode *arg_list);
 
 /* new functions for assignment 4 */
-struct astnode *alloc_compound(struct astnode *exprs, struct sym_tab *tab);
+struct astnode *alloc_compound(struct astnode *exprs, struct symtab *tab);
 struct astnode *alloc_select_stmnt(int type, struct astnode *cond, struct astnode *then, struct astnode *else_stmnt);
 struct astnode *alloc_iterat_stmnt(int type, struct astnode *cont, struct astnode *stmnt, struct astnode *init, struct astnode *update);
 struct astnode *alloc_label_stmnt(int type, struct astnode *stmnt, char* label, struct astnode *cond);

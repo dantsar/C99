@@ -435,7 +435,7 @@ struct astnode *alloc_st_un(int type, int scope)
 {
     struct astnode *ret = astnode_alloc(AST_ST_UN);
     ret->st_un.type = type;
-    ret->st_un.mini_tab = sym_tab_create(SCOPE_MINI);
+    ret->st_un.mini_tab = symtab_create(SCOPE_MINI);
     ret->st_un.def_complete = false;
     return ret; 
 }
@@ -444,7 +444,7 @@ struct astnode *alloc_func(struct astnode *name, struct astnode *arg_list)
 {
     struct astnode *ret = astnode_alloc(AST_FUNC);
     /* really should be a prototype scope, but I'm not worrying about that */
-    ret->func.sym = sym_tab_create(SCOPE_FUNC); 
+    ret->func.sym = symtab_create(SCOPE_FUNC); 
     ret->func.name = name;
     ret->func.args = arg_list;
 
@@ -466,7 +466,7 @@ struct astnode *alloc_func(struct astnode *name, struct astnode *arg_list)
     return ret;
 }
 
-struct astnode *alloc_compound(struct astnode *exprs, struct sym_tab *tab)
+struct astnode *alloc_compound(struct astnode *exprs, struct symtab *tab)
 {
     struct astnode *ret = astnode_alloc(AST_COMPOUND);
     ret->comp.states = exprs;

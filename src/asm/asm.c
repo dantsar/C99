@@ -5,11 +5,11 @@
 #include <parser/ast.h>
 #include <quads/quads.h>
 #include <quads/quads_print.h>
-#include <parser/sym_tab.h>
+#include <parser/symtab.h>
 
 extern FILE *fp;
 extern struct astnode *string_l;
-extern struct sym_tab *curr_scope;
+extern struct symtab *curr_scope;
 extern int temp_count;
 
 static bool once = true;

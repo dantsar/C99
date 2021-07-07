@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <parser/sym_tab.h>
+#include <parser/symtab.h>
 
 extern char filename[256];
 extern int lineno;
@@ -13,35 +13,35 @@ extern int stack_offset;
 extern bool in_func_declaration;
 extern bool in_func;
 
-extern struct sym_tab *curr_scope;
+extern struct symtab *curr_scope;
 
-struct sym_tab *sym_tab_create(int scope_type)
+struct symtab *symtab_create(int scope_type)
 {
-    struct sym_tab *ret = calloc(1, sizeof(struct sym_tab));
+    struct symtab *ret = calloc(1, sizeof(struct symtab));
     ret->scope_type = scope_type;
     return ret;
 }
 
-void sym_tab_destroy(struct sym_tab *sym_tab)
+void symtab_destroy(struct symtab *symtab)
 {
     /* figure this out later: I have 32G of RAM, so I don't care :^) */
-    free(sym_tab);
+    free(symtab);
 }
 
-struct sym_tab *sym_tab_push(int scope_type, struct sym_tab *sym_tab)
+struct symtab *symtab_push(int scope_type, struct symtab *symtab)
 {
-    struct sym_tab *new_tab = sym_tab_create(scope_type);
-    new_tab->next = sym_tab;
+    struct symtab *new_tab = symtab_create(scope_type);
+    new_tab->next = symtab;
     return new_tab;
 }
 
-struct sym_tab *sym_tab_push_on(struct sym_tab *curr_scope, struct sym_tab *new)
+struct symtab *symtab_push_on(struct symtab *curr_scope, struct symtab *new)
 {
     new->next = curr_scope;
     return new;
 }
 
-struct sym_tab *sym_tab_pop(struct sym_tab *stack)
+struct symtab *symtab_pop(struct symtab *stack)
 {
     /* free current scope? ... probably not... */
     return stack->next;
@@ -57,9 +57,9 @@ bool sym_ent_compare(struct sym_entry *  ent1, struct sym_entry *  ent2)
 }
 
 /* returns the entry in the symbol table if present. ELSE returns NULL */
-struct sym_entry *  sym_lookup(struct sym_tab *sym, struct sym_entry *  ent)
+struct sym_entry *  sym_lookup(struct symtab *sym, struct sym_entry *  ent)
 {
-    struct sym_tab *temp_sym = sym;
+    struct symtab *temp_sym = sym;
     struct sym_entries *  temp_ent_ll;
 
     /* loop through symbol tables */
@@ -80,7 +80,7 @@ struct sym_entry *  sym_lookup(struct sym_tab *sym, struct sym_entry *  ent)
 }
 
 /* does not go down the stack of symbol tables but only looks at the provided one */
-struct sym_entry *  sym_lookup_local(struct sym_tab *sym, struct sym_entry *  ent)
+struct sym_entry *  sym_lookup_local(struct symtab *sym, struct sym_entry *  ent)
 {
     struct sym_entries *  temp_ent_ll = sym->ent_ll;
     /* loop through symbol table entries */
@@ -95,7 +95,7 @@ struct sym_entry *  sym_lookup_local(struct sym_tab *sym, struct sym_entry *  en
 }
 
 /* TRUE: successfully entered entry | FALSE: already there */
-bool sym_enter(struct sym_tab *sym, struct sym_entry *  ent)
+bool sym_enter(struct symtab *sym, struct sym_entry *  ent)
 {
     struct sym_entry *  temp;
     if((temp = sym_lookup_local(sym, ent)))
@@ -141,7 +141,7 @@ struct sym_entry *alloc_sym_ent(char* name, int ent_type, int ent_ns)
  * and enteres the variables into the symbol table. This function takes two lists
  * type: list of decl_specs|| var_list: list of decalrators 
  */
-void sym_declaration(struct astnode *declaration, struct sym_tab *tab)
+void sym_declaration(struct astnode *declaration, struct symtab *tab)
 {
     struct astnode *type = declaration->declaration.var_type;
     struct astnode *var_list = declaration->declaration.declaration;
@@ -233,7 +233,7 @@ void sym_struct_define(struct astnode *st_un, struct astnode *decl_list)
     }
 }
 
-void sym_struct_declare(char* name, struct astnode *st_un, struct sym_tab *tab)
+void sym_struct_declare(char* name, struct astnode *st_un, struct symtab *tab)
 {
     st_un->st_un.name = name;
     struct sym_entry *  ent = alloc_sym_ent(name, ENT_SU_TAG, NS_SU);
@@ -248,7 +248,7 @@ void sym_struct_declare(char* name, struct astnode *st_un, struct sym_tab *tab)
 }
 
 /* insert label into the function scope */
-void sym_label(struct astnode *label, struct sym_tab *tab)
+void sym_label(struct astnode *label, struct symtab *tab)
 {
     while(tab->scope_type != SCOPE_FUNC) tab = tab->next;
 
@@ -258,7 +258,7 @@ void sym_label(struct astnode *label, struct sym_tab *tab)
 
 }
 
-void sym_func_def(struct astnode *func_def, struct sym_tab *tab)
+void sym_func_def(struct astnode *func_def, struct symtab *tab)
 {
     if(tab->scope_type != SCOPE_GLOBAL){
         yyerror_die("function definition not in global scope");

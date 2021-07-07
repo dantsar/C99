@@ -126,10 +126,10 @@ struct sym_entry{
     };
 };
 
-struct sym_tab {
+struct symtab {
     /* stack of symbol table scopes */
     int scope_type;
-    struct sym_tab *next;
+    struct symtab *next;
 
     /* linked list of symbol table entries */
     struct sym_entries *first_ent_ll;
@@ -141,25 +141,25 @@ struct sym_tab {
 };
 
 /* symbol table interface functions */
-struct sym_tab *sym_tab_create(int att_type);
-void sym_tab_destory(struct sym_tab *sym);
-struct sym_tab *sym_tab_push(int scope_type, struct sym_tab *sym_tab);
-struct sym_tab *sym_tab_push_on(struct sym_tab *curr_scope, struct sym_tab *new);
-struct sym_tab *sym_tab_pop(struct sym_tab *stack);
-bool sym_enter(struct sym_tab *tab, struct sym_entry *ent);
-struct sym_entry *sym_lookup(struct sym_tab *sym, struct sym_entry *ent); 
+struct symtab *symtab_create(int att_type);
+void symtab_destory(struct symtab *sym);
+struct symtab *symtab_push(int scope_type, struct symtab *symtab);
+struct symtab *symtab_push_on(struct symtab *curr_scope, struct symtab *new);
+struct symtab *symtab_pop(struct symtab *stack);
+bool sym_enter(struct symtab *tab, struct sym_entry *ent);
+struct sym_entry *sym_lookup(struct symtab *sym, struct sym_entry *ent); 
 
-void print_sym(struct sym_tab *sym);
+void print_sym(struct symtab *sym);
 void print_sym_ent(struct sym_entry *ent);
 
 /* for populating the symbol table */
 struct sym_entry *alloc_sym_ent(char* name, int ent_type, int ent_ns);
 // struct sym_entry *alloc_sym_ent_decl(struct astnode *type, struct astnode *ident);
 
-void sym_declaration(struct astnode *declaration, struct sym_tab *tab);
+void sym_declaration(struct astnode *declaration, struct symtab *tab);
 void sym_struct_define(struct astnode *st_un, struct astnode *decl_list);
-void sym_struct_declare(char* name, struct astnode *st_un, struct sym_tab *tab);
-void sym_label(struct astnode *label, struct sym_tab *tab);
-void sym_func_def(struct astnode *func_def, struct sym_tab *tab);
+void sym_struct_declare(char* name, struct astnode *st_un, struct symtab *tab);
+void sym_label(struct astnode *label, struct symtab *tab);
+void sym_func_def(struct astnode *func_def, struct symtab *tab);
 
 #endif
