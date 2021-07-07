@@ -8,7 +8,7 @@
 #include <quads/quads_print.h>
 #include <parser/sym_tab.h>
 
-extern struct symbol_table *curr_scope;
+extern struct sym_tab *curr_scope;
 
 char    *func_name;          /* inidicate the name of the current function */
 static  size_t bblock_count; /* the bblock in the function: e.g. .BB.main.1 */

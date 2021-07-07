@@ -4,7 +4,7 @@ This is my work for ECE466: Compilers, a graduate level class where I had to bui
 # Dependencies 
 * CMake (v. 3.14)
 * GCC 
-* Make (*optional*)
+* Make
 * Flex
 * Bison
 

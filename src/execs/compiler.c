@@ -9,9 +9,8 @@
 FILE *fp = NULL;
 char asm_out[64] = "output.S";
 // char exec_out[64];
-extern struct sym_tab *curr_scope;
+struct sym_tab *curr_scope;
 extern struct astnode *string_l;
-
 
 static int parse_args(int argc, char **argv)
 {
