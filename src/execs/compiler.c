@@ -60,20 +60,21 @@ static int parse_args(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    int arg_ind = parse_args(argc, argv);
+///   int arg_ind = parse_args(argc, argv);
 
     /* creating global symbol table */
     curr_scope = symtab_create(SCOPE_GLOBAL);
 
     /* hard coding in printf... very kludge */
     sym_enter(curr_scope, alloc_sym_ent("printf", ENT_FUNC, NS_MISC));
-
+/*
     if (arg_ind == argc) {
         fprintf(stderr, "fatal error: no input files\ncompilation terminated\n");
         exit(-1);
     }
-
+*/
     /* input files */
+/* 
     for (int i = arg_ind; i < argc; i++) {
         fprintf(stdout, "argv[%d]: %s\n", i, argv[i]);
         FILE *ifp;
@@ -83,6 +84,7 @@ int main(int argc, char **argv)
         }
         // yyparse(ifp);
     }
+*/
 
     yyparse();
 
